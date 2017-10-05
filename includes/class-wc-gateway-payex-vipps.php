@@ -1,0 +1,753 @@
+<?php
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+} // Exit if accessed directly
+
+class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
+	implements WC_Payment_Gateway_Payex_Interface {
+
+	/**
+	 * Merchant Token
+	 * @var string
+	 */
+	public $merchant_token = '';
+
+	/**
+	 * Payee Id
+	 * @var string
+	 */
+	public $payee_id = '';
+
+	/**
+	 * Test Mode
+	 * @var string
+	 */
+	public $testmode = 'yes';
+
+	/**
+	 * Debug Mode
+	 * @var string
+	 */
+	public $debug = 'yes';
+
+	/**
+	 * Locale
+	 * @var string
+	 */
+	public $culture = 'en-US';
+
+	/**
+	 * Checkout Method
+	 * @var string
+	 */
+	public $method = 'redirect';
+
+	/**
+	 * Backend Api Endpoint
+	 * @var string
+	 */
+	public $backend_api_endpoint = 'https://api.payex.com';
+
+	/**
+	 * Init
+	 */
+	public function __construct() {
+		$this->id           = 'payex_vipps';
+		$this->has_fields   = TRUE;
+		$this->method_title = __( 'Vipps', 'woocommerce-gateway-payex-checkout' );
+		$this->icon         = apply_filters( 'woocommerce_payex_vipps_icon', plugins_url( '/assets/images/vipps.png', dirname( __FILE__ ) ) );
+		$this->supports     = array(
+			'products',
+			'refunds',
+		);
+
+		// Load the form fields.
+		$this->init_form_fields();
+
+		// Load the settings.
+		$this->init_settings();
+
+		// Define user set variables
+		$this->enabled        = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title          = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description    = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->merchant_token = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
+		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
+		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->method         = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
+
+		if ( $this->testmode === 'yes' ) {
+			$this->backend_api_endpoint = 'https://api.externalintegration.payex.com';
+		}
+
+		// Actions
+		//add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
+		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
+			$this,
+			'process_admin_options'
+		) );
+
+		add_action( 'woocommerce_thankyou_' . $this->id, array(
+			$this,
+			'thankyou_page'
+		) );
+
+		// Payment listener/API hook
+		add_action( 'woocommerce_api_wc_gateway_' . $this->id, array(
+			$this,
+			'return_handler'
+		) );
+
+		// Payment confirmation
+		add_action( 'the_post', array( &$this, 'payment_confirm' ) );
+
+		// Pending Cancel
+		add_action( 'woocommerce_order_status_pending_to_cancelled', array( $this, 'cancel_pending' ), 10, 2);
+	}
+
+	/**
+	 * Initialise Settings Form Fields
+	 * @return string|void
+	 */
+	public function init_form_fields() {
+		$this->form_fields = array(
+			'enabled'        => array(
+				'title'   => __( 'Enable/Disable', 'woocommerce-gateway-payex-checkout' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable plugin', 'woocommerce-gateway-payex-checkout' ),
+				'default' => 'no'
+			),
+			'title'          => array(
+				'title'       => __( 'Title', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => __( 'Vipps payment', 'woocommerce-gateway-payex-checkout' )
+			),
+			'description'    => array(
+				'title'       => __( 'Description', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'This controls the description which the user sees during checkout.', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => __( 'Vipps payment', 'woocommerce-gateway-payex-checkout' ),
+			),
+			'merchant_token' => array(
+				'title'       => __( 'Merchant Token', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'Merchant Token', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => $this->merchant_token
+			),
+			'payee_id'       => array(
+				'title'       => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => $this->payee_id
+			),
+			'testmode'       => array(
+				'title'   => __( 'Test Mode', 'woocommerce-gateway-payex-checkout' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable PayEx Test Mode', 'woocommerce-gateway-payex-checkout' ),
+				'default' => $this->testmode
+			),
+			'debug'          => array(
+				'title'   => __( 'Debug', 'woocommerce-gateway-payex-checkout' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable logging', 'woocommerce-gateway-payex-checkout' ),
+				'default' => $this->debug
+			),
+			'culture'        => array(
+				'title'       => __( 'Language', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'select',
+				'options'     => array(
+					'en-US' => 'English',
+					'sv-SE' => 'Swedish',
+					'nb-NO' => 'Norway',
+				),
+				'description' => __( 'Language of pages displayed by PayEx during payment.', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => $this->culture
+			),
+			'method'         => array(
+				'title'       => __( 'Checkout Method', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'select',
+				'options'     => array(
+					'redirect' => __( 'Redirect', 'woocommerce-gateway-payex-checkout' ),
+					'direct'   => __( 'Direct', 'woocommerce-gateway-payex-checkout' ),
+				),
+				'description' => __( 'Checkout Method', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => $this->method
+			),
+		);
+	}
+
+	/**
+	 * If There are no payment fields show the description if set.
+	 */
+	public function payment_fields() {
+		parent::payment_fields();
+	}
+
+	/**
+	 * Validate frontend fields.
+	 *
+	 * Validate payment fields on the frontend.
+	 *
+	 * @return bool
+	 */
+	public function validate_fields() {
+		return true;
+	}
+
+	/**
+	 * Thank you page
+	 *
+	 * @param $order_id
+	 *
+	 * @return void
+	 */
+	public function thankyou_page( $order_id ) {
+		//
+	}
+
+	/**
+	 * Process Payment
+	 *
+	 * @param int $order_id
+	 *
+	 * @return array|false
+	 */
+	public function process_payment( $order_id ) {
+		$order = wc_get_order( $order_id );
+
+		$amount   = $order->get_total();
+		$currency = px_obj_prop( $order, 'order_currency' );
+		$email    = px_obj_prop( $order, 'billing_email' );
+		$phone    = px_obj_prop( $order, 'billing_phone' );
+
+		$user_id = $order->get_customer_id();
+
+		// Get Customer UUID
+		if ( $user_id > 0 ) {
+			$customer_uuid = get_user_meta( $user_id, '_payex_customer_uuid', TRUE );
+			if ( empty( $customer_uuid ) ) {
+				$customer_uuid = px_uuid( $user_id );
+				update_user_meta( $user_id, '_payex_customer_uuid', $customer_uuid );
+			}
+		} else {
+			$customer_uuid = px_uuid( uniqid( $email ) );
+		}
+
+		// Get Order UUID
+		$order_uuid = px_uuid( $order_id );
+
+		$params = [
+			'payment' => [
+				'operation'      => 'Purchase',
+				'intent'         => 'Authorization',
+				'currency'       => $currency,
+				'prices'         => [
+					[
+						'type'      => 'Vipps',
+						'amount'    => round( $amount * 100 ),
+						'vatAmount' => '0'
+					]
+				],
+				'description'    => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_order_number() ),
+				'payerReference' => $customer_uuid,
+				'userAgent'      => px_get_remote_address(),
+				'language'       => $this->culture,
+				'urls'           => [
+					'completeUrl' => html_entity_decode( $this->get_return_url( $order ) ),
+					'cancelUrl'   => $order->get_cancel_order_url_raw(),
+					'callbackUrl' => WC()->api_request_url( __CLASS__ )
+				],
+				'payeeInfo'      => [
+					'payeeId'        => $this->payee_id,
+					'payeeReference' => $order_uuid,
+				],
+				'prefillInfo'    => [
+					'msisdn' => '+' . ltrim( $phone, '+' )
+				]
+			]
+		];
+
+		try {
+			$result = $this->request( 'POST', $this->backend_api_endpoint . '/psp/vipps/payments', $params );
+		} catch ( \Exception $e ) {
+			$this->log( sprintf( '[ERROR] Process payment: %s', $e->getMessage() ) );
+			wc_add_notice( $e->getMessage(), 'error' );
+
+			return FALSE;
+		}
+
+		// Save payment ID
+		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
+
+		switch ( $this->method ) {
+			case 'redirect':
+				// Get Redirect
+				$redirect = array_filter( $result['operations'], function ( $value, $key ) {
+					return ( is_array( $value ) && $value['rel'] === 'redirect-authorization' );
+				}, ARRAY_FILTER_USE_BOTH );
+				$redirect = array_shift( $redirect );
+
+				return array(
+					'result'   => 'success',
+					'redirect' => $redirect['href']
+				);
+				break;
+			case 'direct':
+				// Authorize payment
+				$authorization = array_filter( $result['operations'], function ( $value, $key ) {
+					return ( is_array( $value ) && $value['rel'] === 'create-authorization' );
+				}, ARRAY_FILTER_USE_BOTH );
+				$authorization = array_shift( $authorization );
+
+				try {
+					$params = [
+						'transaction' => [
+							'msisdn' => $phone
+						]
+					];
+
+					$result = $this->request( 'POST', $authorization['href'], $params );
+				} catch ( \Exception $e ) {
+					$this->log( sprintf( '[ERROR] Create Authorization: %s', $e->getMessage() ) );
+					wc_add_notice( $e->getMessage(), 'error' );
+
+					return FALSE;
+				}
+
+				return array(
+					'result'   => 'success',
+					'redirect' => $this->get_return_url( $order )
+				);
+
+				break;
+
+			default:
+				wc_add_notice( __( 'Wrong method', 'woocommerce-gateway-payex-checkout' ), 'error' );
+
+				return FALSE;
+		}
+
+	}
+
+	/**
+	 * Payment confirm action
+	 */
+	public function payment_confirm() {
+		if ( empty( $_GET['key'] ) ) {
+			return;
+		}
+
+		// Validate Payment Method
+		$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
+		if ( ! $order_id ) {
+			return;
+		}
+
+		if ( ! ( $order = wc_get_order( $order_id ) ) ) {
+			return;
+		}
+
+		if ( px_obj_prop( $order, 'payment_method' ) !== $this->id ) {
+			return;
+		}
+
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		if ( empty( $payment_id ) ) {
+			return;
+		}
+
+		try {
+			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
+		} catch ( \Exception $e ) {
+			$this->log( sprintf( '[ERROR] Payment confirm: %s', $e->getMessage() ) );
+
+			return;
+		}
+
+		switch ( $result['payment']['state'] ) {
+			case 'Pending':
+				$order->update_status( 'on-hold', __( 'Transaction is pending.', 'woocommerce-gateway-payex-checkout' ) );
+				WC()->cart->empty_cart();
+				break;
+			case 'Ready':
+				$order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-payex-checkout' ) );
+				WC()->cart->empty_cart();
+				break;
+			case 'Failed':
+				$order->update_status( 'failed', __( 'Payment failed.', 'woocommerce-gateway-payex-checkout' ) );
+				break;
+			case 'Aborted':
+				$order->cancel_order( __( 'Payment canceled.', 'woocommerce-gateway-payex-checkout' ) );
+				break;
+			default:
+				//
+		}
+	}
+
+
+	/**
+	 * IPN Callback
+	 * @return void
+	 */
+	public function return_handler() {
+		$post = file_get_contents( 'php://input' );
+
+		$this->log( sprintf( 'IPN: Initialized %s from %s', $_SERVER['REQUEST_URI'], px_get_remote_address() ) );
+		$this->log( sprintf( 'Incoming Callback. Post data: %s', var_export( $post, TRUE ) ) );
+
+		// @todo Implement
+	}
+
+	/**
+	 * Check is Capture possible
+	 *
+	 * @param WC_Order|int $order
+	 * @param bool         $amount
+	 *
+	 * @return bool
+	 */
+	public function can_capture( $order, $amount = FALSE ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		$order_id = px_obj_prop( $order, 'id' );
+
+		if ( ! $amount ) {
+			$amount = $order->get_total();
+		}
+
+		// @todo Improve feature
+
+		$state = get_post_meta( $order_id, '_payex_payment_state' );
+
+		if ( empty( $state ) ) {
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	/**
+	 * Check is Cancel possible
+	 *
+	 * @param WC_Order|int $order
+	 *
+	 * @return bool
+	 */
+	public function can_cancel( $order ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		$order_id = px_obj_prop( $order, 'id' );
+		$state    = get_post_meta( $order_id, '_payex_payment_state' );
+
+		if ( ! in_array( $state, array(
+			'Captured',
+			'Cancelled',
+			'Refunded'
+		) ) ) {
+			return TRUE;
+		}
+
+		return FALSE;
+	}
+
+	/**
+	 * @param \WC_Order $order
+	 * @param bool      $amount
+	 *
+	 * @return bool
+	 * @throws \Exception
+	 */
+	public function can_refund( $order, $amount = FALSE ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		// @todo Improve feature
+		if ( ! $amount ) {
+			$amount = $order->get_total();
+		}
+
+		$order_id = px_obj_prop( $order, 'id' );
+
+		// Should have payment id
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		if ( empty( $payment_id ) ) {
+			return FALSE;
+		}
+
+		// Should be captured
+		$state = get_post_meta( $order_id, '_payex_payment_state', TRUE );
+		if ( $state !== 'Captured' ) {
+			return FALSE;
+		}
+
+		// Check refund amount
+		try {
+			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id . '/transactions' );
+		} catch ( \Exception $e ) {
+			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
+		}
+
+		$refunded = 0;
+		foreach ( $result['transactions']['transactionList'] as $key => $transaction ) {
+			if ( $transaction['type'] === 'Reversal' ) {
+				$refunded += ( $transaction['amount'] / 100 );
+			}
+		}
+
+		$possibleToRefund = $order->get_total() - $refunded;
+		if ( $amount > $possibleToRefund ) {
+			return FALSE;
+		}
+
+
+		return TRUE;
+	}
+
+	/**
+	 * Capture
+	 *
+	 * @param WC_Order|int $order
+	 * @param bool         $amount
+	 *
+	 * @throws \Exception
+	 * @return void
+	 */
+	public function capture_payment( $order, $amount = FALSE ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		// @todo Improve feature
+		if ( ! $amount ) {
+			$amount = $order->get_total();
+		}
+
+		$order_id   = px_obj_prop( $order, 'id' );
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		if ( empty( $payment_id ) ) {
+			throw new \Exception( 'Unable to get payment ID' );
+		}
+
+		try {
+			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
+		} catch ( \Exception $e ) {
+			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
+		}
+
+		$capture_href = self::get_operation( $result['operations'], 'create-capture' );
+		if ( empty( $capture_href ) ) {
+			throw new \Exception( __( 'Capture unavailable', 'woocommerce-gateway-payex-checkout' ) );
+		}
+
+		// Order Info
+		$info = $this->get_order_info( $order );
+
+		// Get Order UUID
+		$payeeReference = px_uuid( uniqid( $order_id ) );
+
+		$params = array(
+			'transaction' => array(
+				'amount'         => round( $order->get_total() * 100 ),
+				'vatAmount'      => round( $info['vat_amount'] * 100 ),
+				'description'    => sprintf( 'Capture for Order #%s', $order_id ),
+				'payeeReference' => $payeeReference
+			)
+		);
+		$result = $this->request( 'POST', $capture_href, $params );
+
+		switch ( $result['capture']['transaction']['state'] ) {
+			case 'Completed':
+				update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
+				update_post_meta( $order_id, '_payex_transaction_capture', $result['capture']['transaction']['id'] );
+
+				$order->add_order_note( __( 'Transaction captured.', 'woocommerce-gateway-payex-checkout' ) );
+				$order->payment_complete();
+
+				break;
+			case 'Initialized':
+				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', 'woocommerce-gateway-payex-checkout' ), $result['capture']['transaction']['state'] ) );
+				break;
+			case 'Failed':
+			default:
+				$message = isset( $result['capture']['transaction']['failedReason'] ) ? $result['capture']['transaction']['failedReason'] : __( 'Capture failed.', 'woocommerce-gateway-payex-checkout' );
+				throw new \Exception( $message );
+				break;
+		}
+	}
+
+	/**
+	 * Cancel
+	 *
+	 * @param WC_Order|int $order
+	 *
+	 * @throws \Exception
+	 * @return void
+	 */
+	public function cancel_payment( $order ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		$order_id   = px_obj_prop( $order, 'id' );
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		if ( empty( $payment_id ) ) {
+			throw new \Exception( 'Unable to get payment ID' );
+		}
+
+		try {
+			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
+		} catch ( \Exception $e ) {
+			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
+		}
+
+		$cancel_href = self::get_operation( $result['operations'], 'create-cancellation' );
+		if ( empty( $cancel_href ) ) {
+			throw new \Exception( __( 'Cancellation unavailable', 'woocommerce-gateway-payex-checkout' ) );
+		}
+
+		// Get Order UUID
+		$payeeReference = px_uuid( uniqid( $order_id ) );
+
+		$params = array(
+			'transaction' => array(
+				'description'    => sprintf( 'Cancellation for Order #%s', $order_id ),
+				'payeeReference' => $payeeReference
+			),
+		);
+		$result = $this->request( 'POST', $cancel_href, $params );
+
+		switch ( $result['cancellation']['transaction']['state'] ) {
+			case 'Completed':
+				update_post_meta( $order_id, '_payex_payment_state', 'Cancelled' );
+				update_post_meta( $order_id, '_payex_transaction_cancel', $result['cancellation']['transaction']['id'] );
+
+				$order->add_order_note( __( 'Transaction cancelled.', 'woocommerce-gateway-payex-checkout' ) );
+				break;
+			case 'Initialized':
+			case 'AwaitingActivity':
+				$order->add_order_note( sprintf( __( 'Transaction cancellation status: %s.', 'woocommerce-gateway-payex-checkout' ), $result['cancellation']['transaction']['state'] ) );
+				break;
+			case 'Failed':
+			default:
+				$message = isset( $result['cancellation']['transaction']['failedReason'] ) ? $result['cancellation']['transaction']['failedReason'] : __( 'Cancel failed.', 'woocommerce-gateway-payex-checkout' );
+				throw new \Exception( $message );
+				break;
+		}
+	}
+
+	/**
+	 * Refund
+	 *
+	 * @param WC_Order|int $order
+	 * @param bool         $amount
+	 * @param string       $reason
+	 *
+	 * @throws \Exception
+	 * @return void
+	 */
+	public function refund_payment( $order, $amount = FALSE, $reason = '' ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		$order_id   = px_obj_prop( $order, 'id' );
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		if ( empty( $payment_id ) ) {
+			throw new \Exception( 'Unable to get payment ID' );
+		}
+
+		try {
+			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
+		} catch ( \Exception $e ) {
+			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
+		}
+
+		$reversal_href = self::get_operation( $result['operations'], 'create-reversal' );
+		if ( empty( $reversal_href ) ) {
+			throw new \Exception( __( 'Refund unavailable', 'woocommerce-gateway-payex-checkout' ) );
+		}
+
+		// Get Order UUID
+		$payeeReference = uniqid( $order_id );
+
+		$params = array(
+			'transaction' => array(
+				'amount'         => round( $amount * 100 ),
+				'vatAmount'      => 0,
+				'description'    => sprintf( 'Refund for Order #%s. Reason: %s', $order_id, $reason ),
+				'payeeReference' => $payeeReference
+			)
+		);
+		$result = $this->request( 'POST', $reversal_href, $params );
+
+		switch ( $result['reversal']['transaction']['state'] ) {
+			case 'Completed':
+				//update_post_meta( $order_id, '_payex_payment_state', 'Refunded' );
+				update_post_meta( $order_id, '_payex_transaction_refund', $result['reversal']['transaction']['id'] );
+				$order->add_order_note( sprintf( __( 'Refunded: %s. Reason: %s', 'woocommerce-gateway-payex-payment' ), wc_price( $amount ), $reason ) );
+				break;
+			case 'Initialized':
+			case 'AwaitingActivity':
+				$order->add_order_note( sprintf( __( 'Transaction reversal status: %s.', 'woocommerce-gateway-payex-checkout' ), $result['reversal']['transaction']['state'] ) );
+				break;
+			case 'Failed':
+			default:
+				$message = isset( $result['reversal']['transaction']['failedReason'] ) ? $result['reversal']['transaction']['failedReason'] : __( 'Refund failed.', 'woocommerce-gateway-payex-checkout' );
+				throw new \Exception( $message );
+				break;
+		}
+	}
+
+	/**
+	 * Cancel payment on PayEx
+	 * @param int $order_id
+	 * @param WC_Order $order
+	 */
+	public function cancel_pending( $order_id, $order ) {
+		$payment_method = px_obj_prop( $order, 'payment_method' );
+		if ( $payment_method !== $this->id ) {
+			return;
+		}
+
+		// Get Payment Id
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		if ( empty( $payment_id ) ) {
+			return;
+		}
+
+		try {
+			// @todo Check is paid
+			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
+
+			$abort_href = self::get_operation( $result['operations'], 'update-payment-abort' );
+			if ( empty( $abort_href ) ) {
+				return;
+			}
+
+			$params = [
+				'payment' => [
+					'operation' => 'Abort',
+					'abortReason' => 'CancelledByConsumer'
+				]
+			];
+			$result = $this->request( 'PATCH', $abort_href, $params );
+			if (is_array($result) && $result['payment']['state'] === 'Aborted') {
+				$order->add_order_note( __( 'Payment aborted', 'woocommerce-gateway-payex-checkout' ) );
+			}
+		} catch (\Exception $e) {
+			$this->log( sprintf('Pending Cancel. Error: %s', $e->getMessage() ) );
+		}
+	}
+}
+
+// Register Gateway
+WC_Payex_Checkout::register_gateway( 'WC_Gateway_Payex_Vipps' );
