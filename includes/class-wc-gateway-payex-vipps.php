@@ -53,6 +53,8 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 	 * Init
 	 */
 	public function __construct() {
+		parent::__construct();
+
 		$this->id           = 'payex_vipps';
 		$this->has_fields   = TRUE;
 		$this->method_title = __( 'Vipps', 'woocommerce-gateway-payex-checkout' );
@@ -105,7 +107,10 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 		add_action( 'the_post', array( &$this, 'payment_confirm' ) );
 
 		// Pending Cancel
-		add_action( 'woocommerce_order_status_pending_to_cancelled', array( $this, 'cancel_pending' ), 10, 2);
+		add_action( 'woocommerce_order_status_pending_to_cancelled', array(
+			$this,
+			'cancel_pending'
+		), 10, 2 );
 	}
 
 	/**
@@ -195,7 +200,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 	 * @return bool
 	 */
 	public function validate_fields() {
-		return true;
+		return TRUE;
 	}
 
 	/**
@@ -286,31 +291,25 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 		switch ( $this->method ) {
 			case 'redirect':
 				// Get Redirect
-				$redirect = array_filter( $result['operations'], function ( $value, $key ) {
-					return ( is_array( $value ) && $value['rel'] === 'redirect-authorization' );
-				}, ARRAY_FILTER_USE_BOTH );
-				$redirect = array_shift( $redirect );
+				$redirect = self::get_operation( $result['operations'], 'redirect-authorization' );
 
 				return array(
 					'result'   => 'success',
-					'redirect' => $redirect['href']
+					'redirect' => $redirect
 				);
 				break;
 			case 'direct':
 				// Authorize payment
-				$authorization = array_filter( $result['operations'], function ( $value, $key ) {
-					return ( is_array( $value ) && $value['rel'] === 'create-authorization' );
-				}, ARRAY_FILTER_USE_BOTH );
-				$authorization = array_shift( $authorization );
+				$authorization = self::get_operation( $result['operations'], 'create-authorization' );
 
 				try {
 					$params = [
 						'transaction' => [
-							'msisdn' => $phone
+							'msisdn' => '+' . ltrim( $phone, '+' )
 						]
 					];
 
-					$result = $this->request( 'POST', $authorization['href'], $params );
+					$result = $this->request( 'POST', $authorization, $params );
 				} catch ( \Exception $e ) {
 					$this->log( sprintf( '[ERROR] Create Authorization: %s', $e->getMessage() ) );
 					wc_add_notice( $e->getMessage(), 'error' );
@@ -360,6 +359,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 			return;
 		}
 
+		// Fetch payment info
 		try {
 			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
 		} catch ( \Exception $e ) {
@@ -368,23 +368,47 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 			return;
 		}
 
+		// Check payment state
 		switch ( $result['payment']['state'] ) {
-			case 'Pending':
-				$order->update_status( 'on-hold', __( 'Transaction is pending.', 'woocommerce-gateway-payex-checkout' ) );
-				WC()->cart->empty_cart();
-				break;
-			case 'Ready':
-				$order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-payex-checkout' ) );
-				WC()->cart->empty_cart();
-				break;
 			case 'Failed':
 				$order->update_status( 'failed', __( 'Payment failed.', 'woocommerce-gateway-payex-checkout' ) );
-				break;
+
+				return;
 			case 'Aborted':
 				$order->cancel_order( __( 'Payment canceled.', 'woocommerce-gateway-payex-checkout' ) );
-				break;
+
+				return;
 			default:
-				//
+				// Payment state is ok
+		}
+
+		// Fetch transactions list
+		$result       = $this->request( 'GET', $this->backend_api_endpoint . $payment_id . '/transactions' );
+		$transactions = $result['transactions']['transactionList'];
+		$this->transactions->import_transactions( $transactions, $order_id );
+
+		// Check payment is authorized
+		$transactions = $this->transactions->select( array(
+			'order_id' => $order_id,
+			'type'     => 'Authorization'
+		) );
+
+		if ( $transaction = px_filter( $transactions, array( 'state' => 'Completed' ) ) ) {
+			$transaction_id = px_obj_prop( $order, 'transaction_id' );
+			if ( empty( $transaction_id ) || $transaction_id != $transaction['number'] ) {
+				update_post_meta( $order_id, '_transaction_id', $transaction['number'] );
+				$order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-payex-checkout' ) );
+			}
+
+			WC()->cart->empty_cart();
+		} elseif ( $transaction = px_filter( $transactions, array( 'state' => 'Failed' ) ) ) {
+			$transaction_id = px_obj_prop( $order, 'transaction_id' );
+			if ( empty( $transaction_id ) || $transaction_id != $transaction['number'] ) {
+				update_post_meta( $order_id, '_transaction_id', $transaction['number'] );
+				$order->update_status( 'failed', __( 'Transaction failed.', 'woocommerce-gateway-payex-checkout' ) );
+			}
+		} else {
+			// Pending?
 		}
 	}
 
@@ -394,12 +418,93 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 	 * @return void
 	 */
 	public function return_handler() {
-		$post = file_get_contents( 'php://input' );
+		$raw_body = file_get_contents( 'php://input' );
 
-		$this->log( sprintf( 'IPN: Initialized %s from %s', $_SERVER['REQUEST_URI'], px_get_remote_address() ) );
-		$this->log( sprintf( 'Incoming Callback. Post data: %s', var_export( $post, TRUE ) ) );
+		$this->log( sprintf( 'IPN: Initialized %s from %s', $_SERVER['REQUEST_URI'], $_SERVER['REMOTE_ADDR'] ) );
+		$this->log( sprintf( 'Incoming Callback. Post data: %s', var_export( $raw_body, TRUE ) ) );
 
-		// @todo Implement
+		// Decode raw body
+		$data = @json_decode( $raw_body, TRUE );
+
+		try {
+			if ( ! isset( $data['payment'] ) || ! isset( $data['payment']['id'] ) ) {
+				throw new \Exception( 'Error: Invalid payment value' );
+			}
+
+			if ( ! isset( $data['transaction'] ) || ! isset( $data['transaction']['number'] ) ) {
+				throw new \Exception( 'Error: Invalid transaction number' );
+			}
+
+			// Get Order by Payment Id
+			$payment_id = $data['payment']['id'];
+			$order_id   = $this->get_post_id_by_meta( '_payex_payment_id', $payment_id );
+			if ( ! $order_id ) {
+				throw new \Exception( sprintf( 'Error: Failed to get order Id by Payment Id %s', $payment_id ) );
+			}
+
+			// Get Order
+			$order = wc_get_order( $order_id );
+			if ( ! $order ) {
+				throw new \Exception( sprintf( 'Error: Failed to get order by Id %s', $order_id ) );
+			}
+
+			// Fetch transactions list
+			$result       = $this->request( 'GET', $this->backend_api_endpoint . $payment_id . '/transactions' );
+			$transactions = $result['transactions']['transactionList'];
+			$this->transactions->import_transactions( $transactions, $order_id );
+
+			// Extract transaction from list
+			$transaction = px_filter( $transactions, array( 'number' => $data['transaction']['number'] ) );
+			$this->log( sprintf( 'IPN: Debug: Transaction: %s', var_export( $transaction, TRUE ) ) );
+			if ( ! is_array( $transaction ) || count( $transaction ) === 0 ) {
+				throw new \Exception( sprintf( 'Error: Failed to fetch transaction number #%s', $data['transaction']['number'] ) );
+			}
+
+			// Check transaction state
+			if ( $data['transaction']['state'] !== 'Completed' ) {
+				$reason = isset( $data['transaction']['failedReason'] ) ? $data['transaction']['failedReason'] : __( 'Transaction failed.', 'woocommerce-gateway-payex-checkout' );
+				throw new \Exception( sprintf( 'Error: Transaction state %s. Reason: %s', $data['transaction']['state'], $reason ) );
+			}
+
+			// Check is action was performed
+			$transaction_id = px_obj_prop( $order, 'transaction_id' );
+			if ( ! empty( $transaction_id ) && $transaction_id == $transaction['number'] ) {
+				throw new \Exception( sprintf( 'Action of Transaction #%s already performed', $data['transaction']['number'] ) );
+			}
+
+			// Apply action
+			switch ( $transaction['type'] ) {
+				case 'Authorization':
+					update_post_meta( $order_id, '_transaction_id', $transaction['number'] );
+					$order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-payex-checkout' ) );
+					$this->log( sprintf( 'IPN: Order #%s marked as authorized', $order_id ) );
+					break;
+				case 'Capture':
+					update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
+					update_post_meta( $order_id, '_payex_transaction_capture', $data['transaction']['id'] );
+
+					$order->add_order_note( __( 'Transaction captured.', 'woocommerce-gateway-payex-checkout' ) );
+					$order->payment_complete( $transaction['number'] );
+					$this->log( sprintf( 'IPN: Order #%s marked as captured', $order_id ) );
+					break;
+				case 'Cancellation':
+					update_post_meta( $order_id, '_transaction_id', $transaction['number'] );
+					update_post_meta( $order_id, '_payex_payment_state', 'Cancelled' );
+					update_post_meta( $order_id, '_payex_transaction_cancel', $result['cancellation']['transaction']['id'] );
+
+					$order->cancel_order( __( 'Transaction cancelled.', 'woocommerce-gateway-payex-checkout' ) );
+					$this->log( sprintf( 'IPN: Order #%s marked as cancelled', $order_id ) );
+					break;
+				case 'Reversal':
+					// @todo Implement Reversal transaction support and Refunds
+					throw new \Exception( 'Error: Reversal transaction don\'t implemented yet.' );
+				default:
+					throw new \Exception( sprintf( 'Error: Unknown type %s', $transaction['type'] ) );
+
+			}
+		} catch ( \Exception $e ) {
+			$this->log( sprintf( 'IPN: %s', $e->getMessage() ) );
+		}
 	}
 
 	/**
@@ -564,21 +669,25 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 		);
 		$result = $this->request( 'POST', $capture_href, $params );
 
-		switch ( $result['capture']['transaction']['state'] ) {
+		// Save transaction
+		$transaction = $result['capture']['transaction'];
+		$this->transactions->import( $transaction, $order_id );
+
+		switch ( $transaction['state'] ) {
 			case 'Completed':
 				update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
-				update_post_meta( $order_id, '_payex_transaction_capture', $result['capture']['transaction']['id'] );
+				update_post_meta( $order_id, '_payex_transaction_capture', $transaction['id'] );
 
 				$order->add_order_note( __( 'Transaction captured.', 'woocommerce-gateway-payex-checkout' ) );
-				$order->payment_complete();
+				$order->payment_complete( $transaction['number'] );
 
 				break;
 			case 'Initialized':
-				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', 'woocommerce-gateway-payex-checkout' ), $result['capture']['transaction']['state'] ) );
+				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', 'woocommerce-gateway-payex-checkout' ), $transaction['state'] ) );
 				break;
 			case 'Failed':
 			default:
-				$message = isset( $result['capture']['transaction']['failedReason'] ) ? $result['capture']['transaction']['failedReason'] : __( 'Capture failed.', 'woocommerce-gateway-payex-checkout' );
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', 'woocommerce-gateway-payex-checkout' );
 				throw new \Exception( $message );
 				break;
 		}
@@ -625,20 +734,25 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 		);
 		$result = $this->request( 'POST', $cancel_href, $params );
 
-		switch ( $result['cancellation']['transaction']['state'] ) {
-			case 'Completed':
-				update_post_meta( $order_id, '_payex_payment_state', 'Cancelled' );
-				update_post_meta( $order_id, '_payex_transaction_cancel', $result['cancellation']['transaction']['id'] );
+		// Save transaction
+		$transaction = $result['cancellation']['transaction'];
+		$this->transactions->import( $transaction, $order_id );
 
-				$order->add_order_note( __( 'Transaction cancelled.', 'woocommerce-gateway-payex-checkout' ) );
+		switch ( $transaction['state'] ) {
+			case 'Completed':
+				update_post_meta( $order_id, '_transaction_id', $transaction['number'] );
+				update_post_meta( $order_id, '_payex_payment_state', 'Cancelled' );
+				update_post_meta( $order_id, '_payex_transaction_cancel', $transaction['id'] );
+
+				$order->cancel_order( __( 'Transaction cancelled.', 'woocommerce-gateway-payex-checkout' ) );
 				break;
 			case 'Initialized':
 			case 'AwaitingActivity':
-				$order->add_order_note( sprintf( __( 'Transaction cancellation status: %s.', 'woocommerce-gateway-payex-checkout' ), $result['cancellation']['transaction']['state'] ) );
+				$order->add_order_note( sprintf( __( 'Transaction cancellation status: %s.', 'woocommerce-gateway-payex-checkout' ), $transaction['state'] ) );
 				break;
 			case 'Failed':
 			default:
-				$message = isset( $result['cancellation']['transaction']['failedReason'] ) ? $result['cancellation']['transaction']['failedReason'] : __( 'Cancel failed.', 'woocommerce-gateway-payex-checkout' );
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Cancel failed.', 'woocommerce-gateway-payex-checkout' );
 				throw new \Exception( $message );
 				break;
 		}
@@ -689,19 +803,23 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 		);
 		$result = $this->request( 'POST', $reversal_href, $params );
 
-		switch ( $result['reversal']['transaction']['state'] ) {
+		// Save transaction
+		$transaction = $result['reversal']['transaction'];
+		$this->transactions->import( $transaction, $order_id );
+
+		switch ( $transaction['state'] ) {
 			case 'Completed':
 				//update_post_meta( $order_id, '_payex_payment_state', 'Refunded' );
-				update_post_meta( $order_id, '_payex_transaction_refund', $result['reversal']['transaction']['id'] );
+				update_post_meta( $order_id, '_payex_transaction_refund', $transaction['id'] );
 				$order->add_order_note( sprintf( __( 'Refunded: %s. Reason: %s', 'woocommerce-gateway-payex-payment' ), wc_price( $amount ), $reason ) );
 				break;
 			case 'Initialized':
 			case 'AwaitingActivity':
-				$order->add_order_note( sprintf( __( 'Transaction reversal status: %s.', 'woocommerce-gateway-payex-checkout' ), $result['reversal']['transaction']['state'] ) );
+				$order->add_order_note( sprintf( __( 'Transaction reversal status: %s.', 'woocommerce-gateway-payex-checkout' ), $transaction['state'] ) );
 				break;
 			case 'Failed':
 			default:
-				$message = isset( $result['reversal']['transaction']['failedReason'] ) ? $result['reversal']['transaction']['failedReason'] : __( 'Refund failed.', 'woocommerce-gateway-payex-checkout' );
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Refund failed.', 'woocommerce-gateway-payex-checkout' );
 				throw new \Exception( $message );
 				break;
 		}
@@ -709,7 +827,8 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 
 	/**
 	 * Cancel payment on PayEx
-	 * @param int $order_id
+	 *
+	 * @param int      $order_id
 	 * @param WC_Order $order
 	 */
 	public function cancel_pending( $order_id, $order ) {
@@ -735,16 +854,16 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 
 			$params = [
 				'payment' => [
-					'operation' => 'Abort',
+					'operation'   => 'Abort',
 					'abortReason' => 'CancelledByConsumer'
 				]
 			];
 			$result = $this->request( 'PATCH', $abort_href, $params );
-			if (is_array($result) && $result['payment']['state'] === 'Aborted') {
+			if ( is_array( $result ) && $result['payment']['state'] === 'Aborted' ) {
 				$order->add_order_note( __( 'Payment aborted', 'woocommerce-gateway-payex-checkout' ) );
 			}
-		} catch (\Exception $e) {
-			$this->log( sprintf('Pending Cancel. Error: %s', $e->getMessage() ) );
+		} catch ( \Exception $e ) {
+			$this->log( sprintf( 'Pending Cancel. Error: %s', $e->getMessage() ) );
 		}
 	}
 }

@@ -1,4 +1,5 @@
 <?php
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
@@ -49,6 +50,8 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	 * Init
 	 */
 	public function __construct() {
+		parent::__construct();
+
 		$this->id           = 'payex_checkout';
 		$this->has_fields   = TRUE;
 		$this->method_title = __( 'PayEx Checkout', 'woocommerce-gateway-payex-checkout' );

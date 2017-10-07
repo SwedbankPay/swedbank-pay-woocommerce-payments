@@ -6,6 +6,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	implements WC_Payment_Gateway_Payex_Interface {
+
+	/**
+	 * @var \WC_Payex_Transactions
+	 */
+	public $transactions;
+
 	/**
 	 * Merchant Token
 	 * @var string
@@ -17,6 +23,13 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @var string
 	 */
 	public $debug = 'no';
+
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		$this->transactions = WC_Payex_Transactions::instance();
+	}
 
 	/**
 	 * Debug Log
@@ -43,8 +56,9 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		}
 
 		if ( $this->is_wc3() ) {
-			$log->log( $level, $message, array( 'source'  => $this->id,
-			                                    '_legacy' => TRUE
+			$log->log( $level, $message, array(
+				'source'  => $this->id,
+				'_legacy' => TRUE
 			) );
 		} else {
 			$log->add( $this->id, sprintf( '[%s] %s', $level, $message ) );

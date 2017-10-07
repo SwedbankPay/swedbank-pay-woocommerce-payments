@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: WooCommerce PayEx Checkout Gateway
+Plugin Name: WooCommerce PayEx PSP Gateway
 Plugin URI: http://payex.com/
 Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
-Version: 0.0.4+dev
+Version: 1.0.0
 Author: AAIT Team
 Author URI: http://aait.se/
 License: GNU General Public License v3.0
@@ -20,35 +20,46 @@ if ( ! defined( 'ABSPATH' ) ) {
 $vendorDir = dirname( __FILE__ ) . '/vendor';
 require_once $vendorDir . '/autoload.php';
 
-if ( ! class_exists( '\\GuzzleHttp\\Client', false ) ) {
+if ( ! class_exists( '\\GuzzleHttp\\Client', FALSE ) ) {
 	require_once $vendorDir . '/guzzlehttp/promises/src/functions_include.php';
 	require_once $vendorDir . '/guzzlehttp/psr7/src/functions_include.php';
 	require_once $vendorDir . '/guzzlehttp/guzzle/src/functions_include.php';
 }
 
-if ( ! class_exists( 'FullNameParser', false ) ) {
+if ( ! class_exists( 'FullNameParser', FALSE ) ) {
 	require_once $vendorDir . '/joshfraser/php-name-parser/parser.php';
 }
 
-if ( ! class_exists( '\\Webpatser\\Uuid\\Uuid', false ) ) {
+if ( ! class_exists( '\\Webpatser\\Uuid\\Uuid', FALSE ) ) {
 	require_once $vendorDir . '/webpatser/laravel-uuid/src/Webpatser/Uuid/Uuid.php';
 }
+
+include_once( dirname( __FILE__ ) . '/includes/class-wc-payex-transactions.php' );
 
 use Webpatser\Uuid\Uuid;
 
 class WC_Payex_Checkout {
 
 	/** Payment IDs */
-	const PAYMENT_METHODS = array('payex_checkout', 'payex_vipps');
+	const PAYMENT_METHODS = array( 'payex_checkout', 'payex_vipps' );
 
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
+		// Activation
+		register_activation_hook( __FILE__, array( $this, 'install' ) );
+
 		// Actions
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
+		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array(
+			$this,
+			'plugin_action_links'
+		) );
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
-		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_loaded' ) );
+		add_action( 'woocommerce_loaded', array(
+			$this,
+			'woocommerce_loaded'
+		) );
 
 		// Add statuses for payment complete
 		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', array(
@@ -57,7 +68,10 @@ class WC_Payex_Checkout {
 		), 10, 2 );
 
 		// Status Change Actions
-		add_action( 'woocommerce_order_status_changed', array( $this, 'order_status_changed' ), 10, 4 );
+		add_action( 'woocommerce_order_status_changed', array(
+			$this,
+			'order_status_changed'
+		), 10, 4 );
 
 		// Add meta boxes
 		add_action( 'add_meta_boxes', __CLASS__ . '::add_meta_boxes' );
@@ -77,10 +91,23 @@ class WC_Payex_Checkout {
 		) );
 
 		// UUID Filter
-		add_filter( 'payex_generate_uuid' , array(
+		add_filter( 'payex_generate_uuid', array(
 			$this,
 			'generate_uuid'
 		), 10, 1 );
+	}
+
+	/**
+	 * Install
+	 */
+	public function install() {
+		// Install Schema
+		WC_Payex_Transactions::instance()->install_schema();
+
+		// Set Version
+		if ( ! get_option( 'woocommerce_payex_psp_version' ) ) {
+			add_option( 'woocommerce_payex_psp_version', '1.0.0' );
+		}
 	}
 
 	/**
@@ -103,7 +130,7 @@ class WC_Payex_Checkout {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( 'woocommerce-gateway-payex-checkout', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( 'woocommerce-gateway-payex-checkout', FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		// Functions
 		include_once( dirname( __FILE__ ) . '/includes/functions-payex-checkout.php' );
@@ -122,6 +149,7 @@ class WC_Payex_Checkout {
 
 	/**
 	 * Register payment gateway
+	 *
 	 * @param string $class_name
 	 */
 	public static function register_gateway( $class_name ) {
@@ -131,14 +159,15 @@ class WC_Payex_Checkout {
 			$px_gateways = array();
 		}
 
-		if ( ! isset( $px_gateways[$class_name] ) ) {
+		if ( ! isset( $px_gateways[ $class_name ] ) ) {
 			// Initialize instance
 			if ( $gateway = new $class_name ) {
 				$px_gateways[] = $class_name;
 
 				// Register gateway instance
-				add_filter( 'woocommerce_payment_gateways', function( $methods ) use ( $gateway ) {
+				add_filter( 'woocommerce_payment_gateways', function ( $methods ) use ( $gateway ) {
 					$methods[] = $gateway;
+
 					return $methods;
 				} );
 			}
@@ -148,7 +177,7 @@ class WC_Payex_Checkout {
 	/**
 	 * Allow processing/completed statuses for capture
 	 *
-	 * @param array $statuses
+	 * @param array    $statuses
 	 * @param WC_Order $order
 	 *
 	 * @return array
@@ -156,7 +185,10 @@ class WC_Payex_Checkout {
 	public function add_valid_order_statuses( $statuses, $order ) {
 		$payment_method = px_obj_prop( $order, 'payment_method' );
 		if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
-			$statuses = array_merge( $statuses, array( 'processing', 'completed' ) );
+			$statuses = array_merge( $statuses, array(
+				'processing',
+				'completed'
+			) );
 		}
 
 		return $statuses;
@@ -164,6 +196,7 @@ class WC_Payex_Checkout {
 
 	/**
 	 * Order Status Change: Capture/Cancel
+	 *
 	 * @param $order_id
 	 * @param $from
 	 * @param $to
@@ -171,11 +204,11 @@ class WC_Payex_Checkout {
 	 */
 	public function order_status_changed( $order_id, $from, $to, $order ) {
 		// We are need "on-hold" only
-		if ($from !== 'on-hold') {
+		if ( $from !== 'on-hold' ) {
 			return;
 		}
 
-		if ( version_compare(WC_VERSION, '3.0', '<') ) {
+		if ( version_compare( WC_VERSION, '3.0', '<' ) ) {
 			$order = wc_get_order( $order_id );
 		}
 
@@ -187,13 +220,13 @@ class WC_Payex_Checkout {
 		/** @var WC_Payment_Gateway_Payex $gateway */
 		$gateway = px_payment_method_instance( $order );
 
-		switch ($to) {
+		switch ( $to ) {
 			case 'cancelled':
 				// Cancel payment
 				if ( $gateway->can_cancel( $order ) ) {
 					try {
 						px_cancel_payment( $order_id );
-					} catch (Exception $e) {
+					} catch ( Exception $e ) {
 						$message = $e->getMessage();
 						WC_Admin_Meta_Boxes::add_error( $message );
 
@@ -208,7 +241,7 @@ class WC_Payex_Checkout {
 				if ( $gateway->can_capture( $order ) ) {
 					try {
 						px_capture_payment( $order_id );
-					} catch (Exception $e) {
+					} catch ( Exception $e ) {
 						$message = $e->getMessage();
 						WC_Admin_Meta_Boxes::add_error( $message );
 
@@ -231,7 +264,7 @@ class WC_Payex_Checkout {
 		if ( $order = wc_get_order( $post_id ) ) {
 			$payment_method = px_obj_prop( $order, 'payment_method' );
 			if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
-				$payment_id = get_post_meta( $post_id, '_payex_payment_id', true );
+				$payment_id = get_post_meta( $post_id, '_payex_payment_id', TRUE );
 				if ( ! empty( $payment_id ) ) {
 					add_meta_box(
 						'payex_payment_actions',
@@ -252,19 +285,19 @@ class WC_Payex_Checkout {
 	 */
 	public static function order_meta_box_payment_actions() {
 		global $post_id;
-		$order       = wc_get_order( $post_id );
-		$payment_id = get_post_meta( $post_id, '_payex_payment_id', true );
+		$order      = wc_get_order( $post_id );
+		$payment_id = get_post_meta( $post_id, '_payex_payment_id', TRUE );
 		if ( empty( $payment_id ) ) {
 			return;
 		}
 
 		/** @var WC_Payment_Gateway_Payex $gateway */
-		$gateway = px_payment_method_instance ( $order );
+		$gateway = px_payment_method_instance( $order );
 
 		// Fetch payment info
 		try {
 			$result = $gateway->request( 'GET', $gateway->backend_api_endpoint . $payment_id );
-		} catch (\Exception $e) {
+		} catch ( \Exception $e ) {
 			// Request failed
 			return;
 		}
@@ -272,10 +305,10 @@ class WC_Payex_Checkout {
 		wc_get_template(
 			'admin/payment-actions.php',
 			array(
-				'order' => $order,
-				'order_id' => $post_id,
+				'order'      => $order,
+				'order_id'   => $post_id,
 				'payment_id' => $payment_id,
-				'info' => $result
+				'info'       => $result
 			),
 			'',
 			dirname( __FILE__ ) . '/templates/'
@@ -319,9 +352,9 @@ class WC_Payex_Checkout {
 		try {
 			px_capture_payment( $order_id );
 			wp_send_json_success( __( 'Capture success.', 'woocommerce-gateway-payex-checkout' ) );
-		} catch (Exception $e) {
+		} catch ( Exception $e ) {
 			$message = $e->getMessage();
-			wp_send_json_error($message);
+			wp_send_json_error( $message );
 		}
 	}
 
@@ -338,14 +371,15 @@ class WC_Payex_Checkout {
 		try {
 			px_cancel_payment( $order_id );
 			wp_send_json_success( __( 'Cancel success.', 'woocommerce-gateway-payex-checkout' ) );
-		} catch (Exception $e) {
+		} catch ( Exception $e ) {
 			$message = $e->getMessage();
-			wp_send_json_error($message);
+			wp_send_json_error( $message );
 		}
 	}
 
 	/**
 	 * Generate UUID
+	 *
 	 * @param $node
 	 *
 	 * @return string

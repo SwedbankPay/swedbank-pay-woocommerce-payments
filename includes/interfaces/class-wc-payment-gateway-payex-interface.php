@@ -3,15 +3,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 
-/**
- * WC Logger Interface
- *
- * Functions that must be defined to correctly fulfill logger API.
- *
- * @version        1.0.0
- * @category       Interface
- * @author         WooThemes
- */
 interface WC_Payment_Gateway_Payex_Interface {
 	/**
 	 * Check is Capture possible

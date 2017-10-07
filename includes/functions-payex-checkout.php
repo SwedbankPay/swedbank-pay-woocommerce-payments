@@ -63,10 +63,10 @@ function px_get_remote_address() {
 		'X_FORWARDED_FOR'
 	);
 
-	$remote_address = false;
-	foreach ($headers as $header) {
-		if ( ! empty( $_SERVER[$header] ) ) {
-			$remote_address = $_SERVER[$header];
+	$remote_address = FALSE;
+	foreach ( $headers as $header ) {
+		if ( ! empty( $_SERVER[ $header ] ) ) {
+			$remote_address = $_SERVER[ $header ];
 			break;
 		}
 	}
@@ -76,20 +76,49 @@ function px_get_remote_address() {
 	}
 
 	// Extract address from list
-	if ( strpos( $remote_address, ',' ) !== false ) {
-		$tmp = explode( ',', $remote_address );
+	if ( strpos( $remote_address, ',' ) !== FALSE ) {
+		$tmp            = explode( ',', $remote_address );
 		$remote_address = trim( array_shift( $tmp ) );
 	}
 
 	// Remove port if exists (IPv4 only)
 	$regEx = "/^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/";
-	if ( preg_match($regEx, $remote_address)
-	    && ($pos_temp = stripos($remote_address, ':')) !== false
+	if ( preg_match( $regEx, $remote_address )
+	     && ( $pos_temp = stripos( $remote_address, ':' ) ) !== FALSE
 	) {
-		$remote_address = substr($remote_address, 0, $pos_temp);
+		$remote_address = substr( $remote_address, 0, $pos_temp );
 	}
 
 	return $remote_address;
+}
+
+/**
+ * Filter data source by conditionals array
+ *
+ * @param array $source
+ * @param array $conditionals
+ * @param bool  $single
+ *
+ * @return array|bool
+ */
+function px_filter( array $source, array $conditionals, $single = TRUE ) {
+	$data = array_filter( $source, function ( $data, $key ) use ( $conditionals ) {
+		$status = TRUE;
+		foreach ( $conditionals as $ckey => $cvalue ) {
+			if ( ! isset( $data[ $ckey ] ) || $data[ $ckey ] != $cvalue ) {
+				$status = FALSE;
+				break;
+			}
+		}
+
+		return $status;
+	}, ARRAY_FILTER_USE_BOTH );
+
+	if ( count( $data ) === 0 ) {
+		return $single ? FALSE : array();
+	}
+
+	return $single ? array_shift( $data ) : $data;
 }
 
 /**
@@ -134,6 +163,7 @@ function px_payment_method( $payment_id ) {
 
 /**
  * Generate UUID
+ *
  * @param string $node
  *
  * @return string
