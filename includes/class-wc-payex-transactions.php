@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 			$wpdb->prefix . 'payex_transactions',
 			$fields,
 			array(
-				'id' => (int) $transaction_id
+				'transaction_id' => (int) $transaction_id
 			)
 		);
 	}
@@ -254,7 +254,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 			$data = $this->prepare( $data, $order_id );
 
 			return $this->add( $data );
-		} elseif ( strtotime( $data['updated'] ) > strtotime( $saved['updated'] ) ) {
+		} else {
 			// Data is should be updated
 			$data = $this->prepare( $data, $order_id );
 			$this->update( $saved['transaction_id'], $data );

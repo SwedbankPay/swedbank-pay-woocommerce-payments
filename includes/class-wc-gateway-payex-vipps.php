@@ -461,8 +461,8 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 			}
 
 			// Check transaction state
-			if ( $data['transaction']['state'] !== 'Completed' ) {
-				$reason = isset( $data['transaction']['failedReason'] ) ? $data['transaction']['failedReason'] : __( 'Transaction failed.', 'woocommerce-gateway-payex-checkout' );
+			if ( $transaction['state'] !== 'Completed' ) {
+				$reason = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Transaction failed.', 'woocommerce-gateway-payex-checkout' );
 				throw new \Exception( sprintf( 'Error: Transaction state %s. Reason: %s', $data['transaction']['state'], $reason ) );
 			}
 
@@ -481,7 +481,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 					break;
 				case 'Capture':
 					update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
-					update_post_meta( $order_id, '_payex_transaction_capture', $data['transaction']['id'] );
+					update_post_meta( $order_id, '_payex_transaction_capture', $transaction['id'] );
 
 					$order->add_order_note( __( 'Transaction captured.', 'woocommerce-gateway-payex-checkout' ) );
 					$order->payment_complete( $transaction['number'] );
@@ -490,7 +490,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 				case 'Cancellation':
 					update_post_meta( $order_id, '_transaction_id', $transaction['number'] );
 					update_post_meta( $order_id, '_payex_payment_state', 'Cancelled' );
-					update_post_meta( $order_id, '_payex_transaction_cancel', $result['cancellation']['transaction']['id'] );
+					update_post_meta( $order_id, '_payex_transaction_cancel', $transaction['id'] );
 
 					$order->cancel_order( __( 'Transaction cancelled.', 'woocommerce-gateway-payex-checkout' ) );
 					$this->log( sprintf( 'IPN: Order #%s marked as cancelled', $order_id ) );
