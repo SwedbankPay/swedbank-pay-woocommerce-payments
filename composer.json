@@ -1,6 +1,0 @@
-{
-    "require": {
-        "guzzlehttp/guzzle": "^6.2",
-        "webpatser/laravel-uuid": "^3.0"
-    }
-}
