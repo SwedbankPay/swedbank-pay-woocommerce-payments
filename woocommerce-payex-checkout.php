@@ -15,29 +15,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-// Load vendor
-// @todo Don't use autoloader
-$vendorDir = dirname( __FILE__ ) . '/vendor';
-require_once $vendorDir . '/autoload.php';
-
-if ( ! class_exists( '\\GuzzleHttp\\Client', FALSE ) ) {
-	require_once $vendorDir . '/guzzlehttp/promises/src/functions_include.php';
-	require_once $vendorDir . '/guzzlehttp/psr7/src/functions_include.php';
-	require_once $vendorDir . '/guzzlehttp/guzzle/src/functions_include.php';
-}
-
-if ( ! class_exists( 'FullNameParser', FALSE ) ) {
-	require_once $vendorDir . '/joshfraser/php-name-parser/parser.php';
-}
-
-if ( ! class_exists( '\\Webpatser\\Uuid\\Uuid', FALSE ) ) {
-	require_once $vendorDir . '/webpatser/laravel-uuid/src/Webpatser/Uuid/Uuid.php';
-}
-
-include_once( dirname( __FILE__ ) . '/includes/class-wc-payex-transactions.php' );
-
-use Webpatser\Uuid\Uuid;
-
 class WC_Payex_Checkout {
 
 	/** Payment IDs */
@@ -47,6 +24,9 @@ class WC_Payex_Checkout {
 	 * Constructor
 	 */
 	public function __construct() {
+		// Includes
+		$this->includes();
+
 		// Activation
 		register_activation_hook( __FILE__, array( $this, 'install' ) );
 
@@ -95,6 +75,24 @@ class WC_Payex_Checkout {
 			$this,
 			'generate_uuid'
 		), 10, 1 );
+	}
+
+	public function includes() {
+		$vendorsDir = dirname( __FILE__ ) . '/vendors';
+
+		if ( ! class_exists( '\\GuzzleHttp\\Client', FALSE ) ) {
+			require_once $vendorsDir . '/guzzle/vendor/autoload.php';
+		}
+
+		if ( ! class_exists( '\\Webpatser\\Uuid\\Uuid', FALSE ) ) {
+			require_once $vendorsDir . '/laravel-uuid/vendor/autoload.php';
+		}
+
+		if ( ! class_exists( 'FullNameParser', FALSE ) ) {
+			require_once $vendorsDir . '/php-name-parser/vendor/autoload.php';
+		}
+
+		require_once( dirname( __FILE__ ) . '/includes/class-wc-payex-transactions.php' );
 	}
 
 	/**
@@ -385,7 +383,7 @@ class WC_Payex_Checkout {
 	 * @return string
 	 */
 	public function generate_uuid( $node ) {
-		return (string) Uuid::generate( 5, $node, Uuid::NS_OID );
+		return (string) \Webpatser\Uuid\Uuid::generate( 5, $node, \Webpatser\Uuid\Uuid::NS_OID );
 	}
 }
 
