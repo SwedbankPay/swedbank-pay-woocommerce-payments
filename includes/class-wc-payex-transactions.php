@@ -85,7 +85,8 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
   `description` varchar(255) DEFAULT NULL,
   `payeeReference` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`transaction_id`),
-  UNIQUE KEY `id` (`id`),
+  UNIQUE KEY `number` (`number`),
+  KEY `id` (`id`),
   KEY `order_id` (`order_id`)
 ) ENGINE=INNODB DEFAULT CHARSET={$wpdb->charset};
 		";
