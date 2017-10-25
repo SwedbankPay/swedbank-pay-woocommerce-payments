@@ -84,8 +84,8 @@ class WC_Payex_Checkout {
 			require_once $vendorsDir . '/guzzle/vendor/autoload.php';
 		}
 
-		if ( ! class_exists( '\\Webpatser\\Uuid\\Uuid', FALSE ) ) {
-			require_once $vendorsDir . '/laravel-uuid/vendor/autoload.php';
+		if ( ! class_exists( '\\Ramsey\\Uuid\\Uuid', FALSE ) ) {
+			require_once $vendorsDir . '/ramsey-uuid/vendor/autoload.php';
 		}
 
 		if ( ! class_exists( 'FullNameParser', FALSE ) ) {
@@ -383,7 +383,7 @@ class WC_Payex_Checkout {
 	 * @return string
 	 */
 	public function generate_uuid( $node ) {
-		return (string) \Webpatser\Uuid\Uuid::generate( 5, $node, \Webpatser\Uuid\Uuid::NS_OID );
+		return \Ramsey\Uuid\Uuid::uuid5( \Ramsey\Uuid\Uuid::NAMESPACE_OID, $node )->toString();
 	}
 }
 

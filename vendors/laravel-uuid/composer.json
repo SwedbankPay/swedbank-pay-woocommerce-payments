@@ -1,5 +1,0 @@
-{
-    "require": {
-        "webpatser/laravel-uuid": "^3.0"
-    }
-}
