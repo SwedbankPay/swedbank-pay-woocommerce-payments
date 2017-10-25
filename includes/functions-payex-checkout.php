@@ -199,6 +199,9 @@ function px_capture_payment( $order, $amount = FALSE ) {
 		throw new \Exception( __( 'Capture action is not available.', 'woocommerce-gateway-payex-checkout' ) );
 	}
 
+	// Disable status change hook
+	remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Checkout::order_status_changed', 10 );
+
 	$gateway->capture_payment( $order, $amount );
 }
 
@@ -227,6 +230,9 @@ function px_cancel_payment( $order ) {
 	if ( ! $gateway->can_cancel( $order ) ) {
 		throw new \Exception( __( 'Cancel action is not available.', 'woocommerce-gateway-payex-checkout' ) );
 	}
+
+	// Disable status change hook
+	remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Checkout::order_status_changed', 10 );
 
 	$gateway->cancel_payment( $order );
 }
