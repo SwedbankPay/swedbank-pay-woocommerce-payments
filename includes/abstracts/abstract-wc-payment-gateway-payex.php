@@ -24,6 +24,13 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 */
 	public $debug = 'no';
 
+
+	/**
+	 * Backend Api Endpoint
+	 * @var string
+	 */
+	public $backend_api_endpoint = 'https://api.payex.com';
+
 	/**
 	 * Constructor
 	 */
@@ -76,6 +83,10 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @throws \Exception
 	 */
 	public function request( $method, $url, $params = array() ) {
+		if ( mb_substr( $url, 0, 1, 'UTF-8' ) === '/' ) {
+			$url = $this->backend_api_endpoint . $url;
+		}
+
 		if ( $this->debug === 'yes' ) {
 			$this->log( sprintf( '%s %s %s', $method, $url, 'Data: ' . var_export( $params, TRUE ) ) );
 		}

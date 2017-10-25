@@ -44,12 +44,6 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 	public $method = 'redirect';
 
 	/**
-	 * Backend Api Endpoint
-	 * @var string
-	 */
-	public $backend_api_endpoint = 'https://api.payex.com';
-
-	/**
 	 * Init
 	 */
 	public function __construct() {
@@ -277,7 +271,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 		];
 
 		try {
-			$result = $this->request( 'POST', $this->backend_api_endpoint . '/psp/vipps/payments', $params );
+			$result = $this->request( 'POST', '/psp/vipps/payments', $params );
 		} catch ( \Exception $e ) {
 			$this->log( sprintf( '[ERROR] Process payment: %s', $e->getMessage() ) );
 			wc_add_notice( $e->getMessage(), 'error' );
@@ -361,7 +355,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 
 		// Fetch payment info
 		try {
-			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
+			$result = $this->request( 'GET', $payment_id );
 		} catch ( \Exception $e ) {
 			$this->log( sprintf( '[ERROR] Payment confirm: %s', $e->getMessage() ) );
 
@@ -383,7 +377,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 		}
 
 		// Fetch transactions list
-		$result       = $this->request( 'GET', $this->backend_api_endpoint . $payment_id . '/transactions' );
+		$result       = $this->request( 'GET', $payment_id . '/transactions' );
 		$transactions = $result['transactions']['transactionList'];
 		$this->transactions->import_transactions( $transactions, $order_id );
 
@@ -449,7 +443,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 			}
 
 			// Fetch transactions list
-			$result       = $this->request( 'GET', $this->backend_api_endpoint . $payment_id . '/transactions' );
+			$result       = $this->request( 'GET', $payment_id . '/transactions' );
 			$transactions = $result['transactions']['transactionList'];
 			$this->transactions->import_transactions( $transactions, $order_id );
 
@@ -596,7 +590,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 
 		// Check refund amount
 		try {
-			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id . '/transactions' );
+			$result = $this->request( 'GET', $payment_id . '/transactions' );
 		} catch ( \Exception $e ) {
 			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
 		}
@@ -643,7 +637,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 		}
 
 		try {
-			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
+			$result = $this->request( 'GET', $payment_id );
 		} catch ( \Exception $e ) {
 			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
 		}
@@ -713,7 +707,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 		}
 
 		try {
-			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
+			$result = $this->request( 'GET', $payment_id );
 		} catch ( \Exception $e ) {
 			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
 		}
@@ -780,7 +774,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 		}
 
 		try {
-			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
+			$result = $this->request( 'GET', $payment_id );
 		} catch ( \Exception $e ) {
 			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
 		}
@@ -845,7 +839,7 @@ class WC_Gateway_Payex_Vipps extends WC_Payment_Gateway_Payex
 
 		try {
 			// @todo Check is paid
-			$result = $this->request( 'GET', $this->backend_api_endpoint . $payment_id );
+			$result = $this->request( 'GET', $payment_id );
 
 			$abort_href = self::get_operation( $result['operations'], 'update-payment-abort' );
 			if ( empty( $abort_href ) ) {

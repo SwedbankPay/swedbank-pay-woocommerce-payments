@@ -41,12 +41,6 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	public $frontend_api_endpoint = 'https://checkout.payex.com/js/payex-checkout.min.js';
 
 	/**
-	 * Backend Api Endpoint
-	 * @var string
-	 */
-	public $backend_api_endpoint = 'https://api.payex.com';
-
-	/**
 	 * Init
 	 */
 	public function __construct() {
@@ -508,7 +502,7 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 			return;
 		}
 
-		$url    = $this->backend_api_endpoint . $data['transaction']['id'];
+		$url    = $data['transaction']['id'];
 		$result = $this->request( 'GET', $url );
 		$this->log( sprintf( 'IPN: Debug: Transaction Url: %s. Response: %s', $url, var_export( $result, TRUE ) ) );
 
@@ -905,7 +899,7 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	 */
 	public function init_payment_session() {
 		// Init Session
-		$session = $this->request( 'GET', $this->backend_api_endpoint . '/psp/checkout' );
+		$session = $this->request( 'GET', '/psp/checkout' );
 		if ( ! $session['authorized'] ) {
 			throw new Exception( 'Unauthorized' );
 		}
