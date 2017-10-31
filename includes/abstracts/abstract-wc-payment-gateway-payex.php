@@ -263,7 +263,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 				$item[] = array(
 					'type'              => 'discount',
-					'name'              => __( 'Discount', 'woocommerce-gateway-payex-checkout' ),
+					'name'              => __( 'Discount', 'woocommerce-gateway-payex-psp' ),
 					'qty'               => 1,
 					'price_with_tax'    => sprintf( "%.2f", - 1 * $discountWithTax ),
 					'price_without_tax' => sprintf( "%.2f", - 1 * $discount ),
@@ -332,7 +332,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 			$item[] = array(
 				'type'              => 'discount',
-				'name'              => __( 'Discount', 'woocommerce-gateway-payex-checkout' ),
+				'name'              => __( 'Discount', 'woocommerce-gateway-payex-psp' ),
 				'qty'               => 1,
 				'price_with_tax'    => sprintf( "%.2f", - 1 * $discountWithTax ),
 				'price_without_tax' => sprintf( "%.2f", - 1 * $discount ),

@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Payex_Checkout {
+class WC_Payex_Psp {
 
 	/** Payment IDs */
 	const PAYMENT_METHODS = array( 'payex_checkout', 'payex_cc', 'payex_psp_invoice', 'payex_vipps' );
@@ -114,7 +114,7 @@ class WC_Payex_Checkout {
 	 */
 	public function plugin_action_links( $links ) {
 		$plugin_links = array(
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_checkout' ) . '">' . __( 'Settings', 'woocommerce-gateway-payex-checkout' ) . '</a>'
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_checkout' ) . '">' . __( 'Settings', 'woocommerce-gateway-payex-psp' ) . '</a>'
 		);
 
 		return array_merge( $plugin_links, $links );
@@ -125,7 +125,7 @@ class WC_Payex_Checkout {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( 'woocommerce-gateway-payex-checkout', FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( 'woocommerce-gateway-payex-psp', FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		// Functions
 		include_once( dirname( __FILE__ ) . '/includes/functions-payex-checkout.php' );
@@ -138,7 +138,6 @@ class WC_Payex_Checkout {
 		// Includes
 		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-payex-interface.php' );
 		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-payment-gateway-payex.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-checkout.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-cc.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-invoice.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-vipps.php' );
@@ -228,7 +227,7 @@ class WC_Payex_Checkout {
 						WC_Admin_Meta_Boxes::add_error( $message );
 
 						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-payex-checkout' ), $message ) );
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-payex-psp' ), $message ) );
 					}
 				}
 				break;
@@ -243,7 +242,7 @@ class WC_Payex_Checkout {
 						WC_Admin_Meta_Boxes::add_error( $message );
 
 						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-payex-checkout' ), $message ) );
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-payex-psp' ), $message ) );
 					}
 				}
 				break;
@@ -265,7 +264,7 @@ class WC_Payex_Checkout {
 				if ( ! empty( $payment_id ) ) {
 					add_meta_box(
 						'payex_payment_actions',
-						__( 'PayEx Payments Actions', 'woocommerce-gateway-payex-checkout' ),
+						__( 'PayEx Payments Actions', 'woocommerce-gateway-payex-psp' ),
 						__CLASS__ . '::order_meta_box_payment_actions',
 						'shop_order',
 						'side',
@@ -327,7 +326,7 @@ class WC_Payex_Checkout {
 			// Localize the script
 			$translation_array = array(
 				'ajax_url'  => admin_url( 'admin-ajax.php' ),
-				'text_wait' => __( 'Please wait...', 'woocommerce-gateway-payex-checkout' ),
+				'text_wait' => __( 'Please wait...', 'woocommerce-gateway-payex-psp' ),
 			);
 			wp_localize_script( 'payex-admin-js', 'Payex_Admin', $translation_array );
 
@@ -348,7 +347,7 @@ class WC_Payex_Checkout {
 
 		try {
 			px_capture_payment( $order_id );
-			wp_send_json_success( __( 'Capture success.', 'woocommerce-gateway-payex-checkout' ) );
+			wp_send_json_success( __( 'Capture success.', 'woocommerce-gateway-payex-psp' ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -367,7 +366,7 @@ class WC_Payex_Checkout {
 
 		try {
 			px_cancel_payment( $order_id );
-			wp_send_json_success( __( 'Cancel success.', 'woocommerce-gateway-payex-checkout' ) );
+			wp_send_json_success( __( 'Cancel success.', 'woocommerce-gateway-payex-psp' ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -386,4 +385,4 @@ class WC_Payex_Checkout {
 	}
 }
 
-new WC_Payex_Checkout();
+new WC_Payex_Psp();

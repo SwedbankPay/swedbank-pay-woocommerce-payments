@@ -51,7 +51,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 
 		$this->id           = 'payex_vipps';
 		$this->has_fields   = TRUE;
-		$this->method_title = __( 'Vipps', 'woocommerce-gateway-payex-checkout' );
+		$this->method_title = __( 'Vipps', 'woocommerce-gateway-payex-psp' );
 		$this->icon         = apply_filters( 'woocommerce_payex_vipps_icon', plugins_url( '/assets/images/vipps.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
@@ -113,66 +113,66 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'enabled'        => array(
-				'title'   => __( 'Enable/Disable', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Enable/Disable', 'woocommerce-gateway-payex-psp' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Enable plugin', 'woocommerce-gateway-payex-psp' ),
 				'default' => 'no'
 			),
 			'title'          => array(
-				'title'       => __( 'Title', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Title', 'woocommerce-gateway-payex-psp' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce-gateway-payex-checkout' ),
-				'default'     => __( 'Vipps payment', 'woocommerce-gateway-payex-checkout' )
+				'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce-gateway-payex-psp' ),
+				'default'     => __( 'Vipps payment', 'woocommerce-gateway-payex-psp' )
 			),
 			'description'    => array(
-				'title'       => __( 'Description', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Description', 'woocommerce-gateway-payex-psp' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', 'woocommerce-gateway-payex-checkout' ),
-				'default'     => __( 'Vipps payment', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'This controls the description which the user sees during checkout.', 'woocommerce-gateway-payex-psp' ),
+				'default'     => __( 'Vipps payment', 'woocommerce-gateway-payex-psp' ),
 			),
 			'merchant_token' => array(
-				'title'       => __( 'Merchant Token', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Merchant Token', 'woocommerce-gateway-payex-psp' ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Merchant Token', 'woocommerce-gateway-payex-psp' ),
 				'default'     => $this->merchant_token
 			),
 			'payee_id'       => array(
-				'title'       => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Payee Id', 'woocommerce-gateway-payex-psp' ),
 				'type'        => 'text',
-				'description' => __( 'Payee Id', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Payee Id', 'woocommerce-gateway-payex-psp' ),
 				'default'     => $this->payee_id
 			),
 			'testmode'       => array(
-				'title'   => __( 'Test Mode', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Test Mode', 'woocommerce-gateway-payex-psp' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable PayEx Test Mode', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Enable PayEx Test Mode', 'woocommerce-gateway-payex-psp' ),
 				'default' => $this->testmode
 			),
 			'debug'          => array(
-				'title'   => __( 'Debug', 'woocommerce-gateway-payex-checkout' ),
+				'title'   => __( 'Debug', 'woocommerce-gateway-payex-psp' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable logging', 'woocommerce-gateway-payex-checkout' ),
+				'label'   => __( 'Enable logging', 'woocommerce-gateway-payex-psp' ),
 				'default' => $this->debug
 			),
 			'culture'        => array(
-				'title'       => __( 'Language', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Language', 'woocommerce-gateway-payex-psp' ),
 				'type'        => 'select',
 				'options'     => array(
 					'en-US' => 'English',
 					'sv-SE' => 'Swedish',
 					'nb-NO' => 'Norway',
 				),
-				'description' => __( 'Language of pages displayed by PayEx during payment.', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Language of pages displayed by PayEx during payment.', 'woocommerce-gateway-payex-psp' ),
 				'default'     => $this->culture
 			),
 			'method'         => array(
-				'title'       => __( 'Checkout Method', 'woocommerce-gateway-payex-checkout' ),
+				'title'       => __( 'Checkout Method', 'woocommerce-gateway-payex-psp' ),
 				'type'        => 'select',
 				'options'     => array(
-					'redirect' => __( 'Redirect', 'woocommerce-gateway-payex-checkout' ),
-					'direct'   => __( 'Direct', 'woocommerce-gateway-payex-checkout' ),
+					'redirect' => __( 'Redirect', 'woocommerce-gateway-payex-psp' ),
+					'direct'   => __( 'Direct', 'woocommerce-gateway-payex-psp' ),
 				),
-				'description' => __( 'Checkout Method', 'woocommerce-gateway-payex-checkout' ),
+				'description' => __( 'Checkout Method', 'woocommerce-gateway-payex-psp' ),
 				'default'     => $this->method
 			),
 		);
@@ -250,7 +250,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 						'vatAmount' => '0'
 					]
 				],
-				'description'    => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-checkout' ), $order->get_order_number() ),
+				'description'    => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-psp' ), $order->get_order_number() ),
 				'payerReference' => $customer_uuid,
 				'userAgent'      => px_get_remote_address(),
 				'language'       => $this->culture,
@@ -318,7 +318,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				break;
 
 			default:
-				wc_add_notice( __( 'Wrong method', 'woocommerce-gateway-payex-checkout' ), 'error' );
+				wc_add_notice( __( 'Wrong method', 'woocommerce-gateway-payex-psp' ), 'error' );
 
 				return FALSE;
 		}
@@ -327,4 +327,4 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 }
 
 // Register Gateway
-WC_Payex_Checkout::register_gateway( 'WC_Gateway_Payex_Vipps' );
+WC_Payex_Psp::register_gateway( 'WC_Gateway_Payex_Vipps' );
