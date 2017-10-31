@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_Payex_Psp {
 
 	/** Payment IDs */
-	const PAYMENT_METHODS = array( 'payex_checkout', 'payex_cc', 'payex_psp_invoice', 'payex_vipps' );
+	const PAYMENT_METHODS = array( 'payex_checkout', 'payex_psp_cc', 'payex_psp_invoice', 'payex_psp_vipps' );
 
 	/**
 	 * Constructor
@@ -114,7 +114,7 @@ class WC_Payex_Psp {
 	 */
 	public function plugin_action_links( $links ) {
 		$plugin_links = array(
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_checkout' ) . '">' . __( 'Settings', 'woocommerce-gateway-payex-psp' ) . '</a>'
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_cc' ) . '">' . __( 'Settings', 'woocommerce-gateway-payex-psp' ) . '</a>'
 		);
 
 		return array_merge( $plugin_links, $links );

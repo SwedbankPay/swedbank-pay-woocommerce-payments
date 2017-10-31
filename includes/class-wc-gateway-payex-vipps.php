@@ -49,7 +49,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 	public function __construct() {
 		$this->transactions = WC_Payex_Transactions::instance();
 
-		$this->id           = 'payex_vipps';
+		$this->id           = 'payex_psp_vipps';
 		$this->has_fields   = TRUE;
 		$this->method_title = __( 'Vipps', 'woocommerce-gateway-payex-psp' );
 		$this->icon         = apply_filters( 'woocommerce_payex_vipps_icon', plugins_url( '/assets/images/vipps.png', dirname( __FILE__ ) ) );

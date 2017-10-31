@@ -43,7 +43,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 	public function __construct() {
 		$this->transactions = WC_Payex_Transactions::instance();
 
-		$this->id           = 'payex_cc';
+		$this->id           = 'payex_psp_cc';
 		$this->has_fields   = TRUE;
 		$this->method_title = __( 'Credit Card', 'woocommerce-gateway-payex-psp' );
 		$this->icon         = apply_filters( 'woocommerce_payex_cc_icon', plugins_url( '/assets/images/creditcards.png', dirname( __FILE__ ) ) );
