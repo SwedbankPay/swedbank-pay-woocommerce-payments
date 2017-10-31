@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_Payex_Checkout {
 
 	/** Payment IDs */
-	const PAYMENT_METHODS = array( 'payex_checkout', 'payex_vipps' );
+	const PAYMENT_METHODS = array( 'payex_checkout', 'payex_cc', 'payex_psp_invoice', 'payex_vipps' );
 
 	/**
 	 * Constructor
@@ -48,10 +48,7 @@ class WC_Payex_Checkout {
 		), 10, 2 );
 
 		// Status Change Actions
-		add_action( 'woocommerce_order_status_changed', array(
-			$this,
-			'order_status_changed'
-		), 10, 4 );
+		add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
 
 		// Add meta boxes
 		add_action( 'add_meta_boxes', __CLASS__ . '::add_meta_boxes' );
@@ -142,6 +139,8 @@ class WC_Payex_Checkout {
 		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-payex-interface.php' );
 		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-payment-gateway-payex.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-checkout.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-cc.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-invoice.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-vipps.php' );
 	}
 
@@ -200,7 +199,7 @@ class WC_Payex_Checkout {
 	 * @param $to
 	 * @param $order
 	 */
-	public function order_status_changed( $order_id, $from, $to, $order ) {
+	public static function order_status_changed( $order_id, $from, $to, $order ) {
 		// We are need "on-hold" only
 		if ( $from !== 'on-hold' ) {
 			return;

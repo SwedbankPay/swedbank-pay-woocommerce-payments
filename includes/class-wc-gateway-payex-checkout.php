@@ -44,7 +44,7 @@ class WC_Gateway_Payex_Checkout extends WC_Payment_Gateway_Payex
 	 * Init
 	 */
 	public function __construct() {
-		parent::__construct();
+		$this->transactions = WC_Payex_Transactions::instance();
 
 		$this->id           = 'payex_checkout';
 		$this->has_fields   = TRUE;

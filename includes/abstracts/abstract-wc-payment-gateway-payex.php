@@ -24,19 +24,11 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 */
 	public $debug = 'no';
 
-
 	/**
 	 * Backend Api Endpoint
 	 * @var string
 	 */
 	public $backend_api_endpoint = 'https://api.payex.com';
-
-	/**
-	 * Constructor
-	 */
-	public function __construct() {
-		$this->transactions = WC_Payex_Transactions::instance();
-	}
 
 	/**
 	 * Debug Log
