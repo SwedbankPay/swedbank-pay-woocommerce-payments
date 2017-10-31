@@ -24,7 +24,6 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 */
 	public $debug = 'no';
 
-
 	/**
 	 * Backend Api Endpoint
 	 * @var string
