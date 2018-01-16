@@ -236,7 +236,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		}
 
 		// Get Order UUID
-		$order_uuid = px_uuid( $order_id );
+		$order_uuid = mb_strimwidth( px_uuid( $order_id ), 0, 30, '', 'UTF-8' );
 
 		$params = [
 			'payment' => [
