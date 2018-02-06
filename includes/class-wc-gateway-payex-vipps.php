@@ -264,7 +264,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 					'payeeReference' => $order_uuid,
 				],
 				'prefillInfo'    => [
-					'msisdn' => '+' . ltrim( $phone, '+' )
+					'msisdn' => $phone
 				]
 			]
 		];
