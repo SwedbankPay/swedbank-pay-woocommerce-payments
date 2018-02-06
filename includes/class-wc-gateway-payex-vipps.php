@@ -104,6 +104,8 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 			$this,
 			'cancel_pending'
 		), 10, 2 );
+
+		add_filter( 'payex_vipps_phone_format', array( $this, 'vipps_phone_format' ), 10, 2 );
 	}
 
 	/**
@@ -264,7 +266,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 					'payeeReference' => $order_uuid,
 				],
 				'prefillInfo'    => [
-					'msisdn' => $phone
+					'msisdn' => apply_filters( 'payex_vipps_phone_format', $phone, $order )
 				]
 			]
 		];
@@ -298,7 +300,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				try {
 					$params = [
 						'transaction' => [
-							'msisdn' => '+' . ltrim( $phone, '+' )
+							'msisdn' => apply_filters( 'payex_vipps_phone_format', $phone, $order )
 						]
 					];
 
@@ -323,6 +325,17 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				return FALSE;
 		}
 
+	}
+
+	/**
+	 * Format phone
+	 * @param string $phone
+	 * @param WC_Order $order
+	 *
+	 * @return string
+	 */
+	public function vipps_phone_format( $phone, $order ) {
+		return $phone;
 	}
 }
 
