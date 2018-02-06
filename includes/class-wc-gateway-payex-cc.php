@@ -619,7 +619,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 		$params = array(
 			'transaction' => array(
-				'amount'         => (int) round( $order->get_total() * 100 ),
+				'amount'         => (int) round( $amount * 100 ),
 				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
 				'description'    => sprintf( 'Capture for Order #%s', $order_id ),
 				'payeeReference' => $payeeReference

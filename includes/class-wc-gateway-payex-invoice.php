@@ -453,7 +453,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 		$params = array(
 			'transaction' => array(
 				'activity'       => 'FinancingConsumer',
-				'amount'         => (int) round( $order->get_total() * 100 ),
+				'amount'         => (int) round( $amount * 100 ),
 				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
 				'description'    => sprintf( 'Capture for Order #%s', $order_id ),
 				'payeeReference' => str_replace( '-', '', $payeeReference )
