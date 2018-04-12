@@ -263,7 +263,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				],
 				'payeeInfo'      => [
 					'payeeId'        => $this->payee_id,
-					'payeeReference' => $order_uuid,
+					'payeeReference' => str_replace('-', '', $order_uuid),
 				],
 				'prefillInfo'    => [
 					'msisdn' => apply_filters( 'payex_vipps_phone_format', $phone, $order )
