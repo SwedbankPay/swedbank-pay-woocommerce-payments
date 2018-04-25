@@ -326,6 +326,82 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		}
 
 	}
+	
+	/**
+	 * Capture
+	 *
+	 * @param WC_Order|int $order
+	 * @param bool         $amount
+	 *
+	 * @throws \Exception
+	 * @return void
+	 */
+	public function capture_payment( $order, $amount = FALSE ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+
+		// @todo Improve feature
+		if ( ! $amount ) {
+			$amount = $order->get_total();
+		}
+
+		$order_id   = px_obj_prop( $order, 'id' );
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		if ( empty( $payment_id ) ) {
+			throw new \Exception( 'Unable to get payment ID' );
+		}
+
+		try {
+			$result = $this->request( 'GET', $payment_id );
+		} catch ( \Exception $e ) {
+			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
+		}
+
+		$capture_href = self::get_operation( $result['operations'], 'create-capture' );
+		if ( empty( $capture_href ) ) {
+			throw new \Exception( __( 'Capture unavailable', 'woocommerce-gateway-payex-psp' ) );
+		}
+
+		// Order Info
+		$info = $this->get_order_info( $order );
+
+		// Get Order UUID
+		$payeeReference = mb_strimwidth( px_uuid( uniqid( $order_id ) ), 0, 30, '', 'UTF-8' );
+
+		$params = array(
+			'transaction' => array(
+				'amount'         => (int) round( $amount * 100 ),
+				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
+				'description'    => sprintf( 'Capture for Order #%s', $order_id ),
+				'payeeReference' => str_replace( '-', '', $payeeReference )
+			)
+		);
+		$result = $this->request( 'POST', $capture_href, $params );
+
+		// Save transaction
+		$transaction = $result['capture']['transaction'];
+		$this->transactions->import( $transaction, $order_id );
+
+		switch ( $transaction['state'] ) {
+			case 'Completed':
+				update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
+				update_post_meta( $order_id, '_payex_transaction_capture', $transaction['id'] );
+
+				$order->add_order_note( __( 'Transaction captured.', 'woocommerce-gateway-payex-psp' ) );
+				$order->payment_complete( $transaction['number'] );
+
+				break;
+			case 'Initialized':
+				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', 'woocommerce-gateway-payex-psp' ), $transaction['state'] ) );
+				break;
+			case 'Failed':
+			default:
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', 'woocommerce-gateway-payex-psp' );
+				throw new \Exception( $message );
+				break;
+		}
+	}
 
 	/**
 	 * Format phone
