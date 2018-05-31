@@ -195,6 +195,18 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 	 * @return bool
 	 */
 	public function validate_fields() {
+		$billing_phone = wc_clean( isset( $_POST['billing_phone'] ) ? $_POST['billing_phone'] : '' );
+		if ( empty( $billing_phone ) ) {
+			wc_add_notice( __( 'Phone number required.', 'woocommerce-gateway-payex-psp' ), 'error' );
+		}
+
+		$matches = array();
+		preg_match( '/^(\+47)(?:4[015-8]|5[89]|87|9\d)\d{6}$/u', $billing_phone, $matches );
+		if ( ! isset( $matches[0] ) || $matches[0] !== $billing_phone ) {
+			wc_add_notice( __( 'Input your number like this +47xxxxxxxxx', 'woocommerce-gateway-payex-psp' ), 'error' );
+			return FALSE;
+		}
+
 		return TRUE;
 	}
 
