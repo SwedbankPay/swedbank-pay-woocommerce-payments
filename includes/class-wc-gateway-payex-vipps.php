@@ -266,7 +266,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				],
 				'description'    => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-psp' ), $order->get_order_number() ),
 				'payerReference' => $customer_uuid,
-				'userAgent'      => px_get_remote_address(),
+				'userAgent'      => $_SERVER['HTTP_USER_AGENT'],
 				'language'       => $this->culture,
 				'urls'           => [
 					'completeUrl' => html_entity_decode( $this->get_return_url( $order ) ),

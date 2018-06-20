@@ -243,7 +243,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'payerReference' => $customer_uuid,
 				'generatePaymentToken' => false,
 				'pageStripdown' => false,
-				'userAgent'      => px_get_remote_address(),
+				'userAgent'      => $_SERVER['HTTP_USER_AGENT'],
 				'language'       => $this->culture,
 				'urls'           => [
 					'completeUrl' => html_entity_decode( $this->get_return_url( $order ) ),
