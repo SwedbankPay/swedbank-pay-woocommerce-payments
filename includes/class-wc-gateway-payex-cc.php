@@ -84,7 +84,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		) );
 
 		// Payment listener/API hook
-		add_action( 'woocommerce_api_wc_gateway_' . $this->id, array(
+		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array(
 			$this,
 			'return_handler'
 		) );
