@@ -6,7 +6,7 @@
  * Author: AAIT Team
  * Author URI: http://aait.se/
  * Version: 1.0.0
- * Text Domain: oocommerce-gateway-payex-psp
+ * Text Domain: woocommerce-gateway-payex-psp
  * Domain Path: /languages
  * WC requires at least: 3.0.0
  * WC tested up to: 3.4.5
