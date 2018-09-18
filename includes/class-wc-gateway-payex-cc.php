@@ -428,6 +428,11 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			// Apply action
 			switch ( $transaction['type'] ) {
 				case 'Authorization':
+					$order_stock_reduced = $order->get_meta( '_order_stock_reduced', true );
+					if ( ! $order_stock_reduced ) {
+						wc_reduce_stock_levels( $order_id );
+					}
+
 					update_post_meta( $order_id, '_transaction_id', $transaction['number'] );
 					$order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-payex-psp' ) );
 					$this->log( sprintf( 'IPN: Order #%s marked as authorized', $order_id ) );
