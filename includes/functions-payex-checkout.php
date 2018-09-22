@@ -261,7 +261,7 @@ function px_refund_payment( $order, $amount = FALSE, $reason = '' ) {
 		throw new \Exception( sprintf( __( 'Refund failure: %s', 'woocommerce-gateway-payex-psp' ), 'Payment method don\'t support this feature' ) );
 	}
 
-	if ( ! $gateway->can_refund( $order ) ) {
+	if ( ! $gateway->can_refund( $order, $amount ) ) {
 		throw new \Exception( __( 'Refund action is not available.', 'woocommerce-gateway-payex-psp' ) );
 	}
 
