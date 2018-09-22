@@ -303,7 +303,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			return;
 		}
 
-		if ( px_obj_prop( $order, 'payment_method' ) !== $this->id ) {
+		if ( ! in_array( px_obj_prop( $order, 'payment_method' ), WC_Payex_Psp::PAYMENT_METHODS ) ) {
 			return;
 		}
 
