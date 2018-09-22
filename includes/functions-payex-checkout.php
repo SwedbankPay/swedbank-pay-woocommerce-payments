@@ -200,7 +200,7 @@ function px_capture_payment( $order, $amount = FALSE ) {
 	}
 
 	// Disable status change hook
-	remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Checkout::order_status_changed', 10 );
+	remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
 
 	$gateway->capture_payment( $order, $amount );
 }
@@ -232,7 +232,7 @@ function px_cancel_payment( $order ) {
 	}
 
 	// Disable status change hook
-	remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Checkout::order_status_changed', 10 );
+	remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
 
 	$gateway->cancel_payment( $order );
 }
