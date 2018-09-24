@@ -2,14 +2,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Woocommerce Gateway PayEx Checkout\n"
 "POT-Creation-Date: 2017-10-03 15:35+0600\n"
-"PO-Revision-Date: 2017-10-03 15:36+0600\n"
+"PO-Revision-Date: 2018-09-24 11:11+0200\n"
 "Last-Translator: aait <info@aait.se>\n"
 "Language-Team: \n"
 "Language: sv_SE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.7.1\n"
+"X-Generator: Poedit 2.1.1\n"
 "X-Poedit-KeywordsList: __;_e;_e(sprintf;__(sprintf\n"
 "X-Poedit-Basepath: .\n"
 "X-Poedit-SourceCharset: UTF-8\n"
@@ -102,14 +102,14 @@ msgstr "Transaktionen misslyckades"
 #: ../includes/class-wc-gateway-payex-checkout.php:770
 #: ../includes/class-wc-gateway-payex-vipps.php:574
 msgid "Transaction captured."
-msgstr ""
+msgstr "Transaktionen fångades"
 
 #: ../includes/class-wc-gateway-payex-checkout.php:625
 #: ../includes/class-wc-gateway-payex-checkout.php:887
 #: ../includes/class-wc-gateway-payex-vipps.php:698
 #, php-format
 msgid "Refunded: %s. Reason: %s"
-msgstr ""
+msgstr "Återbetalades: %s. Anöedning: %s"
 
 #: ../includes/class-wc-gateway-payex-checkout.php:743
 #: ../includes/class-wc-gateway-payex-checkout.php:799
@@ -119,36 +119,36 @@ msgstr ""
 #: ../includes/class-wc-gateway-payex-checkout.php:748
 #: ../includes/class-wc-gateway-payex-vipps.php:550
 msgid "Capture unavailable"
-msgstr ""
+msgstr "Det går inte att fånga ordern, kanske för att den redan är fångad?"
 
 #: ../includes/class-wc-gateway-payex-checkout.php:775
 #: ../includes/class-wc-gateway-payex-vipps.php:583
 msgid "Capture failed."
-msgstr ""
+msgstr "Vi försökte fånga ordern men misslyckades."
 
 #: ../includes/class-wc-gateway-payex-checkout.php:804
 #: ../includes/class-wc-gateway-payex-vipps.php:616
 msgid "Cancellation unavailable"
-msgstr ""
+msgstr "Det går inte att avbryta betalningen."
 
 #: ../includes/class-wc-gateway-payex-checkout.php:819
 #: ../includes/class-wc-gateway-payex-vipps.php:635
 msgid "Transaction cancelled."
-msgstr ""
+msgstr "Betalningen har avbrutits."
 
 #: ../includes/class-wc-gateway-payex-checkout.php:823
 #: ../includes/class-wc-gateway-payex-vipps.php:643
 msgid "Cancel failed."
-msgstr ""
+msgstr "Vi misslyckades med att avbryta betalningen."
 
 #: ../includes/class-wc-gateway-payex-checkout.php:854
 msgid "Unable to perform refund. The transaction must be captured."
-msgstr ""
+msgstr "Det går inte att göra en återbetalning. Transaktionen måste först fångas."
 
 #: ../includes/class-wc-gateway-payex-checkout.php:892
 #: ../includes/class-wc-gateway-payex-vipps.php:706
 msgid "Refund failed."
-msgstr ""
+msgstr "Återbetalningen misslyckades."
 
 #: ../includes/class-wc-gateway-payex-vipps.php:58
 msgid "Vipps"
@@ -167,7 +167,7 @@ msgstr ""
 #: ../includes/class-wc-gateway-payex-vipps.php:171
 #: ../includes/class-wc-gateway-payex-vipps.php:177
 msgid "Checkout Method"
-msgstr ""
+msgstr "Betalmetod"
 
 #: ../includes/class-wc-gateway-payex-vipps.php:174
 msgid "Redirect"
@@ -184,23 +184,23 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-payex-vipps.php:329
 msgid "Wrong method"
-msgstr ""
+msgstr "Fel betalmetod"
 
 #: ../includes/class-wc-gateway-payex-vipps.php:373
 msgid "Transaction is pending."
-msgstr ""
+msgstr "Transaktionsstatus är: Väntande"
 
 #: ../includes/class-wc-gateway-payex-vipps.php:377
 msgid "Payment authorized."
-msgstr ""
+msgstr "Betalningen är auktoriserad."
 
 #: ../includes/class-wc-gateway-payex-vipps.php:381
 msgid "Payment failed."
-msgstr ""
+msgstr "Betalningen misslyckades."
 
 #: ../includes/class-wc-gateway-payex-vipps.php:384
 msgid "Payment canceled."
-msgstr ""
+msgstr "Betalningen avbröts."
 
 #: ../includes/class-wc-gateway-payex-vipps.php:579
 #, php-format
@@ -223,7 +223,7 @@ msgstr ""
 
 #: ../includes/class-wc-gateway-payex-vipps.php:746
 msgid "Payment aborted"
-msgstr ""
+msgstr "Betalningen aborterad"
 
 #: ../includes/functions-payex-checkout.php:161
 #: ../includes/functions-payex-checkout.php:190
@@ -260,7 +260,7 @@ msgstr ""
 
 #: ../templates/admin/payment-actions.php:13
 msgid "Payment Info"
-msgstr ""
+msgstr "Betalinformation"
 
 #: ../templates/admin/payment-actions.php:15
 msgid "Number"
@@ -288,7 +288,7 @@ msgstr ""
 
 #: ../templates/payex-checkout/cart-button.php:10
 msgid "Proceed to PayEx checkout"
-msgstr ""
+msgstr "Fortsätt till PayEx Checkout"
 
 #: ../woocommerce-payex-checkout.php:95
 msgid "Settings"
@@ -305,7 +305,7 @@ msgstr ""
 
 #: ../woocommerce-payex-checkout.php:300
 msgid "Please wait..."
-msgstr ""
+msgstr "Vänligen vänta"
 
 #: ../woocommerce-payex-checkout.php:321
 msgid "Capture success."
