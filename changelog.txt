@@ -1,0 +1,8 @@
+Version 1.1.0
+* Implemented: Tokenization
+* Implemented: WC Subscriptions support
+* Settings: AutoCapture mode
+* Integrated PayEx Client library
+
+Version 1.0.0
+* First release

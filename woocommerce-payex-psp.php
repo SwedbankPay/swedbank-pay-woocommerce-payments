@@ -5,11 +5,11 @@
  * Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
  * Author: AAIT Team
  * Author URI: http://aait.se/
- * Version: 1.0.0
+ * Version: 1.1.0
  * Text Domain: woocommerce-gateway-payex-psp
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 3.4.5
+ * WC tested up to: 3.5.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
