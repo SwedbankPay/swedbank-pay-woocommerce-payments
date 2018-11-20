@@ -68,10 +68,6 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 
-		if ( $this->testmode === 'yes' ) {
-			$this->backend_api_endpoint = 'https://api.externalintegration.payex.com';
-		}
-
 		// Actions
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
 			$this,
