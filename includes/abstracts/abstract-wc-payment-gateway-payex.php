@@ -7,6 +7,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	implements WC_Payment_Gateway_Payex_Interface {
 
+	/** @var \PayEx\Api\Client */
+	public $client;
+
 	/**
 	 * @var \WC_Payex_Transactions
 	 */
@@ -19,16 +22,42 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	public $merchant_token = '';
 
 	/**
+	 * Test Mode
+	 * @var string
+	 */
+	public $testmode = 'yes';
+
+	/**
 	 * Debug Mode
 	 * @var string
 	 */
 	public $debug = 'no';
 
 	/**
-	 * Backend Api Endpoint
-	 * @var string
+	 * Get PayEx Client
+	 * @return \PayEx\Api\Client
 	 */
-	public $backend_api_endpoint = 'https://api.payex.com';
+	public function getClient() {
+		if ( ! $this->client ) {
+			global $wp_version;
+			$plugin_version = get_file_data(
+				dirname(__FILE__) . '/../../woocommerce-payex-psp.php',
+				array('Version'),
+				'woocommerce-gateway-payex-psp'
+			);
+
+			$this->client = new \PayEx\Api\Client();
+			$this->client->setMerchantToken( $this->merchant_token );
+			$this->client->setMode( $this->testmode === 'yes' ? \PayEx\Api\Client::MODE_TEST : \PayEx\Api\Client::MODE_PRODUCTION );
+			$this->client->setPlatform( sprintf("WordPress/%s WooCommerce/%s PayEx.Psp.WooCommerce/%s",
+				$wp_version,
+				WC_VERSION,
+				$plugin_version[0]
+			) );
+		}
+
+		return $this->client;
+	}
 
 	/**
 	 * Debug Log
@@ -75,73 +104,23 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @throws \Exception
 	 */
 	public function request( $method, $url, $params = array() ) {
-		if ( mb_substr( $url, 0, 1, 'UTF-8' ) === '/' ) {
-			$url = $this->backend_api_endpoint . $url;
-		}
-
 		if ( $this->debug === 'yes' ) {
-			$this->log( sprintf( '%s %s %s', $method, $url, 'Data: ' . var_export( $params, TRUE ) ) );
+			$this->log( sprintf('Request: %s %s %s', $method, $url, json_encode( $params, JSON_PRETTY_PRINT ) ) );
 		}
 
-		// Session ID
-		$session_id = px_uuid( uniqid() );
-
-		// Get Payment URL
 		try {
-			$client  = new GuzzleHttp\Client();
-			$headers = array(
-				'Accept'        => 'application/json',
-				'Session-Id'    => $session_id,
-				'Forwarded'     => $_SERVER['REMOTE_ADDR'],
-				'Authorization' => 'Bearer ' . $this->merchant_token
-			);
-
-			$response = $client->request( $method, $url, count( $params ) > 0 ? array(
-				'json'    => $params,
-				'headers' => $headers
-			) : array( 'headers' => $headers ) );
+			/** @var \PayEx\Api\Response $response */
+			$response = $this->getClient()->request( $method, $url, $params );
+			$result   = $response->toArray();
 
 			if ( $this->debug === 'yes' ) {
-				$this->log( sprintf( 'Status code: %s', $response->getStatusCode() ) );
-			}
-
-			if ( floor( $response->getStatusCode() / 100 ) != 2 ) {
-				throw new Exception( 'Request failed. Status code: ' . $response->getStatusCode() );
-			}
-
-			$response = $response->getBody()->getContents();
-
-			$result = @json_decode( $response, TRUE );
-			if ( ! $result ) {
-				$result = $response;
-			}
-
-			if ( $this->debug === 'yes' ) {
-				$this->log( sprintf( 'Response: %s', var_export( $result, TRUE ) ) );
+				$this->log( sprintf( 'Response: %s', $response->getBody() ) );
 			}
 
 			return $result;
-		} catch ( GuzzleHttp\Exception\ClientException $e ) {
-			$response             = $e->getResponse();
-			$responseBodyAsString = $response->getBody()->getContents();
-
+		} catch ( \PayEx\Api\Exception $e ) {
 			if ( $this->debug === 'yes' ) {
-				$this->log( sprintf( 'ClientException: %s. URL: %s, Params: %s', $responseBodyAsString, $url, var_export( $params, TRUE ) ) );
-			}
-
-			throw new Exception( $responseBodyAsString );
-		} catch ( GuzzleHttp\Exception\ServerException $e ) {
-			$response             = $e->getResponse();
-			$responseBodyAsString = $response->getBody()->getContents();
-
-			if ( $this->debug === 'yes' ) {
-				$this->log( sprintf( 'ServerException: %s. URL: %s, Params: %s', $responseBodyAsString, $url, var_export( $params, TRUE ) ) );
-			}
-
-			throw new Exception( $responseBodyAsString );
-		} catch ( Exception $e ) {
-			if ( $this->debug === 'yes' ) {
-				$this->log( sprintf( 'Exception: %s. URL: %s, Params: %s', $e->getMessage(), $url, var_export( $params, TRUE ) ) );
+				$this->log( sprintf( 'Exception: %s', $e->getMessage() ) );
 			}
 
 			throw $e;
@@ -428,5 +407,170 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		} catch ( \Exception $e ) {
 			return new WP_Error( 'refund', $e->getMessage() );
 		}
+	}
+
+	/**
+	 * Process Transaction
+	 * @param array $transaction
+	 * @param WC_Order $order
+	 *
+	 * @throws Exception
+	 */
+	public function process_transaction($transaction, $order) {
+		// Disable status change hook
+		remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
+
+		try {
+			// Apply action
+			switch ( $transaction['type'] ) {
+				case 'Authorization':
+					// Check is action was performed
+					if ( $state = $order->get_meta('_payex_payment_state' ) && ! empty( $state ) ) {
+						throw new Exception( sprintf( 'Action of Transaction #%s already performed', $transaction['number'] ) );
+					}
+
+					$order->update_meta_data( '_payex_payment_state', 'Authorized' );
+					$order->update_meta_data( '_payex_transaction_authorize', $transaction['id'] );
+					$order->update_meta_data( '_transaction_id', $transaction['number'] );
+					$order->save_meta_data();
+
+					// Reduce stock
+					$order_stock_reduced = $order->get_meta( '_order_stock_reduced' );
+					if ( ! $order_stock_reduced ) {
+						wc_reduce_stock_levels( $order->get_id() );
+					}
+
+					$order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-payex-psp' ) );
+
+					// Save Payment Token
+					if ( $order->get_meta( '_payex_generate_token' ) === '1' &&
+					     count( $order->get_payment_tokens() ) === 0
+					) {
+						$payment_id = $order->get_meta( '_payex_payment_id' );
+						$result     = $this->request( 'GET', $payment_id . '/authorizations' );
+						if ( isset( $result['authorizations']['authorizationList'][0] ) &&
+						     isset( $result['authorizations']['authorizationList'][0]['paymentToken'] ) )
+						{
+							$authorization = $result['authorizations']['authorizationList'][0];
+							$paymentToken  = $authorization['paymentToken'];
+							$cardBrand     = $authorization['cardBrand'];
+							$maskedPan     = $authorization['maskedPan'];
+							$expiryDate    = explode('/', $authorization['expiryDate'] );
+
+							// Create Payment Token
+							$token = new WC_Payment_Token_Payex();
+							$token->set_gateway_id( $this->id );
+							$token->set_token( $paymentToken );
+							$token->set_last4( substr( $maskedPan, -4 ) );
+							$token->set_expiry_year( $expiryDate[1] );
+							$token->set_expiry_month( $expiryDate[0] );
+							$token->set_card_type( strtolower( $cardBrand ) );
+							$token->set_user_id( $order->get_user_id() );
+							$token->set_masked_pan( $maskedPan );
+							$token->save();
+							if ( ! $token->get_id() ) {
+								throw new Exception( __( 'There was a problem adding the card.', 'woocommerce-gateway-payex-psp' ) );
+							}
+
+							// Add payment token
+							$order->add_payment_token( $token );
+						}
+					}
+					break;
+				case 'Capture':
+					// Check is action was performed
+					if ( $order->get_meta('_payex_payment_state' ) === 'Captured' ) {
+						throw new Exception( sprintf( 'Action of Transaction #%s already performed', $transaction['number'] ) );
+					}
+
+					$order->update_meta_data( '_payex_payment_state', 'Captured' );
+					$order->update_meta_data( '_payex_transaction_capture', $transaction['id'] );
+					$order->save_meta_data();
+
+					$order->payment_complete( $transaction['number'] );
+					$order->add_order_note( __( 'Transaction captured.', 'woocommerce-gateway-payex-psp' ) );
+					break;
+				case 'Cancellation':
+					// Check is action was performed
+					if ( $order->get_meta('_payex_payment_state' ) === 'Cancellation' ) {
+						throw new Exception( sprintf( 'Action of Transaction #%s already performed', $transaction['number'] ) );
+					}
+
+					$order->update_meta_data( '_payex_payment_state', 'Cancelled' );
+					$order->update_meta_data( '_payex_transaction_cancel', $transaction['id'] );
+					$order->update_meta_data( '_transaction_id', $transaction['number'] );
+					$order->save_meta_data();
+
+					if ( ! $order->has_status( 'cancelled' ) ) {
+						$order->update_status( 'cancelled', __( 'Transaction cancelled.', 'woocommerce-gateway-payex-psp' ) );
+					} else {
+						$order->add_order_note( __( 'Transaction cancelled.', 'woocommerce-gateway-payex-psp' ) );
+					}
+					break;
+				case 'Reversal':
+					// @todo Implement Refunds creation
+					// @see wc_create_refund()
+					throw new Exception( 'Error: Reversal transaction don\'t implemented yet.' );
+				default:
+					throw new Exception( sprintf( 'Error: Unknown type %s', $transaction['type'] ) );
+			}
+		} catch ( Exception $e ) {
+			if ( $this->debug === 'yes' ) {
+				$this->log( sprintf(  '%s::%s Exception: %s', __CLASS__, __METHOD__, $e->getMessage() ) );
+			}
+
+			// Enable status change hook
+			add_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10, 4 );
+
+			throw $e;
+		}
+
+		// Enable status change hook
+		add_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10, 4 );
+	}
+
+	/**
+	 * Checks an order to see if it contains a subscription.
+	 * @see wcs_order_contains_subscription()
+	 *
+	 * @param WC_Order $order
+	 *
+	 * @return bool
+	 */
+	public static function order_contains_subscription( $order ) {
+		if ( ! function_exists( 'wcs_order_contains_subscription' ) ) {
+			return FALSE;
+		}
+
+		return wcs_order_contains_subscription( $order );
+	}
+
+	/**
+	 * WC Subscriptions: Is Payment Change
+	 * @return bool
+	 */
+	public static function wcs_is_payment_change() {
+		return class_exists( 'WC_Subscriptions_Change_Payment_Gateway', FALSE ) &&
+		       WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
+	}
+
+	/**
+	 * Check is Cart have Subscription Products
+	 * @return bool
+	 */
+	public static function wcs_cart_have_subscription() {
+		if ( ! class_exists( 'WC_Product_Subscription', FALSE ) ) {
+			return FALSE;
+		}
+
+		// Check is Recurring Payment
+		$cart = WC()->cart->get_cart();
+		foreach ( $cart as $key => $item ) {
+			if ( is_object( $item['data'] ) && get_class( $item['data'] ) === 'WC_Product_Subscription' ) {
+				return TRUE;
+			}
+		}
+
+		return FALSE;
 	}
 }

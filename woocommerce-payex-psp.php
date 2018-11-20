@@ -78,8 +78,8 @@ class WC_Payex_Psp {
 	public function includes() {
 		$vendorsDir = dirname( __FILE__ ) . '/vendors';
 
-		if ( ! class_exists( '\\GuzzleHttp\\Client', FALSE ) ) {
-			require_once $vendorsDir . '/guzzle/vendor/autoload.php';
+		if ( ! class_exists( '\\PayEx\\Api\\Client', FALSE ) ) {
+			require_once $vendorsDir . '/payex-ecom-php/vendor/autoload.php';
 		}
 
 		if ( ! class_exists( '\\Ramsey\\Uuid\\Uuid', FALSE ) ) {
@@ -137,6 +137,7 @@ class WC_Payex_Psp {
 	 */
 	public function woocommerce_loaded() {
 		// Includes
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-token-payex.php' );
 		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-payex-interface.php' );
 		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-payment-gateway-payex.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-cc.php' );
@@ -293,7 +294,7 @@ class WC_Payex_Psp {
 
 		// Fetch payment info
 		try {
-			$result = $gateway->request( 'GET', $gateway->backend_api_endpoint . $payment_id );
+			$result = $gateway->request( 'GET', $payment_id );
 		} catch ( \Exception $e ) {
 			// Request failed
 			return;

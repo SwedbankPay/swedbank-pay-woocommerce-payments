@@ -1,0 +1,5 @@
+{
+    "require": {
+        "payex/payex-ecom-php": "^2.0"
+    }
+}

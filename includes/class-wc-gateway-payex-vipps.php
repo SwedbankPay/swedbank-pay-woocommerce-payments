@@ -75,10 +75,6 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->method         = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
 
-		if ( $this->testmode === 'yes' ) {
-			$this->backend_api_endpoint = 'https://api.externalintegration.payex.com';
-		}
-
 		// Actions
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
 			$this,
