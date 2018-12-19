@@ -1120,6 +1120,10 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 	 * @param $order_id
 	 */
 	public function add_subscription_card_id( $order_id ) {
+	    if ( ! function_exists( 'wcs_get_subscriptions_for_order' ) ) {
+	        return;
+        }
+
 		$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
 		foreach ( $subscriptions as $subscription ) {
 			/** @var WC_Subscription $subscription */
