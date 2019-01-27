@@ -481,6 +481,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 					}
 					break;
 				case 'Capture':
+				case 'Sale':
 					// Check is action was performed
 					if ( $order->get_meta('_payex_payment_state' ) === 'Captured' ) {
 						throw new Exception( sprintf( 'Action of Transaction #%s already performed', $transaction['number'] ) );

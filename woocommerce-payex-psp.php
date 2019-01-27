@@ -19,7 +19,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 class WC_Payex_Psp {
 
 	/** Payment IDs */
-	const PAYMENT_METHODS = array( 'payex_checkout', 'payex_psp_cc', 'payex_psp_invoice', 'payex_psp_vipps' );
+	const PAYMENT_METHODS = array(
+		'payex_checkout',
+		'payex_psp_cc',
+		'payex_psp_invoice',
+		'payex_psp_vipps',
+	    'payex_psp_swish'
+	);
 
 	/**
 	 * Constructor
@@ -143,6 +149,7 @@ class WC_Payex_Psp {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-cc.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-invoice.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-vipps.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-payex-swish.php' );
 	}
 
 	/**
