@@ -104,6 +104,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @throws \Exception
 	 */
 	public function request( $method, $url, $params = array() ) {
+		$start = microtime(true);
 		if ( $this->debug === 'yes' ) {
 			$this->log( sprintf('Request: %s %s %s', $method, $url, json_encode( $params, JSON_PRETTY_PRINT ) ) );
 		}
@@ -114,13 +115,15 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			$result   = $response->toArray();
 
 			if ( $this->debug === 'yes' ) {
-				$this->log( sprintf( 'Response: %s', $response->getBody() ) );
+                $time = microtime(true) - $start;
+				$this->log( sprintf( '[%.4F] Response: %s', $time, $response->getBody() ) );
 			}
 
 			return $result;
 		} catch ( \PayEx\Api\Exception $e ) {
 			if ( $this->debug === 'yes' ) {
-				$this->log( sprintf( 'Exception: %s', $e->getMessage() ) );
+                $time = microtime(true) - $start;
+				$this->log( sprintf( '[%.4F] Exception: %s', $time, $e->getMessage() ) );
 			}
 
 			throw $e;
