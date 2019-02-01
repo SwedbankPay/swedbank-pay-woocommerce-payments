@@ -432,6 +432,22 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 						throw new Exception( sprintf( 'Action of Transaction #%s already performed', $transaction['number'] ) );
 					}
 
+					if ( $transaction['state'] === 'Failed' ) {
+						$order->update_meta_data( '_transaction_id', $transaction['number'] );
+						$order->save_meta_data();
+
+						$reason = implode('; ', [$transaction['failedReason'], $transaction['failedErrorCode'], $transaction['failedErrorDescription']]);
+						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', 'woocommerce-gateway-payex-psp' ), $reason ) );
+						break;
+					}
+
+					if ( $transaction['state'] === 'Pending' ) {
+						$order->update_meta_data( '_transaction_id', $transaction['number'] );
+						$order->save_meta_data();
+						$order->update_status( 'on-hold', __( 'Transaction pending.', 'woocommerce-gateway-payex-psp' ) );
+						break;
+					}
+
 					$order->update_meta_data( '_payex_payment_state', 'Authorized' );
 					$order->update_meta_data( '_payex_transaction_authorize', $transaction['id'] );
 					$order->update_meta_data( '_transaction_id', $transaction['number'] );
@@ -487,6 +503,22 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 						throw new Exception( sprintf( 'Action of Transaction #%s already performed', $transaction['number'] ) );
 					}
 
+					if ( $transaction['state'] === 'Failed' ) {
+						$order->update_meta_data( '_transaction_id', $transaction['number'] );
+						$order->save_meta_data();
+
+						$reason = implode('; ', [$transaction['failedReason'], $transaction['failedErrorCode'], $transaction['failedErrorDescription']]);
+						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', 'woocommerce-gateway-payex-psp' ), $reason ) );
+						break;
+					}
+
+					if ( $transaction['state'] === 'Pending' ) {
+						$order->update_meta_data( '_transaction_id', $transaction['number'] );
+						$order->save_meta_data();
+						$order->update_status( 'on-hold', __( 'Transaction pending.', 'woocommerce-gateway-payex-psp' ) );
+						break;
+					}
+
 					$order->update_meta_data( '_payex_payment_state', 'Captured' );
 					$order->update_meta_data( '_payex_transaction_capture', $transaction['id'] );
 					$order->save_meta_data();
@@ -498,6 +530,10 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 					// Check is action was performed
 					if ( $order->get_meta('_payex_payment_state' ) === 'Cancellation' ) {
 						throw new Exception( sprintf( 'Action of Transaction #%s already performed', $transaction['number'] ) );
+					}
+
+					if ( $transaction['state'] === 'Failed' ) {
+						throw new Exception( 'Cancellation transaction is failed' );
 					}
 
 					$order->update_meta_data( '_payex_payment_state', 'Cancelled' );

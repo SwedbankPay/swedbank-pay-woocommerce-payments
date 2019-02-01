@@ -725,6 +725,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 			// Extract transaction from list
 			$transaction_id = $data['transaction']['number'];
+			$transaction_state = $data['transaction']['state'];
 			$transaction = px_filter( $transactions, array( 'number' => $transaction_id ) );
 			$this->log( sprintf( 'IPN: Debug: Transaction: %s', var_export( $transaction, TRUE ) ) );
 			if ( ! is_array( $transaction ) || count( $transaction ) === 0 ) {
@@ -732,18 +733,12 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			}
 
 			// Prevent
-			wp_cache_delete( 'payex_transaction_' . $transaction_id, 'transient' );
-			if ( get_transient( 'payex_transaction_' . $transaction_id ) !== FALSE ) {
+			wp_cache_delete( 'payex_transaction_' . $transaction_id . $transaction_state, 'transient' );
+			if ( get_transient( 'payex_transaction_' . $transaction_id . $transaction_state ) !== FALSE ) {
 				throw new Exception( sprintf( 'IPN: Error: Transaction #%s rejected (duplicate request)', $transaction_id ) );
 			}
 
-			set_transient( 'payex_transaction_' . $transaction_id, TRUE, MINUTE_IN_SECONDS * 5 );
-
-			// Check transaction state
-			if ( $transaction['state'] !== 'Completed' ) {
-				$reason = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Transaction failed.', 'woocommerce-gateway-payex-psp' );
-				throw new Exception( sprintf( 'IPN: Error: Transaction %s state %s. Reason: %s', $transaction['number'], $transaction['state'], $reason ) );
-			}
+			set_transient( 'payex_transaction_' . $transaction_id . $transaction_state, TRUE, MINUTE_IN_SECONDS * 5 );
 
 			// Process transaction
 			try {
