@@ -79,6 +79,15 @@ class WC_Payex_Psp {
 			$this,
 			'generate_uuid'
 		), 10, 1 );
+
+		// Init Cron Recurrence Interval
+		add_filter( 'cron_schedules', __CLASS__ . '::add_cron_recurrence_interval' );
+
+		// Init Cron Tasks
+		add_action( 'wp', __CLASS__ . '::add_cron_tasks' );
+
+		// Add Cron Actions
+		add_action( 'payex_process_queue', __CLASS__ . '::process_queue' );
 	}
 
 	public function includes() {
@@ -97,6 +106,7 @@ class WC_Payex_Psp {
 		}
 
 		require_once( dirname( __FILE__ ) . '/includes/class-wc-payex-transactions.php' );
+		require_once( dirname( __FILE__ ) . '/includes/class-wc-payex-queue.php' );
 	}
 
 	/**
@@ -105,6 +115,7 @@ class WC_Payex_Psp {
 	public function install() {
 		// Install Schema
 		WC_Payex_Transactions::instance()->install_schema();
+		WC_Payex_Queue::instance()->install_schema();
 
 		// Set Version
 		if ( ! get_option( 'woocommerce_payex_psp_version' ) ) {
@@ -391,6 +402,49 @@ class WC_Payex_Psp {
 	 */
 	public function generate_uuid( $node ) {
 		return \Ramsey\Uuid\Uuid::uuid5( \Ramsey\Uuid\Uuid::NAMESPACE_OID, $node )->toString();
+	}
+
+	/**
+	 * Cron Recurrence Interval
+	 *
+	 * @param array $schedules
+	 *
+	 * @return mixed
+	 */
+	public static function add_cron_recurrence_interval( $schedules )
+	{
+		$schedules['payex_every_minute'] = array(
+			'interval'  => 60,
+			'display'   => __( 'Every Minute', 'woocommerce-gateway-payex-psp' )
+		);
+
+		return $schedules;
+	}
+
+	/**
+	 * Init Cron Tasks
+	 */
+	public static function add_cron_tasks() {
+		if ( ! wp_next_scheduled( 'woocommerce_payex_queue' ) ) {
+			wp_schedule_event( current_time( 'timestamp' ), 'payex_every_minute', 'payex_process_queue' );
+		}
+	}
+
+	/**
+	 * Process Queue
+	 */
+	public static function process_queue()
+	{
+		$items = WC_Payex_Queue::instance()->getQueue();
+		foreach ($items as $item) {
+			try {
+				do_action( 'payex_webhook_' . $item['payment_method_id'], $item['webhook_data'] );
+			} catch (Exception $e) {
+				// Silence is golden
+			}
+
+			WC_Payex_Queue::instance()->setProcessed( $item['queue_id'] );
+		}
 	}
 }
 
