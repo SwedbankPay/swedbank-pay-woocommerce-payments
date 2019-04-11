@@ -693,13 +693,17 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 	public function return_handler() {
 		$raw_body = file_get_contents( 'php://input' );
 
-		$this->log( sprintf( 'IPN: Initialized %s from %s', $_SERVER['REQUEST_URI'], $_SERVER['REMOTE_ADDR'] ) );
+		$this->log( sprintf( 'Incoming Callback: Initialized %s from %s', $_SERVER['REQUEST_URI'], $_SERVER['REMOTE_ADDR'] ) );
 		$this->log( sprintf( 'Incoming Callback. Post data: %s', var_export( $raw_body, TRUE ) ) );
 
 		// Decode raw body
 		$data = @json_decode( $raw_body, TRUE );
 
 		try {
+		    if ( empty( $data ) ) {
+			    throw new Exception( 'Error: Empty request received' );
+            }
+
 			if ( ! isset( $data['payment'] ) || ! isset( $data['payment']['id'] ) ) {
 				throw new Exception( 'Error: Invalid payment value' );
 			}
@@ -709,15 +713,15 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			}
 
 			$queue_id = WC_Payex_Queue::instance()->enqueue( $raw_body, $this->id );
-			$this->log( sprintf( 'IPN: Webhook enqueued. ID: %s', $queue_id ) );
+			$this->log( sprintf( 'Incoming Callback: Webhook enqueued. ID: %s', $queue_id ) );
 		} catch ( Exception $e ) {
-			$this->log( sprintf( 'IPN: %s', $e->getMessage() ) );
+			$this->log( sprintf( 'Incoming Callback: %s', $e->getMessage() ) );
 		}
 	}
 
 	/**
      * WebHook Handler
-	 * @param $raw_body
+	 * @param string $raw_body
 	 */
 	public function webhook( $raw_body )
     {

@@ -425,7 +425,7 @@ class WC_Payex_Psp {
 	 * Init Cron Tasks
 	 */
 	public static function add_cron_tasks() {
-		if ( ! wp_next_scheduled( 'woocommerce_payex_queue' ) ) {
+		if ( ! wp_next_scheduled( 'payex_process_queue' ) ) {
 			wp_schedule_event( current_time( 'timestamp' ), 'payex_every_minute', 'payex_process_queue' );
 		}
 	}
