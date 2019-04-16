@@ -36,7 +36,6 @@ install:
   - bash tests/bin/install.sh woocommerce_test root '' localhost $WP_VERSION
   - cd ..
   - cd $TRAVIS_BUILD_DIR
-  - composer require --dev phpunit/phpunit ^7
 
 before_script:
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
