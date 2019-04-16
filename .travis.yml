@@ -34,7 +34,7 @@ install:
   - git checkout tags/$WOO_VERSION
   - bash tests/bin/install.sh woocommerce_test root '' localhost $WP_VERSION
   - cd ..
-  - cd PayEx.Psp.WooCommerce
+  - cd $TRAVIS_BUILD_DIR
 
 before_script:
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
