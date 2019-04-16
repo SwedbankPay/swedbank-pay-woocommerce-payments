@@ -28,7 +28,7 @@ matrix:
     - php: hhvm
 
 install:
-  - cd ..
+  - cd /tmp
   - git clone https://github.com/woocommerce/woocommerce
   - cd woocommerce/
   - git checkout tags/$WOO_VERSION
