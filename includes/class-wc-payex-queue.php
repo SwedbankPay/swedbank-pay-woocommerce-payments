@@ -52,17 +52,20 @@ class WC_Payex_Queue {
 	 */
 	public function install_schema() {
 		global $wpdb;
+
 		$query = "
 CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
   `queue_id` int(11) NOT NULL AUTO_INCREMENT,
-  `number` varchar(255) DEFAULT NULL COMMENT 'Transaction Number',
+  `payment_id` varchar(255) DEFAULT NULL COMMENT 'Payment ID',
+  `payment_number` varchar(255) DEFAULT NULL COMMENT 'Transaction Number',
   `transation_id` varchar(50) DEFAULT NULL COMMENT 'Transaction ID',
-  `transaction_data` text COMMENT 'Transaction Data',
+  `transaction_number` varchar(255) DEFAULT NULL COMMENT 'Transaction Number',
+  `webhook_data` text COMMENT 'WebHook Data',
   `created_at` datetime DEFAULT NULL COMMENT 'Incoming date',
-  `processed_at` datetime DEFAULT NULL COMMENT 'Processed date',
   `processed` tinyint(4) DEFAULT '0',
+  `processed_at` datetime DEFAULT NULL COMMENT 'Processing date',
+  `payment_method_id` varchar(255) DEFAULT NULL COMMENT 'Payment Method ID',
   PRIMARY KEY (`queue_id`),
-  UNIQUE KEY `number` (`number`)
 ) ENGINE=INNODB DEFAULT CHARSET={$wpdb->charset};
 		";
 
