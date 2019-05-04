@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
   `processed` tinyint(4) DEFAULT '0' COMMENT 'Is Processed',
   `processed_at` datetime DEFAULT NULL COMMENT 'Processing date',
   `payment_method_id` varchar(255) DEFAULT NULL COMMENT 'Payment Method ID',
+  `order_id` varchar(255) DEFAULT NULL COMMENT 'Order ID',
   PRIMARY KEY (`queue_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET={$wpdb->charset};
 		";
@@ -85,6 +86,9 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 
 		$data = @json_decode( $raw_body, TRUE );
 
+		// Get Order by Payment Id
+		$order_id = px_get_post_id_by_meta( '_payex_payment_id', $data['payment']['id'] );
+
 		$result = $wpdb->insert( $wpdb->prefix . 'payex_queue', array(
 			'payment_id' => $data['payment']['id'],
 			'payment_number' => $data['payment']['number'],
@@ -93,7 +97,8 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 			'webhook_data' => $raw_body,
 			'created_at' => gmdate( 'Y-m-d H:i:s', time() ),
 			'processed' => 0,
-			'payment_method_id' => $payment_method_id
+			'payment_method_id' => $payment_method_id,
+			'order_id' => $order_id ?: $order_id
 		) );
 
 		if ( $result > 0 ) {
@@ -127,13 +132,13 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 
 	/**
 	 * Get Unprocessed entries from Queue
-	 * @return array|object|null
+	 * @return array
 	 */
 	public function getQueue()
 	{
 		global $wpdb;
 
-		$query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}payex_queue WHERE processed = %d ORDER BY created_at ASC;", 0 );
+		$query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}payex_queue WHERE processed = %d ORDER BY transaction_number ASC;", 0 );
 		return $wpdb->get_results( $query, ARRAY_A );
 	}
 

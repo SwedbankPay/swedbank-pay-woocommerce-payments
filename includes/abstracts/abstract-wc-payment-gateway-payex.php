@@ -149,15 +149,14 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	/**
 	 * Get Post Id by Meta
 	 *
+	 * @deprecated
 	 * @param $key
 	 * @param $value
 	 *
 	 * @return null|string
 	 */
 	protected function get_post_id_by_meta( $key, $value ) {
-		global $wpdb;
-
-		return $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;", $key, $value ) );
+		return px_get_post_id_by_meta( $key, $value );
 	}
 
 

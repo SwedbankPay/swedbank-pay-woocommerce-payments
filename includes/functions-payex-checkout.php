@@ -268,3 +268,17 @@ function px_refund_payment( $order, $amount = FALSE, $reason = '' ) {
 	$gateway->refund_payment( $order, $amount, $reason );
 }
 
+/**
+ * Get Post Id by Meta
+ *
+ * @param $key
+ * @param $value
+ *
+ * @return null|string
+ */
+function px_get_post_id_by_meta( $key, $value ) {
+	global $wpdb;
+
+	return $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;", $key, $value ) );
+}
+

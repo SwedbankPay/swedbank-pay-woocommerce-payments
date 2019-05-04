@@ -705,17 +705,25 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
             }
 
 			if ( ! isset( $data['payment'] ) || ! isset( $data['payment']['id'] ) ) {
-				throw new Exception( 'Error: Invalid payment value' );
+				throw new Exception( 'Error: Invalid payment ID' );
 			}
 
-			if ( ! isset( $data['transaction'] ) || ! isset( $data['transaction']['number'] ) ) {
-				throw new Exception( 'Error: Invalid transaction number' );
+			if ( ! isset( $data['transaction'] ) || ! isset( $data['transaction']['id'] ) ) {
+				throw new Exception( 'Error: Invalid transaction ID' );
 			}
 
 			$queue_id = WC_Payex_Queue::instance()->enqueue( $raw_body, $this->id );
 			$this->log( sprintf( 'Incoming Callback: Webhook enqueued. ID: %s', $queue_id ) );
 		} catch ( Exception $e ) {
 			$this->log( sprintf( 'Incoming Callback: %s', $e->getMessage() ) );
+		}
+
+		// Process queue
+		sleep(10);
+		wp_cache_delete( 'payex_enqueue', 'transient' );
+		if ( false === get_transient( 'payex_enqueue' ) ) {
+			set_transient( 'payex_enqueue', true, MINUTE_IN_SECONDS * 5 );
+			WC_Payex_Psp::process_queue();
 		}
 	}
 
@@ -739,7 +747,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 		    // Get Order by Payment Id
 		    $payment_id = $data['payment']['id'];
-		    $order_id   = $this->get_post_id_by_meta( '_payex_payment_id', $payment_id );
+		    $order_id   = px_get_post_id_by_meta( '_payex_payment_id', $payment_id );
 		    if ( ! $order_id ) {
 			    throw new Exception( sprintf( 'Error: Failed to get order Id by Payment Id %s', $payment_id ) );
 		    }
