@@ -435,6 +435,13 @@ class WC_Payex_Psp {
 	 */
 	public static function process_queue()
 	{
+		// Prevent multiple requests
+		if ( get_transient( 'payex_enqueue' ) ) {
+			return;
+		}
+
+		set_transient( 'payex_enqueue', true, MINUTE_IN_SECONDS * 5 );
+
 		$items = WC_Payex_Queue::instance()->getQueue();
 		foreach ($items as $item) {
 			try {
@@ -445,6 +452,8 @@ class WC_Payex_Psp {
 
 			WC_Payex_Queue::instance()->setProcessed( $item['queue_id'] );
 		}
+
+		delete_transient( 'payex_enqueue' );
 	}
 }
 
