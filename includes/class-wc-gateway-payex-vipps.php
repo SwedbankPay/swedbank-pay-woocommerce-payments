@@ -74,6 +74,14 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->method         = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
+		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+
+		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
+		if ( ! filter_var($this->terms_url, FILTER_VALIDATE_URL) ) {
+			$this->terms_url = '';
+		} elseif ( 'https' !== parse_url( $this->terms_url, PHP_URL_SCHEME ) ) {
+			$this->terms_url = '';
+		}
 
 		// Actions
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
@@ -176,6 +184,12 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				'description' => __( 'Checkout Method', 'woocommerce-gateway-payex-psp' ),
 				'default'     => $this->method
 			),
+			'terms_url'        => array(
+				'title'       => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-psp' ),
+				'type'        => 'text',
+				'description' => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-psp' ),
+				'default'     => get_site_url()
+			),
 		);
 	}
 
@@ -270,7 +284,8 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				'urls'           => [
 					'completeUrl' => html_entity_decode( $this->get_return_url( $order ) ),
 					'cancelUrl'   => $order->get_cancel_order_url_raw(),
-					'callbackUrl' => WC()->api_request_url( __CLASS__ )
+					'callbackUrl' => WC()->api_request_url( __CLASS__ ),
+					'termsOfServiceUrl' => $this->terms_url
 				],
 				'payeeInfo'      => [
 					'payeeId'        => $this->payee_id,

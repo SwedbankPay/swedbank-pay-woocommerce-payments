@@ -50,6 +50,12 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 	public $save_cc = 'no';
 
 	/**
+	 * Terms URL
+	 * @var string
+	 */
+	public $terms_url = '';
+
+	/**
 	 * Init
 	 */
 	public function __construct() {
@@ -92,6 +98,14 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->auto_capture   = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
 		$this->save_cc        = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
+		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+
+		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
+		if ( ! filter_var($this->terms_url, FILTER_VALIDATE_URL) ) {
+			$this->terms_url = '';
+		} elseif ( 'https' !== parse_url( $this->terms_url, PHP_URL_SCHEME ) ) {
+			$this->terms_url = '';
+		}
 
 		// Actions
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array(
@@ -231,6 +245,12 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable Save CC feature', 'woocommerce-gateway-payex-psp' ),
 				'default' => $this->save_cc
+			),
+			'terms_url'        => array(
+				'title'       => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-psp' ),
+				'type'        => 'text',
+				'description' => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-psp' ),
+				'default'     => get_site_url()
 			),
 		);
 	}
@@ -479,7 +499,8 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 						'urls'           => array(
 							'completeUrl' => add_query_arg( array( 'verify' => 'true', 'key' => $order->get_order_key() ), $this->get_return_url( $order ) ),
 							'cancelUrl'   => $order->get_cancel_order_url_raw(),
-							'callbackUrl' => WC()->api_request_url( __CLASS__ )
+							'callbackUrl' => WC()->api_request_url( __CLASS__ ),
+							'termsOfServiceUrl' => $this->terms_url
 						),
 						'payeeInfo'      => array(
 							'payeeId'        => $this->payee_id,
@@ -548,7 +569,8 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'urls'           => array(
 					'completeUrl' => $this->get_return_url( $order ),
 					'cancelUrl'   => $order->get_cancel_order_url_raw(),
-					'callbackUrl' => WC()->api_request_url( __CLASS__ )
+					'callbackUrl' => WC()->api_request_url( __CLASS__ ),
+					'termsOfServiceUrl' => $this->terms_url
 				),
 				'payeeInfo'      => array(
 					'payeeId'        => $this->payee_id,
