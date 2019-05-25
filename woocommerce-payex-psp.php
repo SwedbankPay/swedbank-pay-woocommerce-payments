@@ -444,23 +444,34 @@ class WC_Payex_Psp {
 	public static function process_queue()
 	{
 		// Prevent multiple requests
-		if ( get_transient( 'payex_enqueue' ) ) {
-			return;
-		}
+		set_time_limit(0);
+		$times = 0;
 
+		// Wait for unlocking
+		while ( false !== get_transient( 'payex_enqueue' ) ) {
+			sleep( 10 );
+
+			$times ++;
+			if ( $times > 6 ) {
+				break;
+			}
+        }
+
+        // Lock queue processing
 		set_transient( 'payex_enqueue', true, MINUTE_IN_SECONDS * 5 );
 
+		// Process queue
 		$items = WC_Payex_Queue::instance()->getQueue();
 		foreach ($items as $item) {
 			try {
 				do_action( 'payex_webhook_' . $item['payment_method_id'], $item['webhook_data'] );
+				WC_Payex_Queue::instance()->setProcessed( $item['queue_id'] );
 			} catch (Exception $e) {
 				// Silence is golden
 			}
-
-			WC_Payex_Queue::instance()->setProcessed( $item['queue_id'] );
 		}
 
+		// Unlock queue processing
 		delete_transient( 'payex_enqueue' );
 	}
 
