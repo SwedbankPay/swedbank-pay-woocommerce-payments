@@ -88,6 +88,14 @@ class WC_Payex_Psp {
 
 		// Add Cron Actions
 		add_action( 'payex_process_queue', __CLASS__ . '::process_queue' );
+
+		// Add admin menu
+		add_action( 'admin_menu', array( &$this, 'admin_menu' ), 99 );
+
+		// Add Upgrade Notice
+		if ( version_compare( get_option( 'woocommerce_payex_psp_version', '1.1.0' ), '1.1.0', '<' ) ) {
+			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
+		}
 	}
 
 	public function includes() {
@@ -119,7 +127,7 @@ class WC_Payex_Psp {
 
 		// Set Version
 		if ( ! get_option( 'woocommerce_payex_psp_version' ) ) {
-			add_option( 'woocommerce_payex_psp_version', '1.0.0' );
+			add_option( 'woocommerce_payex_psp_version', '1.1.0' );
 		}
 	}
 
@@ -454,6 +462,55 @@ class WC_Payex_Psp {
 		}
 
 		delete_transient( 'payex_enqueue' );
+	}
+
+	/**
+	 * Provide Admin Menu items
+	 */
+	public function admin_menu() {
+		// Add Upgrade Page
+		global $_registered_pages;
+
+		$hookname = get_plugin_page_hookname( 'wc-payex-psp-upgrade', '' );
+		if ( ! empty( $hookname ) ) {
+			add_action( $hookname, __CLASS__ . '::upgrade_page' );
+		}
+
+		$_registered_pages[ $hookname ] = true;
+	}
+
+
+	/**
+	 * Upgrade Page
+	 */
+	public static function upgrade_page() {
+		if ( ! current_user_can( 'update_plugins' ) ) {
+			return;
+		}
+
+		// Run Database Update
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-payex-psp-update.php' );
+		WC_Payex_Psp_Update::update();
+
+		echo esc_html__( 'Upgrade finished.', 'woocommerce-gateway-payex-psp' );
+	}
+
+	/**
+	 * Upgrade Notice
+	 */
+	public static function upgrade_notice() {
+		if ( current_user_can( 'update_plugins' ) ) {
+			?>
+			<div id="message" class="error">
+				<p>
+					<?php
+					echo esc_html__( 'Warning! WooCommerce PayEx PSP Gateway plugin requires to update the database structure.', 'woocommerce-gateway-payex-psp' );
+					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', 'woocommerce-gateway-payex-psp' ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">', '</a>' );
+					?>
+				</p>
+			</div>
+			<?php
+		}
 	}
 }
 
