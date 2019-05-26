@@ -100,9 +100,6 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 			'return_handler'
 		) );
 
-		// Webhook handler
-		add_action( 'payex_webhook_' . $this->id, array( $this, 'webhook' ), 10, 1 );
-
 		// Payment confirmation
 		add_action( 'the_post', array( &$this, 'payment_confirm' ) );
 

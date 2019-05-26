@@ -1,3 +1,9 @@
+Version 1.2.0
+* Transactions processing in Background process
+* Add Terms & Conditions Url option
+* Update Swedish translations
+* Updates of PayEx Transaction Callback
+
 Version 1.1.0
 * Implemented: Tokenization
 * Implemented: WC Subscriptions support

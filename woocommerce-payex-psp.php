@@ -5,7 +5,7 @@
  * Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
  * Author: AAIT Team
  * Author URI: http://aait.se/
- * Version: 1.1.0
+ * Version: 1.2.0
  * Text Domain: woocommerce-gateway-payex-psp
  * Domain Path: /languages
  * WC requires at least: 3.0.0
@@ -28,6 +28,11 @@ class WC_Payex_Psp {
 	);
 
 	/**
+	 * @var WC_Background_Payex_Queue
+	 */
+	public static $background_process;
+
+	/**
 	 * Constructor
 	 */
 	public function __construct() {
@@ -43,6 +48,7 @@ class WC_Payex_Psp {
 			'plugin_action_links'
 		) );
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
+		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
 		add_action( 'woocommerce_loaded', array(
 			$this,
 			'woocommerce_loaded'
@@ -80,20 +86,17 @@ class WC_Payex_Psp {
 			'generate_uuid'
 		), 10, 1 );
 
-		// Init Cron Recurrence Interval
-		add_filter( 'cron_schedules', __CLASS__ . '::add_cron_recurrence_interval' );
-
-		// Init Cron Tasks
-		add_action( 'wp', __CLASS__ . '::add_cron_tasks' );
-
-		// Add Cron Actions
-		add_action( 'payex_process_queue', __CLASS__ . '::process_queue' );
+		// Process payex queue
+		if ( ! is_multisite() ) {
+			add_action( 'customize_save_after', array( $this, 'maybe_process_queue' ) );
+			add_action( 'after_switch_theme', array( $this, 'maybe_process_queue' ) );
+		}
 
 		// Add admin menu
 		add_action( 'admin_menu', array( &$this, 'admin_menu' ), 99 );
 
 		// Add Upgrade Notice
-		if ( version_compare( get_option( 'woocommerce_payex_psp_version', '1.1.0' ), '1.1.0', '<' ) ) {
+		if ( version_compare( get_option( 'woocommerce_payex_psp_version', '1.2.0' ), '1.2.0', '<' ) ) {
 			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
 		}
 	}
@@ -123,7 +126,6 @@ class WC_Payex_Psp {
 	public function install() {
 		// Install Schema
 		WC_Payex_Transactions::instance()->install_schema();
-		WC_Payex_Queue::instance()->install_schema();
 
 		// Set Version
 		if ( ! get_option( 'woocommerce_payex_psp_version' ) ) {
@@ -156,6 +158,15 @@ class WC_Payex_Psp {
 		// Functions
 		include_once( dirname( __FILE__ ) . '/includes/functions-payex-checkout.php' );
 	}
+
+	/**
+	 * WooCommerce Init
+	 */
+	public function woocommerce_init()
+    {
+	    include_once( dirname( __FILE__ ) . '/includes/class-wc-background-payex-queue.php' );
+	    self::$background_process = new WC_Background_Payex_Queue();
+    }
 
 	/**
 	 * WooCommerce Loaded: load classes
@@ -413,67 +424,12 @@ class WC_Payex_Psp {
 	}
 
 	/**
-	 * Cron Recurrence Interval
-	 *
-	 * @param array $schedules
-	 *
-	 * @return mixed
+	 * Dispatch Background Process
 	 */
-	public static function add_cron_recurrence_interval( $schedules )
-	{
-		$schedules['payex_every_minute'] = array(
-			'interval'  => 60,
-			'display'   => __( 'Every Minute', 'woocommerce-gateway-payex-psp' )
-		);
-
-		return $schedules;
-	}
-
-	/**
-	 * Init Cron Tasks
-	 */
-	public static function add_cron_tasks() {
-		if ( ! wp_next_scheduled( 'payex_process_queue' ) ) {
-			wp_schedule_event( current_time( 'timestamp' ), 'payex_every_minute', 'payex_process_queue' );
-		}
-	}
-
-	/**
-	 * Process Queue
-	 */
-	public static function process_queue()
-	{
-		// Prevent multiple requests
-		set_time_limit(0);
-		$times = 0;
-
-		// Wait for unlocking
-		while ( false !== get_transient( 'payex_enqueue' ) ) {
-			sleep( 10 );
-
-			$times ++;
-			if ( $times > 6 ) {
-				break;
-			}
-        }
-
-        // Lock queue processing
-		set_transient( 'payex_enqueue', true, MINUTE_IN_SECONDS * 5 );
-
-		// Process queue
-		$items = WC_Payex_Queue::instance()->getQueue();
-		foreach ($items as $item) {
-			try {
-				do_action( 'payex_webhook_' . $item['payment_method_id'], $item['webhook_data'] );
-				WC_Payex_Queue::instance()->setProcessed( $item['queue_id'] );
-			} catch (Exception $e) {
-				// Silence is golden
-			}
-		}
-
-		// Unlock queue processing
-		delete_transient( 'payex_enqueue' );
-	}
+	public function maybe_process_queue()
+    {
+	    self::$background_process->dispatch();
+    }
 
 	/**
 	 * Provide Admin Menu items

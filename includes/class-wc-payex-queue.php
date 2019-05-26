@@ -4,6 +4,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
+/**
+ * Class WC_Payex_Queue
+ * @deprecated
+ */
 class WC_Payex_Queue {
 	/**
 	 * The single instance of the class.

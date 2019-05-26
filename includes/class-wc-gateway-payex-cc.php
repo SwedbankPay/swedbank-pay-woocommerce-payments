@@ -124,9 +124,6 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			'return_handler'
 		) );
 
-		// Webhook handler
-		add_action( 'payex_webhook_' . $this->id, array( $this, 'webhook' ), 10, 1 );
-
 		// Payment confirmation
 		add_action( 'the_post', array( &$this, 'payment_confirm' ) );
 
@@ -734,80 +731,19 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				throw new Exception( 'Error: Invalid transaction ID' );
 			}
 
-			$queue_id = WC_Payex_Queue::instance()->enqueue( $raw_body, $this->id );
-			$this->log( sprintf( 'Incoming Callback: Webhook enqueued. ID: %s', $queue_id ) );
+			// Create Background Process Task
+			$background_process = new WC_Background_Payex_Queue();
+			$background_process->push_to_queue( array(
+				'payment_method_id' => $this->id,
+				'webhook_data' => $raw_body,
+            ) );
+			$background_process->save();
+
+			$this->log( sprintf( 'Incoming Callback: Task enqueued. Transaction ID: %s', $data['transaction']['number'] ) );
 		} catch ( Exception $e ) {
 			$this->log( sprintf( 'Incoming Callback: %s', $e->getMessage() ) );
 		}
-
-		// Queue processing should be triggered using wp-cron
-        // There is failback
-        WC_Payex_Psp::process_queue();
 	}
-
-	/**
-     * WebHook Handler
-	 * @param string $raw_body
-	 */
-	public function webhook( $raw_body )
-    {
-	    // Decode raw body
-	    $data = @json_decode( $raw_body, TRUE );
-
-	    try {
-		    if ( ! isset( $data['payment'] ) || ! isset( $data['payment']['id'] ) ) {
-			    throw new Exception( 'Error: Invalid payment value' );
-		    }
-
-		    if ( ! isset( $data['transaction'] ) || ! isset( $data['transaction']['number'] ) ) {
-			    throw new Exception( 'Error: Invalid transaction number' );
-		    }
-
-		    // Get Order by Payment Id
-		    $payment_id = $data['payment']['id'];
-		    $order_id   = px_get_post_id_by_meta( '_payex_payment_id', $payment_id );
-		    if ( ! $order_id ) {
-			    throw new Exception( sprintf( 'Error: Failed to get order Id by Payment Id %s', $payment_id ) );
-		    }
-
-		    // Get Order
-		    $order = wc_get_order( $order_id );
-		    if ( ! $order ) {
-			    throw new Exception( sprintf( 'Error: Failed to get order by Id %s', $order_id ) );
-		    }
-
-		    // Fetch transactions list
-		    $result       = $this->request( 'GET', $payment_id . '/transactions' );
-		    $transactions = $result['transactions']['transactionList'];
-		    $this->transactions->import_transactions( $transactions, $order_id );
-
-		    // Extract transaction from list
-		    $transaction_id = $data['transaction']['number'];
-		    $transaction_state = $data['transaction']['state'];
-		    $transaction = px_filter( $transactions, array( 'number' => $transaction_id ) );
-		    $this->log( sprintf( 'WEBHOOK: Debug: Transaction: %s', var_export( $transaction, TRUE ) ) );
-		    if ( ! is_array( $transaction ) || count( $transaction ) === 0 ) {
-			    throw new Exception( sprintf( 'WEBHOOK: Error: Failed to fetch transaction number #%s', $transaction_id ) );
-		    }
-
-		    // Prevent
-		    wp_cache_delete( 'payex_transaction_' . $transaction_id . $transaction_state, 'transient' );
-		    if ( get_transient( 'payex_transaction_' . $transaction_id . $transaction_state ) !== FALSE ) {
-			    throw new Exception( sprintf( 'WEBHOOK: Error: Transaction #%s rejected (duplicate request)', $transaction_id ) );
-		    }
-
-		    set_transient( 'payex_transaction_' . $transaction_id . $transaction_state, TRUE, MINUTE_IN_SECONDS * 5 );
-
-		    // Process transaction
-		    try {
-			    $this->process_transaction( $transaction, $order );
-		    } catch ( Exception $e ) {
-			    $this->log( sprintf( 'WEBHOOK: Warning: Process Transaction: %s', $e->getMessage() ) );
-		    }
-	    } catch ( Exception $e ) {
-		    $this->log( sprintf( 'WEBHOOK: %s', $e->getMessage() ) );
-	    }
-    }
 
 	/**
 	 * Check is Capture possible
