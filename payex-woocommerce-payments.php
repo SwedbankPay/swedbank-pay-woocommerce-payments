@@ -473,7 +473,7 @@ class WC_Payex_Psp {
 			<div id="message" class="error">
 				<p>
 					<?php
-					echo esc_html__( 'Warning! WooCommerce PayEx PSP Gateway plugin requires to update the database structure.', 'woocommerce-gateway-payex-psp' );
+					echo esc_html__( 'Warning! PayEx WooCommerce payments plugin requires to update the database structure.', 'woocommerce-gateway-payex-psp' );
 					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', 'woocommerce-gateway-payex-psp' ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">', '</a>' );
 					?>
 				</p>
