@@ -5,7 +5,7 @@
  * Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
  * Author: AAIT Team
  * Author URI: http://aait.se/
- * License: GNU Apache License 2.0
+ * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
  * Version: 1.2.0
  * Text Domain: woocommerce-gateway-payex-psp
