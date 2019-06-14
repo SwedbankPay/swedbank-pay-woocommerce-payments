@@ -3,11 +3,11 @@ Installation and configuration manual for PayEx WooCommerce Payments
 
 This plugin is using PayEx RESTful API and specifically the PayEx Payment Instruments section. For documentation about the API see https://developer.payex.com/xwiki/wiki/developer/view/Main/ecommerce/payex-payment-instruments/
 
-##Prerequisites
+## Prerequisites
 
 1. WooCommerce 3.*
 
-##Installation
+## Installation
 
 Before you update to a newer version of WooCommerce, always make a backup as we don’t guarantee functionality of new versions of WooCommerce. We can only guarantee that the modules work in the standard theme and checkout of WooCommerce.
 
