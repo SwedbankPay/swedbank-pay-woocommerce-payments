@@ -156,7 +156,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		add_filter( 'woocommerce_subscription_validate_payment_meta', array(
 			$this,
 			'validate_subscription_payment_meta'
-		), 10, 2 );
+		), 10, 3 );
 
 		add_action( 'wcs_save_other_payment_meta', array( $this, 'save_subscription_payment_meta' ), 10, 4 );
 
