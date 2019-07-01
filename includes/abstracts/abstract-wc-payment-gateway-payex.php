@@ -41,9 +41,9 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		if ( ! $this->client ) {
 			global $wp_version;
 			$plugin_version = get_file_data(
-				dirname(__FILE__) . '/../../woocommerce-payex-psp.php',
+				dirname(__FILE__) . '/../../payex-woocommerce-payments.php',
 				array('Version'),
-				'woocommerce-gateway-payex-psp'
+				'payex-woocommerce-payments'
 			);
 
 			$this->client = new \PayEx\Api\Client();
@@ -244,7 +244,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 				$item[] = array(
 					'type'              => 'discount',
-					'name'              => __( 'Discount', 'woocommerce-gateway-payex-psp' ),
+					'name'              => __( 'Discount', 'payex-woocommerce-payments' ),
 					'qty'               => 1,
 					'price_with_tax'    => sprintf( "%.2f", - 1 * $discountWithTax ),
 					'price_without_tax' => sprintf( "%.2f", - 1 * $discount ),
@@ -313,7 +313,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 			$item[] = array(
 				'type'              => 'discount',
-				'name'              => __( 'Discount', 'woocommerce-gateway-payex-psp' ),
+				'name'              => __( 'Discount', 'payex-woocommerce-payments' ),
 				'qty'               => 1,
 				'price_with_tax'    => sprintf( "%.2f", - 1 * $discountWithTax ),
 				'price_without_tax' => sprintf( "%.2f", - 1 * $discount ),
@@ -436,14 +436,14 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 						$order->save_meta_data();
 
 						$reason = implode('; ', [$transaction['failedReason'], $transaction['failedErrorCode'], $transaction['failedErrorDescription']]);
-						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', 'woocommerce-gateway-payex-psp' ), $reason ) );
+						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', 'payex-woocommerce-payments' ), $reason ) );
 						break;
 					}
 
 					if ( $transaction['state'] === 'Pending' ) {
 						$order->update_meta_data( '_transaction_id', $transaction['number'] );
 						$order->save_meta_data();
-						$order->update_status( 'on-hold', __( 'Transaction pending.', 'woocommerce-gateway-payex-psp' ) );
+						$order->update_status( 'on-hold', __( 'Transaction pending.', 'payex-woocommerce-payments' ) );
 						break;
 					}
 
@@ -458,7 +458,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 						wc_reduce_stock_levels( $order->get_id() );
 					}
 
-					$order->update_status( 'on-hold', __( 'Payment authorized.', 'woocommerce-gateway-payex-psp' ) );
+					$order->update_status( 'on-hold', __( 'Payment authorized.', 'payex-woocommerce-payments' ) );
 
 					// Save Payment Token
 					if ( $order->get_meta( '_payex_generate_token' ) === '1' &&
@@ -487,7 +487,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 							$token->set_masked_pan( $maskedPan );
 							$token->save();
 							if ( ! $token->get_id() ) {
-								throw new Exception( __( 'There was a problem adding the card.', 'woocommerce-gateway-payex-psp' ) );
+								throw new Exception( __( 'There was a problem adding the card.', 'payex-woocommerce-payments' ) );
 							}
 
 							// Add payment token
@@ -507,14 +507,14 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 						$order->save_meta_data();
 
 						$reason = implode('; ', [$transaction['failedReason'], $transaction['failedErrorCode'], $transaction['failedErrorDescription']]);
-						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', 'woocommerce-gateway-payex-psp' ), $reason ) );
+						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', 'payex-woocommerce-payments' ), $reason ) );
 						break;
 					}
 
 					if ( $transaction['state'] === 'Pending' ) {
 						$order->update_meta_data( '_transaction_id', $transaction['number'] );
 						$order->save_meta_data();
-						$order->update_status( 'on-hold', __( 'Transaction pending.', 'woocommerce-gateway-payex-psp' ) );
+						$order->update_status( 'on-hold', __( 'Transaction pending.', 'payex-woocommerce-payments' ) );
 						break;
 					}
 
@@ -523,7 +523,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 					$order->save_meta_data();
 
 					$order->payment_complete( $transaction['number'] );
-					$order->add_order_note( __( 'Transaction captured.', 'woocommerce-gateway-payex-psp' ) );
+					$order->add_order_note( __( 'Transaction captured.', 'payex-woocommerce-payments' ) );
 					break;
 				case 'Cancellation':
 					// Check is action was performed
@@ -541,9 +541,9 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 					$order->save_meta_data();
 
 					if ( ! $order->has_status( 'cancelled' ) ) {
-						$order->update_status( 'cancelled', __( 'Transaction cancelled.', 'woocommerce-gateway-payex-psp' ) );
+						$order->update_status( 'cancelled', __( 'Transaction cancelled.', 'payex-woocommerce-payments' ) );
 					} else {
-						$order->add_order_note( __( 'Transaction cancelled.', 'woocommerce-gateway-payex-psp' ) );
+						$order->add_order_note( __( 'Transaction cancelled.', 'payex-woocommerce-payments' ) );
 					}
 					break;
 				case 'Reversal':

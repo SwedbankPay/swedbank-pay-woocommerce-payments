@@ -63,7 +63,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 		$this->id           = 'payex_psp_cc';
 		$this->has_fields   = TRUE;
-		$this->method_title = __( 'Credit Card', 'woocommerce-gateway-payex-psp' );
+		$this->method_title = __( 'Credit Card', 'payex-woocommerce-payments' );
 		$this->icon         = apply_filters( 'woocommerce_payex_cc_icon', plugins_url( '/assets/images/creditcards.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
@@ -179,74 +179,74 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'enabled'        => array(
-				'title'   => __( 'Enable/Disable', 'woocommerce-gateway-payex-psp' ),
+				'title'   => __( 'Enable/Disable', 'payex-woocommerce-payments' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', 'woocommerce-gateway-payex-psp' ),
+				'label'   => __( 'Enable plugin', 'payex-woocommerce-payments' ),
 				'default' => 'no'
 			),
 			'title'          => array(
-				'title'       => __( 'Title', 'woocommerce-gateway-payex-psp' ),
+				'title'       => __( 'Title', 'payex-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce-gateway-payex-psp' ),
-				'default'     => __( 'Credit Card', 'woocommerce-gateway-payex-psp' )
+				'description' => __( 'This controls the title which the user sees during checkout.', 'payex-woocommerce-payments' ),
+				'default'     => __( 'Credit Card', 'payex-woocommerce-payments' )
 			),
 			'description'    => array(
-				'title'       => __( 'Description', 'woocommerce-gateway-payex-psp' ),
+				'title'       => __( 'Description', 'payex-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', 'woocommerce-gateway-payex-psp' ),
-				'default'     => __( 'Credit Card', 'woocommerce-gateway-payex-psp' ),
+				'description' => __( 'This controls the description which the user sees during checkout.', 'payex-woocommerce-payments' ),
+				'default'     => __( 'Credit Card', 'payex-woocommerce-payments' ),
 			),
 			'merchant_token' => array(
-				'title'       => __( 'Merchant Token', 'woocommerce-gateway-payex-psp' ),
+				'title'       => __( 'Merchant Token', 'payex-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'woocommerce-gateway-payex-psp' ),
+				'description' => __( 'Merchant Token', 'payex-woocommerce-payments' ),
 				'default'     => $this->merchant_token
 			),
 			'payee_id'       => array(
-				'title'       => __( 'Payee Id', 'woocommerce-gateway-payex-psp' ),
+				'title'       => __( 'Payee Id', 'payex-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'Payee Id', 'woocommerce-gateway-payex-psp' ),
+				'description' => __( 'Payee Id', 'payex-woocommerce-payments' ),
 				'default'     => $this->payee_id
 			),
 			'testmode'       => array(
-				'title'   => __( 'Test Mode', 'woocommerce-gateway-payex-psp' ),
+				'title'   => __( 'Test Mode', 'payex-woocommerce-payments' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable PayEx Test Mode', 'woocommerce-gateway-payex-psp' ),
+				'label'   => __( 'Enable PayEx Test Mode', 'payex-woocommerce-payments' ),
 				'default' => $this->testmode
 			),
 			'debug'          => array(
-				'title'   => __( 'Debug', 'woocommerce-gateway-payex-psp' ),
+				'title'   => __( 'Debug', 'payex-woocommerce-payments' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable logging', 'woocommerce-gateway-payex-psp' ),
+				'label'   => __( 'Enable logging', 'payex-woocommerce-payments' ),
 				'default' => $this->debug
 			),
 			'culture'        => array(
-				'title'       => __( 'Language', 'woocommerce-gateway-payex-psp' ),
+				'title'       => __( 'Language', 'payex-woocommerce-payments' ),
 				'type'        => 'select',
 				'options'     => array(
 					'en-US' => 'English',
 					'sv-SE' => 'Swedish',
 					'nb-NO' => 'Norway',
 				),
-				'description' => __( 'Language of pages displayed by PayEx during payment.', 'woocommerce-gateway-payex-psp' ),
+				'description' => __( 'Language of pages displayed by PayEx during payment.', 'payex-woocommerce-payments' ),
 				'default'     => $this->culture
 			),
 			'auto_capture'   => array(
-				'title'   => __( 'Auto Capture', 'woocommerce-gateway-payex-psp' ),
+				'title'   => __( 'Auto Capture', 'payex-woocommerce-payments' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Auto Capture', 'woocommerce-gateway-payex-psp' ),
+				'label'   => __( 'Enable Auto Capture', 'payex-woocommerce-payments' ),
 				'default' => $this->auto_capture
 			),
 			'save_cc'        => array(
-				'title'   => __( 'Save CC', 'woocommerce-gateway-payex-psp' ),
+				'title'   => __( 'Save CC', 'payex-woocommerce-payments' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Save CC feature', 'woocommerce-gateway-payex-psp' ),
+				'label'   => __( 'Enable Save CC feature', 'payex-woocommerce-payments' ),
 				'default' => $this->save_cc
 			),
 			'terms_url'        => array(
-				'title'       => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-psp' ),
+				'title'       => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'Terms & Conditions Url', 'woocommerce-gateway-payex-psp' ),
+				'description' => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
 				'default'     => get_site_url()
 			),
 		);
@@ -323,7 +323,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			'payment' => array(
 				'operation'      => 'Verify',
 				'currency'       => get_woocommerce_currency(),
-				'description'    => __( 'Verification of Credit Card', 'woocommerce-gateway-payex-psp' ),
+				'description'    => __( 'Verification of Credit Card', 'payex-woocommerce-payments' ),
 				'payerReference' => $customer_uuid,
 				'generatePaymentToken' => TRUE,
 				'pageStripdown' => FALSE,
@@ -373,7 +373,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 	{
 		try {
 			if ( ! $payment_id = WC()->session->get( 'verification_payment_id' ) ) {
-				throw new Exception( __( 'There was a problem adding the card.', 'woocommerce-gateway-payex-psp' ) );
+				throw new Exception( __( 'There was a problem adding the card.', 'payex-woocommerce-payments' ) );
 			}
 
 			$result = $this->request( 'GET', $payment_id . '/verifications' );
@@ -400,12 +400,12 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				// Save Credit Card
 				$token->save();
 				if ( ! $token->get_id() ) {
-					throw new Exception( __( 'There was a problem adding the card.', 'woocommerce-gateway-payex-psp' ) );
+					throw new Exception( __( 'There was a problem adding the card.', 'payex-woocommerce-payments' ) );
 				}
 
 				WC()->session->__unset( 'verification_payment_id' );
 
-				wc_add_notice( __( 'Payment method successfully added.', 'woocommerce-gateway-payex-psp' ) );
+				wc_add_notice( __( 'Payment method successfully added.', 'payex-woocommerce-payments' ) );
 				wp_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
 				exit();
 			}
@@ -445,14 +445,14 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		if ( $token_id !== 'new' ) {
 			$token = new WC_Payment_Token_Payex( $token_id );
 			if ( ! $token->get_id() ) {
-				wc_add_notice( __( 'Failed to load token.', 'woocommerce-gateway-payex-psp' ), 'error' );
+				wc_add_notice( __( 'Failed to load token.', 'payex-woocommerce-payments' ), 'error' );
 
 				return FALSE;
 			}
 
 			// Check access
 			if ( $token->get_user_id() !== $order->get_user_id() ) {
-				wc_add_notice( __( 'Access denied.', 'woocommerce-gateway-payex-psp' ), 'error' );
+				wc_add_notice( __( 'Access denied.', 'payex-woocommerce-payments' ), 'error' );
 			}
 
 			$generate_token = false;
@@ -487,7 +487,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					'payment' => array(
 						'operation'      => 'Verify',
 						'currency'       => $currency,
-						'description'    => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-psp' ), $order->get_order_number() ),
+						'description'    => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
 						'payerReference' => $customer_uuid,
 						'generatePaymentToken' => true,
 						'pageStripdown'  => false,
@@ -526,7 +526,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				$order->save_meta_data();
 
 				// Redirect
-				$order->add_order_note( __( 'Customer has been redirected to PayEx.', 'woocommerce-gateway-payex-psp' ) );
+				$order->add_order_note( __( 'Customer has been redirected to PayEx.', 'payex-woocommerce-payments' ) );
 
 				return array(
 					'result'   => 'success',
@@ -557,7 +557,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 						'vatAmount' => '0'
 					)
 				),
-				'description'    => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-psp' ), $order->get_order_number() ),
+				'description'    => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
 				'payerReference' => $customer_uuid,
 				'generatePaymentToken' => $generate_token,
 				'pageStripdown' => false,
@@ -611,7 +611,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		$order->save_meta_data();
 
 		// Redirect
-		$order->add_order_note( __( 'Customer has been redirected to PayEx.', 'woocommerce-gateway-payex-psp' ) );
+		$order->add_order_note( __( 'Customer has been redirected to PayEx.', 'payex-woocommerce-payments' ) );
 
 		return array(
 			'result'   => 'success',
@@ -693,11 +693,11 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
                 }
                 return;
 			case 'Failed':
-				$order->update_status( 'failed', __( 'Payment failed.', 'woocommerce-gateway-payex-psp' ) );
+				$order->update_status( 'failed', __( 'Payment failed.', 'payex-woocommerce-payments' ) );
 
 				return;
 			case 'Aborted':
-				$order->cancel_order( __( 'Payment canceled.', 'woocommerce-gateway-payex-psp' ) );
+				$order->cancel_order( __( 'Payment canceled.', 'payex-woocommerce-payments' ) );
 
 				return;
 			default:
@@ -878,7 +878,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 		$capture_href = self::get_operation( $result['operations'], 'create-capture' );
 		if ( empty( $capture_href ) ) {
-			throw new Exception( __( 'Capture unavailable', 'woocommerce-gateway-payex-psp' ) );
+			throw new Exception( __( 'Capture unavailable', 'payex-woocommerce-payments' ) );
 		}
 
 		// Order Info
@@ -907,16 +907,16 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				$order->update_meta_data( '_payex_transaction_capture', $transaction['id'] );
 				$order->save_meta_data();
 
-				$order->add_order_note( __( 'Transaction captured.', 'woocommerce-gateway-payex-psp' ) );
+				$order->add_order_note( __( 'Transaction captured.', 'payex-woocommerce-payments' ) );
 				$order->payment_complete( $transaction['number'] );
 
 				break;
 			case 'Initialized':
-				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', 'woocommerce-gateway-payex-psp' ), $transaction['state'] ) );
+				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', 'payex-woocommerce-payments' ), $transaction['state'] ) );
 				break;
 			case 'Failed':
 			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', 'woocommerce-gateway-payex-psp' );
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', 'payex-woocommerce-payments' );
 				throw new Exception( $message );
 				break;
 		}
@@ -949,7 +949,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 		$cancel_href = self::get_operation( $result['operations'], 'create-cancellation' );
 		if ( empty( $cancel_href ) ) {
-			throw new Exception( __( 'Cancellation unavailable', 'woocommerce-gateway-payex-psp' ) );
+			throw new Exception( __( 'Cancellation unavailable', 'payex-woocommerce-payments' ) );
 		}
 
 		// Get Order UUID
@@ -975,18 +975,18 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				$order->save_meta_data();
 
 				if ( ! $order->has_status('cancelled') ) {
-					$order->update_status( 'cancelled', __( 'Transaction cancelled.', 'woocommerce-gateway-payex-psp' ) );
+					$order->update_status( 'cancelled', __( 'Transaction cancelled.', 'payex-woocommerce-payments' ) );
 				} else {
-					$order->add_order_note( __( 'Transaction cancelled.', 'woocommerce-gateway-payex-psp' ) );
+					$order->add_order_note( __( 'Transaction cancelled.', 'payex-woocommerce-payments' ) );
 				}
 				break;
 			case 'Initialized':
 			case 'AwaitingActivity':
-				$order->add_order_note( sprintf( __( 'Transaction cancellation status: %s.', 'woocommerce-gateway-payex-psp' ), $transaction['state'] ) );
+				$order->add_order_note( sprintf( __( 'Transaction cancellation status: %s.', 'payex-woocommerce-payments' ), $transaction['state'] ) );
 				break;
 			case 'Failed':
 			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Cancel failed.', 'woocommerce-gateway-payex-psp' );
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Cancel failed.', 'payex-woocommerce-payments' );
 				throw new Exception( $message );
 				break;
 		}
@@ -1021,7 +1021,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 		$reversal_href = self::get_operation( $result['operations'], 'create-reversal' );
 		if ( empty( $reversal_href ) ) {
-			throw new Exception( __( 'Refund unavailable', 'woocommerce-gateway-payex-psp' ) );
+			throw new Exception( __( 'Refund unavailable', 'payex-woocommerce-payments' ) );
 		}
 
 		// Get Order UUID
@@ -1051,11 +1051,11 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				break;
 			case 'Initialized':
 			case 'AwaitingActivity':
-				$order->add_order_note( sprintf( __( 'Transaction reversal status: %s.', 'woocommerce-gateway-payex-psp' ), $transaction['state'] ) );
+				$order->add_order_note( sprintf( __( 'Transaction reversal status: %s.', 'payex-woocommerce-payments' ), $transaction['state'] ) );
 				break;
 			case 'Failed':
 			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Refund failed.', 'woocommerce-gateway-payex-psp' );
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Refund failed.', 'payex-woocommerce-payments' );
 				throw new Exception( $message );
 				break;
 		}
@@ -1096,7 +1096,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			];
 			$result = $this->request( 'PATCH', $abort_href, $params );
 			if ( is_array( $result ) && $result['payment']['state'] === 'Aborted' ) {
-				$order->add_order_note( __( 'Payment aborted', 'woocommerce-gateway-payex-psp' ) );
+				$order->add_order_note( __( 'Payment aborted', 'payex-woocommerce-payments' ) );
 			}
 		} catch ( Exception $e ) {
 			$this->log( sprintf( 'Pending Cancel. Error: %s', $e->getMessage() ) );
@@ -1284,7 +1284,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					    'paymentToken'   => $token->get_token(),
 					    'currency'       => $renewal_order->get_currency(),
 					    'amount'         => round( $amount_to_charge * 100 ),
-					    'description'    => sprintf( __( 'Order #%s', 'woocommerce-gateway-payex-psp' ), $renewal_order->get_order_number() ),
+					    'description'    => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $renewal_order->get_order_number() ),
 					    'payerReference' => $customer_uuid,
 					    'userAgent'      => $renewal_order->get_customer_user_agent(),
 					    'language'       => $this->culture,
@@ -1321,7 +1321,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 				    // Check transaction state
 				    if ( $transaction['state'] !== 'Completed' ) {
-					    $reason = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Transaction failed.', 'woocommerce-gateway-payex-psp' );
+					    $reason = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Transaction failed.', 'payex-woocommerce-payments' );
 					    $this->log( sprintf( '[WC_Subscriptions]: Warning: Transaction %s state %s. Reason: %s', $transaction['number'], $transaction['state'], $reason ) );
 					    continue;
 				    }
@@ -1347,7 +1347,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 			    if ( $transaction = px_filter( $transactions, array( 'state' => 'Failed' ) ) ) {
 				    $this->log( sprintf( '[WC_Subscriptions]: Failed to perform payment: %s', $transaction['id'] ) );
-				    throw new Exception( __( 'Failed to perform payment', 'woocommerce-gateway-payex-psp' ), 'error' );
+				    throw new Exception( __( 'Failed to perform payment', 'payex-woocommerce-payments' ), 'error' );
 			    }
 		    }
         } catch ( Exception $e ) {
@@ -1376,7 +1376,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				continue;
 			}
 
-			return sprintf( __( 'Via %s card ending in %s/%s', 'woocommerce-gateway-payex-psp' ),
+			return sprintf( __( 'Via %s card ending in %s/%s', 'payex-woocommerce-payments' ),
                 $token->get_masked_pan(),
                 $token->get_expiry_month(),
                 $token->get_expiry_year()

@@ -188,15 +188,15 @@ function px_capture_payment( $order, $amount = FALSE ) {
 	/** @var WC_Payment_Gateway_Payex_Interface $gateway */
 	$gateway = px_payment_method_instance( $order );
 	if ( ! $gateway ) {
-		throw new \Exception( __( 'Unable to get payment instance.', 'woocommerce-gateway-payex-psp' ) );
+		throw new \Exception( __( 'Unable to get payment instance.', 'payex-woocommerce-payments' ) );
 	}
 
 	if ( ! method_exists( $gateway, 'capture_payment' ) ) {
-		throw new \Exception( sprintf( __( 'Capture failure: %s', 'woocommerce-gateway-payex-psp' ), 'Payment method don\'t support this feature' ) );
+		throw new \Exception( sprintf( __( 'Capture failure: %s', 'payex-woocommerce-payments' ), 'Payment method don\'t support this feature' ) );
 	}
 
 	if ( ! $gateway->can_capture( $order, $amount ) ) {
-		throw new \Exception( __( 'Capture action is not available.', 'woocommerce-gateway-payex-psp' ) );
+		throw new \Exception( __( 'Capture action is not available.', 'payex-woocommerce-payments' ) );
 	}
 
 	// Disable status change hook
@@ -220,15 +220,15 @@ function px_cancel_payment( $order ) {
 	/** @var WC_Payment_Gateway_Payex_Interface $gateway */
 	$gateway = px_payment_method_instance( $order );
 	if ( ! $gateway ) {
-		throw new \Exception( __( 'Unable to get payment instance.', 'woocommerce-gateway-payex-psp' ) );
+		throw new \Exception( __( 'Unable to get payment instance.', 'payex-woocommerce-payments' ) );
 	}
 
 	if ( ! method_exists( $gateway, 'cancel_payment' ) ) {
-		throw new \Exception( sprintf( __( 'Cancel failure: %s', 'woocommerce-gateway-payex-psp' ), 'Payment method don\'t support this feature' ) );
+		throw new \Exception( sprintf( __( 'Cancel failure: %s', 'payex-woocommerce-payments' ), 'Payment method don\'t support this feature' ) );
 	}
 
 	if ( ! $gateway->can_cancel( $order ) ) {
-		throw new \Exception( __( 'Cancel action is not available.', 'woocommerce-gateway-payex-psp' ) );
+		throw new \Exception( __( 'Cancel action is not available.', 'payex-woocommerce-payments' ) );
 	}
 
 	// Disable status change hook
@@ -254,15 +254,15 @@ function px_refund_payment( $order, $amount = FALSE, $reason = '' ) {
 	/** @var WC_Payment_Gateway_Payex_Interface $gateway */
 	$gateway = px_payment_method_instance( $order );
 	if ( ! $gateway ) {
-		throw new \Exception( __( 'Unable to get payment instance.', 'woocommerce-gateway-payex-psp' ) );
+		throw new \Exception( __( 'Unable to get payment instance.', 'payex-woocommerce-payments' ) );
 	}
 
 	if ( ! method_exists( $gateway, 'refund_payment' ) ) {
-		throw new \Exception( sprintf( __( 'Refund failure: %s', 'woocommerce-gateway-payex-psp' ), 'Payment method don\'t support this feature' ) );
+		throw new \Exception( sprintf( __( 'Refund failure: %s', 'payex-woocommerce-payments' ), 'Payment method don\'t support this feature' ) );
 	}
 
 	if ( ! $gateway->can_refund( $order, $amount ) ) {
-		throw new \Exception( __( 'Refund action is not available.', 'woocommerce-gateway-payex-psp' ) );
+		throw new \Exception( __( 'Refund action is not available.', 'payex-woocommerce-payments' ) );
 	}
 
 	$gateway->refund_payment( $order, $amount, $reason );

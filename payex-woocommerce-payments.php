@@ -8,7 +8,7 @@
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
  * Version: 1.2.0
- * Text Domain: woocommerce-gateway-payex-psp
+ * Text Domain: payex-woocommerce-payments
  * Domain Path: /languages
  * WC requires at least: 3.0.0
  * WC tested up to: 3.5.1
@@ -144,7 +144,7 @@ class WC_Payex_Psp {
 	 */
 	public function plugin_action_links( $links ) {
 		$plugin_links = array(
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_cc' ) . '">' . __( 'Settings', 'woocommerce-gateway-payex-psp' ) . '</a>'
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_cc' ) . '">' . __( 'Settings', 'payex-woocommerce-payments' ) . '</a>'
 		);
 
 		return array_merge( $plugin_links, $links );
@@ -155,7 +155,7 @@ class WC_Payex_Psp {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( 'woocommerce-gateway-payex-psp', FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( 'payex-woocommerce-payments', FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		// Functions
 		include_once( dirname( __FILE__ ) . '/includes/functions-payex-checkout.php' );
@@ -268,7 +268,7 @@ class WC_Payex_Psp {
 						WC_Admin_Meta_Boxes::add_error( $message );
 
 						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-payex-psp' ), $message ) );
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'payex-woocommerce-payments' ), $message ) );
 					}
 				}
 				break;
@@ -283,7 +283,7 @@ class WC_Payex_Psp {
 						WC_Admin_Meta_Boxes::add_error( $message );
 
 						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'woocommerce-gateway-payex-psp' ), $message ) );
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'payex-woocommerce-payments' ), $message ) );
 					}
 				}
 				break;
@@ -305,7 +305,7 @@ class WC_Payex_Psp {
 				if ( ! empty( $payment_id ) ) {
 					add_meta_box(
 						'payex_payment_actions',
-						__( 'PayEx Payments Actions', 'woocommerce-gateway-payex-psp' ),
+						__( 'PayEx Payments Actions', 'payex-woocommerce-payments' ),
 						__CLASS__ . '::order_meta_box_payment_actions',
 						'shop_order',
 						'side',
@@ -367,7 +367,7 @@ class WC_Payex_Psp {
 			// Localize the script
 			$translation_array = array(
 				'ajax_url'  => admin_url( 'admin-ajax.php' ),
-				'text_wait' => __( 'Please wait...', 'woocommerce-gateway-payex-psp' ),
+				'text_wait' => __( 'Please wait...', 'payex-woocommerce-payments' ),
 			);
 			wp_localize_script( 'payex-admin-js', 'Payex_Admin', $translation_array );
 
@@ -388,7 +388,7 @@ class WC_Payex_Psp {
 
 		try {
 			px_capture_payment( $order_id );
-			wp_send_json_success( __( 'Capture success.', 'woocommerce-gateway-payex-psp' ) );
+			wp_send_json_success( __( 'Capture success.', 'payex-woocommerce-payments' ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -407,7 +407,7 @@ class WC_Payex_Psp {
 
 		try {
 			px_cancel_payment( $order_id );
-			wp_send_json_success( __( 'Cancel success.', 'woocommerce-gateway-payex-psp' ) );
+			wp_send_json_success( __( 'Cancel success.', 'payex-woocommerce-payments' ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -461,7 +461,7 @@ class WC_Payex_Psp {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-payex-psp-update.php' );
 		WC_Payex_Psp_Update::update();
 
-		echo esc_html__( 'Upgrade finished.', 'woocommerce-gateway-payex-psp' );
+		echo esc_html__( 'Upgrade finished.', 'payex-woocommerce-payments' );
 	}
 
 	/**
@@ -473,8 +473,8 @@ class WC_Payex_Psp {
 			<div id="message" class="error">
 				<p>
 					<?php
-					echo esc_html__( 'Warning! PayEx WooCommerce payments plugin requires to update the database structure.', 'woocommerce-gateway-payex-psp' );
-					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', 'woocommerce-gateway-payex-psp' ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">', '</a>' );
+					echo esc_html__( 'Warning! PayEx WooCommerce payments plugin requires to update the database structure.', 'payex-woocommerce-payments' );
+					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', 'payex-woocommerce-payments' ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">', '</a>' );
 					?>
 				</p>
 			</div>
