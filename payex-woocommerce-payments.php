@@ -7,7 +7,7 @@
  * Author URI: http://aait.se/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
- * Version: 1.2.0
+ * Version: 1.3.0
  * Text Domain: payex-woocommerce-payments
  * Domain Path: /languages
  * WC requires at least: 3.0.0
