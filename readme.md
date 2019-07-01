@@ -1,11 +1,11 @@
-# WooCommerce plugin for the RESTful PayEx eCommerce API Platform [![Build Status](https://travis-ci.org/PayEx/payex-woocommerce-payments.svg?branch=master)](https://travis-ci.org/PayEx/payex-woocommerce-payments)
+# WooCommerce plugin for the RESTful PayEx eCommerce API Platform
 
 This plugin provides the PayEx Payment Gateway for WooCommerce.
 
-* Contributors: aait
+* Contributors: payex
 * Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, payex, payment gateway
 * Requires at least: 3.1
-* [License: GNU General Public License v3.0](http://www.gnu.org/licenses/gpl-3.0.html)
+* [License: Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## Description
 
