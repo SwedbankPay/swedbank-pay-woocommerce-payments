@@ -4,7 +4,9 @@ This plugin provides the PayEx Payment Gateway for WooCommerce.
 
 * Contributors: payex
 * Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, payex, payment gateway
-* Requires at least: 3.1
+* Requires at least: 4.7
+* Tested up to: 5.1
+* Stable tag: 1.3.0
 * [License: Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0)
 
 ## Description

@@ -11,7 +11,7 @@
  * Text Domain: payex-woocommerce-payments
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 3.5.1
+ * WC tested up to: 3.6.4
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
