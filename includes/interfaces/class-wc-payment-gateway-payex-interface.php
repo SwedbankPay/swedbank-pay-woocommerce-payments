@@ -6,6 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 interface WC_Payment_Gateway_Payex_Interface {
 	/**
 	 * Check is Capture possible
+	 *
 	 * @param \WC_Order $order
 	 * @param bool|float $amount
 	 *
@@ -15,6 +16,7 @@ interface WC_Payment_Gateway_Payex_Interface {
 
 	/**
 	 * Check is Cancel possible
+	 *
 	 * @param \WC_Order $order
 	 *
 	 * @return bool
@@ -23,6 +25,7 @@ interface WC_Payment_Gateway_Payex_Interface {
 
 	/**
 	 * Check is Refund possible
+	 *
 	 * @param \WC_Order $order
 	 * @param bool|float $amount
 	 *
@@ -32,31 +35,34 @@ interface WC_Payment_Gateway_Payex_Interface {
 
 	/**
 	 * Capture
+	 *
 	 * @param \WC_Order $order
 	 * @param bool|float $amount
 	 *
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
 	public function capture_payment( $order, $amount );
 
 	/**
 	 * Cancel
+	 *
 	 * @param \WC_Order $order
 	 *
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
 	public function cancel_payment( $order );
 
 	/**
 	 * Refund
+	 *
 	 * @param \WC_Order $order
 	 * @param bool|float $amount
 	 * @param string $reason
 	 *
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
 	public function refund_payment( $order, $amount, $reason );
 }

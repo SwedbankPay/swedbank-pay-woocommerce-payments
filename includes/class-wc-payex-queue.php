@@ -14,7 +14,7 @@ class WC_Payex_Queue {
 	 *
 	 * @var WC_Payex_Queue
 	 */
-	protected static $_instance = NULL;
+	protected static $_instance = null;
 
 	/**
 	 * Instance.
@@ -79,30 +79,30 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 
 	/**
 	 * Enqueue
+	 *
 	 * @param string $raw_body
 	 * @param string $payment_method_id
 	 *
 	 * @return bool|int
 	 */
-	public function enqueue( $raw_body, $payment_method_id )
-	{
+	public function enqueue( $raw_body, $payment_method_id ) {
 		global $wpdb;
 
-		$data = @json_decode( $raw_body, TRUE );
+		$data = @json_decode( $raw_body, true );
 
 		// Get Order by Payment Id
 		$order_id = px_get_post_id_by_meta( '_payex_payment_id', $data['payment']['id'] );
 
 		$result = $wpdb->insert( $wpdb->prefix . 'payex_queue', array(
-			'payment_id' => $data['payment']['id'],
-			'payment_number' => $data['payment']['number'],
-			'transaction_id' => $data['transaction']['id'],
+			'payment_id'         => $data['payment']['id'],
+			'payment_number'     => $data['payment']['number'],
+			'transaction_id'     => $data['transaction']['id'],
 			'transaction_number' => $data['transaction']['number'],
-			'webhook_data' => $raw_body,
-			'created_at' => gmdate( 'Y-m-d H:i:s', time() ),
-			'processed' => 0,
-			'payment_method_id' => $payment_method_id,
-			'order_id' => $order_id ?: $order_id
+			'webhook_data'       => $raw_body,
+			'created_at'         => gmdate( 'Y-m-d H:i:s', time() ),
+			'processed'          => 0,
+			'payment_method_id'  => $payment_method_id,
+			'order_id'           => $order_id ?: $order_id
 		) );
 
 		if ( $result > 0 ) {
@@ -114,18 +114,18 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 
 	/**
 	 * Mark queue's entry as processed
+	 *
 	 * @param $queue_id
 	 *
 	 * @return false|int
 	 */
-	public function setProcessed($queue_id)
-	{
+	public function setProcessed( $queue_id ) {
 		global $wpdb;
 
 		return $wpdb->update(
 			$wpdb->prefix . 'payex_queue',
 			array(
-				'processed' => 1,
+				'processed'    => 1,
 				'processed_at' => gmdate( 'Y-m-d H:i:s', time() ),
 			),
 			array(
@@ -138,11 +138,11 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 	 * Get Unprocessed entries from Queue
 	 * @return array
 	 */
-	public function getQueue()
-	{
+	public function getQueue() {
 		global $wpdb;
 
 		$query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}payex_queue WHERE processed = %d ORDER BY transaction_number ASC;", 0 );
+
 		return $wpdb->get_results( $query, ARRAY_A );
 	}
 

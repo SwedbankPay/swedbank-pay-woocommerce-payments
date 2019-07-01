@@ -26,7 +26,7 @@ class WC_Payex_Psp {
 		'payex_psp_cc',
 		'payex_psp_invoice',
 		'payex_psp_vipps',
-	    'payex_psp_swish'
+		'payex_psp_swish'
 	);
 
 	/**
@@ -106,15 +106,15 @@ class WC_Payex_Psp {
 	public function includes() {
 		$vendorsDir = dirname( __FILE__ ) . '/vendors';
 
-		if ( ! class_exists( '\\PayEx\\Api\\Client', FALSE ) ) {
+		if ( ! class_exists( '\\PayEx\\Api\\Client', false ) ) {
 			require_once $vendorsDir . '/payex-ecom-php/vendor/autoload.php';
 		}
 
-		if ( ! class_exists( '\\Ramsey\\Uuid\\Uuid', FALSE ) ) {
+		if ( ! class_exists( '\\Ramsey\\Uuid\\Uuid', false ) ) {
 			require_once $vendorsDir . '/ramsey-uuid/vendor/autoload.php';
 		}
 
-		if ( ! class_exists( 'FullNameParser', FALSE ) ) {
+		if ( ! class_exists( 'FullNameParser', false ) ) {
 			require_once $vendorsDir . '/php-name-parser/vendor/autoload.php';
 		}
 
@@ -138,7 +138,7 @@ class WC_Payex_Psp {
 	/**
 	 * Add relevant links to plugins page
 	 *
-	 * @param  array $links
+	 * @param array $links
 	 *
 	 * @return array
 	 */
@@ -155,7 +155,7 @@ class WC_Payex_Psp {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( 'payex-woocommerce-payments', FALSE, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( 'payex-woocommerce-payments', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		// Functions
 		include_once( dirname( __FILE__ ) . '/includes/functions-payex-checkout.php' );
@@ -164,11 +164,10 @@ class WC_Payex_Psp {
 	/**
 	 * WooCommerce Init
 	 */
-	public function woocommerce_init()
-    {
-	    include_once( dirname( __FILE__ ) . '/includes/class-wc-background-payex-queue.php' );
-	    self::$background_process = new WC_Background_Payex_Queue();
-    }
+	public function woocommerce_init() {
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-background-payex-queue.php' );
+		self::$background_process = new WC_Background_Payex_Queue();
+	}
 
 	/**
 	 * WooCommerce Loaded: load classes
@@ -214,7 +213,7 @@ class WC_Payex_Psp {
 	/**
 	 * Allow processing/completed statuses for capture
 	 *
-	 * @param array    $statuses
+	 * @param array $statuses
 	 * @param WC_Order $order
 	 *
 	 * @return array
@@ -301,7 +300,7 @@ class WC_Payex_Psp {
 		if ( $order = wc_get_order( $post_id ) ) {
 			$payment_method = px_obj_prop( $order, 'payment_method' );
 			if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
-				$payment_id = get_post_meta( $post_id, '_payex_payment_id', TRUE );
+				$payment_id = get_post_meta( $post_id, '_payex_payment_id', true );
 				if ( ! empty( $payment_id ) ) {
 					add_meta_box(
 						'payex_payment_actions',
@@ -323,7 +322,7 @@ class WC_Payex_Psp {
 	public static function order_meta_box_payment_actions() {
 		global $post_id;
 		$order      = wc_get_order( $post_id );
-		$payment_id = get_post_meta( $post_id, '_payex_payment_id', TRUE );
+		$payment_id = get_post_meta( $post_id, '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
 			return;
 		}
@@ -428,10 +427,9 @@ class WC_Payex_Psp {
 	/**
 	 * Dispatch Background Process
 	 */
-	public function maybe_process_queue()
-    {
-	    self::$background_process->dispatch();
-    }
+	public function maybe_process_queue() {
+		self::$background_process->dispatch();
+	}
 
 	/**
 	 * Provide Admin Menu items
@@ -470,14 +468,14 @@ class WC_Payex_Psp {
 	public static function upgrade_notice() {
 		if ( current_user_can( 'update_plugins' ) ) {
 			?>
-			<div id="message" class="error">
-				<p>
+            <div id="message" class="error">
+                <p>
 					<?php
 					echo esc_html__( 'Warning! PayEx WooCommerce payments plugin requires to update the database structure.', 'payex-woocommerce-payments' );
 					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', 'payex-woocommerce-payments' ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">', '</a>' );
 					?>
-				</p>
-			</div>
+                </p>
+            </div>
 			<?php
 		}
 	}

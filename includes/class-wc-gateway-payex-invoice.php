@@ -44,7 +44,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 		$this->transactions = WC_Payex_Transactions::instance();
 
 		$this->id           = 'payex_psp_invoice';
-		$this->has_fields   = TRUE;
+		$this->has_fields   = true;
 		$this->method_title = __( 'Invoice', 'payex-woocommerce-payments' );
 		$this->icon         = apply_filters( 'woocommerce_payex_psp_invoice_icon', plugins_url( '/assets/images/invoice.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
@@ -70,7 +70,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
-		if ( ! filter_var($this->terms_url, FILTER_VALIDATE_URL) ) {
+		if ( ! filter_var( $this->terms_url, FILTER_VALIDATE_URL ) ) {
 			$this->terms_url = '';
 		} elseif ( 'https' !== parse_url( $this->terms_url, PHP_URL_SCHEME ) ) {
 			$this->terms_url = '';
@@ -162,7 +162,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 				'description' => __( 'Language of pages displayed by PayEx during payment.', 'payex-woocommerce-payments' ),
 				'default'     => $this->culture
 			),
-			'terms_url'        => array(
+			'terms_url'      => array(
 				'title'       => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
 				'type'        => 'text',
 				'description' => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
@@ -177,14 +177,15 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 	public function payment_fields() {
 		parent::payment_fields();
 		?>
-		<p class="form-row form-row-wide">
-			<label for="social-security-number">
+        <p class="form-row form-row-wide">
+            <label for="social-security-number">
 				<?php echo __( 'Social Security Number', 'payex-woocommerce-payments' ); ?>
-				<abbr class="required">*</abbr>
-			</label>
-			<input type="text" class="input-text required-entry" name="social-security-number" id="social-security-number" value="" autocomplete="off">
-		</p>
-        <?php
+                <abbr class="required">*</abbr>
+            </label>
+            <input type="text" class="input-text required-entry" name="social-security-number"
+                   id="social-security-number" value="" autocomplete="off">
+        </p>
+		<?php
 	}
 
 	/**
@@ -197,34 +198,39 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 	public function validate_fields() {
 		if ( empty( $_POST['billing_country'] ) ) {
 			wc_add_notice( __( 'Please specify country.', 'payex-woocommerce-payments' ), 'error' );
-			return FALSE;
+
+			return false;
 		}
 
 		if ( empty( $_POST['billing_postcode'] ) ) {
 			wc_add_notice( __( 'Please specify postcode.', 'payex-woocommerce-payments' ), 'error' );
-			return FALSE;
+
+			return false;
 		}
 
-		if ( ! in_array( mb_strtoupper( $_POST['billing_country'], 'UTF-8' ) , array('SE', 'NO', 'FI') ) ) {
+		if ( ! in_array( mb_strtoupper( $_POST['billing_country'], 'UTF-8' ), array( 'SE', 'NO', 'FI' ) ) ) {
 			wc_add_notice( __( 'This country is not supported by the payment system.', 'payex-woocommerce-payments' ), 'error' );
-			return FALSE;
+
+			return false;
 		}
 
 		// Validate country phone code
-		if ( in_array( $_POST['billing_country'], ['SE', 'NO'] ) ) {
+		if ( in_array( $_POST['billing_country'], [ 'SE', 'NO' ] ) ) {
 			$phone_code = mb_substr( ltrim( $_POST['billing_phone'], '+' ), 0, 2, 'UTF-8' );
 			if ( ! in_array( $phone_code, [ '46', '47' ] ) ) {
 				wc_add_notice( __( 'Invalid phone number. Phone code must include country phone code.', 'payex-woocommerce-payments' ), 'error' );
-				return FALSE;
+
+				return false;
 			}
 		}
 
 		if ( empty( $_POST['social-security-number'] ) ) {
 			wc_add_notice( __( 'Please enter your Social Security Number and confirm your order.', 'payex-woocommerce-payments' ), 'error' );
-			return FALSE;
+
+			return false;
 		}
 
-		return TRUE;
+		return true;
 
 	}
 
@@ -262,7 +268,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 
 		// Get Customer UUID
 		if ( $user_id > 0 ) {
-			$customer_uuid = get_user_meta( $user_id, '_payex_customer_uuid', TRUE );
+			$customer_uuid = get_user_meta( $user_id, '_payex_customer_uuid', true );
 			if ( empty( $customer_uuid ) ) {
 				$customer_uuid = px_uuid( $user_id );
 				update_user_meta( $user_id, '_payex_customer_uuid', $customer_uuid );
@@ -291,24 +297,24 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 				'userAgent'      => $_SERVER['HTTP_USER_AGENT'],
 				'language'       => $this->culture,
 				'urls'           => [
-					'completeUrl' => html_entity_decode( $this->get_return_url( $order ) ),
-					'cancelUrl'   => $order->get_cancel_order_url_raw(),
-					'callbackUrl' => WC()->api_request_url( __CLASS__ ),
+					'completeUrl'       => html_entity_decode( $this->get_return_url( $order ) ),
+					'cancelUrl'         => $order->get_cancel_order_url_raw(),
+					'callbackUrl'       => WC()->api_request_url( __CLASS__ ),
 					'termsOfServiceUrl' => $this->terms_url
 				],
 				'payeeInfo'      => [
-					'payeeId'        => $this->payee_id,
-					'payeeReference' => str_replace('-', '', $order_uuid),
-					"payeeName" => "Merchant1",
+					'payeeId'         => $this->payee_id,
+					'payeeReference'  => str_replace( '-', '', $order_uuid ),
+					"payeeName"       => "Merchant1",
 					"productCategory" => "PC1234"
 				],
 			],
-			'invoice'        => [
-				'invoiceType'    => 'PayExFinancing' . ucfirst( strtolower( $country ) )
+			'invoice' => [
+				'invoiceType' => 'PayExFinancing' . ucfirst( strtolower( $country ) )
 			]
 		];
 
-		$this->log( json_encode($params) );
+		$this->log( json_encode( $params ) );
 
 		try {
 			$result = $this->request( 'POST', '/psp/invoice/payments', $params );
@@ -316,7 +322,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 			$this->log( sprintf( '[ERROR] Process payment: %s', $e->getMessage() ) );
 			wc_add_notice( $e->getMessage(), 'error' );
 
-			return FALSE;
+			return false;
 		}
 
 		// Save payment ID
@@ -333,7 +339,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 			$params = [
 				'addressee' => [
 					'socialSecurityNumber' => $ssn,
-					'zipCode' => str_replace( ' ', '', $postcode )
+					'zipCode'              => str_replace( ' ', '', $postcode )
 				]
 			];
 
@@ -342,7 +348,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 			$this->log( sprintf( '[ERROR] Create Approved Legal Address: %s', $e->getMessage() ) );
 			wc_add_notice( $e->getMessage(), 'error' );
 
-			return FALSE;
+			return false;
 		}
 
 		// Save legal address
@@ -352,23 +358,23 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 		// Transaction Activity: FinancingConsumer
 		try {
 			$params = [
-				'transaction' => [
+				'transaction'  => [
 					'activity' => 'FinancingConsumer'
 				],
-				'consumer' => [
+				'consumer'     => [
 					'socialSecurityNumber' => $ssn,
-					'customerNumber' => $user_id,
-					'email' => $email,
-					'msisdn' => '+' . ltrim( $phone, '+' ),
-					'ip' => px_get_remote_address()
+					'customerNumber'       => $user_id,
+					'email'                => $email,
+					'msisdn'               => '+' . ltrim( $phone, '+' ),
+					'ip'                   => px_get_remote_address()
 				],
 				'legalAddress' => [
-					'addressee' => $legal_address['addressee'],
-					'coAddress' => $legal_address['coAddress'],
+					'addressee'     => $legal_address['addressee'],
+					'coAddress'     => $legal_address['coAddress'],
 					'streetAddress' => $legal_address['streetAddress'],
-					'zipCode' => $legal_address['zipCode'],
-					'city' => $legal_address['city'],
-					'countryCode' => $legal_address['countryCode']
+					'zipCode'       => $legal_address['zipCode'],
+					'city'          => $legal_address['city'],
+					'countryCode'   => $legal_address['countryCode']
 				]
 			];
 
@@ -377,7 +383,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 			$this->log( sprintf( '[ERROR] Create Authorize: %s', $e->getMessage() ) );
 			wc_add_notice( $e->getMessage(), 'error' );
 
-			return FALSE;
+			return false;
 		}
 
 		return array(
@@ -403,12 +409,12 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 			$vatAmount      += $item['tax_price'];
 			$unit_price     = sprintf( "%.2f", $item['price_without_tax'] / $item['qty'] );
 			$descriptions[] = array(
-				'product' => $item['name'],
-				'quantity'    => $item['qty'],
-				'unitPrice' => (int) round($unit_price * 100),
-				'amount'      => (int) round( $item['price_with_tax'] * 100),
-				'vatAmount'   => (int) round( $item['tax_price'] * 100),
-				'vatPercent'  => sprintf( "%.2f", $item['tax_percent'] ),
+				'product'    => $item['name'],
+				'quantity'   => $item['qty'],
+				'unitPrice'  => (int) round( $unit_price * 100 ),
+				'amount'     => (int) round( $item['price_with_tax'] * 100 ),
+				'vatAmount'  => (int) round( $item['tax_price'] * 100 ),
+				'vatPercent' => sprintf( "%.2f", $item['tax_percent'] ),
 			);
 		}
 
@@ -423,12 +429,12 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 	 * Capture
 	 *
 	 * @param WC_Order|int $order
-	 * @param bool         $amount
+	 * @param bool $amount
 	 *
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
-	public function capture_payment( $order, $amount = FALSE ) {
+	public function capture_payment( $order, $amount = false ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -439,7 +445,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 		}
 
 		$order_id   = px_obj_prop( $order, 'id' );
-		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
 			throw new \Exception( 'Unable to get payment ID' );
 		}
@@ -462,7 +468,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 		$payeeReference = px_uuid( uniqid( $order_id ) );
 
 		$params = array(
-			'transaction' => array(
+			'transaction'      => array(
 				'activity'       => 'FinancingConsumer',
 				'amount'         => (int) round( $amount * 100 ),
 				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
@@ -502,8 +508,8 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 	 *
 	 * @param WC_Order|int $order
 	 *
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
 	public function cancel_payment( $order ) {
 		if ( is_int( $order ) ) {
@@ -511,7 +517,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 		}
 
 		$order_id   = px_obj_prop( $order, 'id' );
-		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
 			throw new \Exception( 'Unable to get payment ID' );
 		}
@@ -549,7 +555,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 				update_post_meta( $order_id, '_payex_payment_state', 'Cancelled' );
 				update_post_meta( $order_id, '_payex_transaction_cancel', $transaction['id'] );
 
-				if ( ! $order->has_status('cancelled') ) {
+				if ( ! $order->has_status( 'cancelled' ) ) {
 					$order->update_status( 'cancelled', __( 'Transaction cancelled.', 'payex-woocommerce-payments' ) );
 				} else {
 					$order->add_order_note( __( 'Transaction cancelled.', 'payex-woocommerce-payments' ) );
@@ -572,19 +578,19 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 	 * Refund
 	 *
 	 * @param WC_Order|int $order
-	 * @param bool         $amount
-	 * @param string       $reason
+	 * @param bool $amount
+	 * @param string $reason
 	 *
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
-	public function refund_payment( $order, $amount = FALSE, $reason = '' ) {
+	public function refund_payment( $order, $amount = false, $reason = '' ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
 
 		$order_id   = px_obj_prop( $order, 'id' );
-		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
 			throw new \Exception( 'Unable to get payment ID' );
 		}

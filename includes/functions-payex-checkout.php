@@ -6,12 +6,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Access an object's property in a way that is compatible with CRUD and non-CRUD APIs for different versions of WooCommerce.
- * @see wcs_get_objects_property()
  *
  * @param WC_Order|WC_Product|WC_Subscription $object
- * @param string                              $property
+ * @param string $property
  *
  * @return mixed
+ * @see wcs_get_objects_property()
+ *
  */
 function px_obj_prop( $object, $property ) {
 	switch ( $property ) {
@@ -28,7 +29,7 @@ function px_obj_prop( $object, $property ) {
 			if ( is_callable( array( $object, $function_name ) ) ) {
 				$value = $object->$function_name();
 			} else {
-				$value = isset( $object->$property ) ? $object->$property : NULL;
+				$value = isset( $object->$property ) ? $object->$property : null;
 			}
 			break;
 	}
@@ -63,7 +64,7 @@ function px_get_remote_address() {
 		'X_FORWARDED_FOR'
 	);
 
-	$remote_address = FALSE;
+	$remote_address = false;
 	foreach ( $headers as $header ) {
 		if ( ! empty( $_SERVER[ $header ] ) ) {
 			$remote_address = $_SERVER[ $header ];
@@ -76,7 +77,7 @@ function px_get_remote_address() {
 	}
 
 	// Extract address from list
-	if ( strpos( $remote_address, ',' ) !== FALSE ) {
+	if ( strpos( $remote_address, ',' ) !== false ) {
 		$tmp            = explode( ',', $remote_address );
 		$remote_address = trim( array_shift( $tmp ) );
 	}
@@ -84,7 +85,7 @@ function px_get_remote_address() {
 	// Remove port if exists (IPv4 only)
 	$regEx = "/^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/";
 	if ( preg_match( $regEx, $remote_address )
-	     && ( $pos_temp = stripos( $remote_address, ':' ) ) !== FALSE
+	     && ( $pos_temp = stripos( $remote_address, ':' ) ) !== false
 	) {
 		$remote_address = substr( $remote_address, 0, $pos_temp );
 	}
@@ -97,16 +98,16 @@ function px_get_remote_address() {
  *
  * @param array $source
  * @param array $conditionals
- * @param bool  $single
+ * @param bool $single
  *
  * @return array|bool
  */
-function px_filter( array $source, array $conditionals, $single = TRUE ) {
+function px_filter( array $source, array $conditionals, $single = true ) {
 	$data = array_filter( $source, function ( $data, $key ) use ( $conditionals ) {
-		$status = TRUE;
+		$status = true;
 		foreach ( $conditionals as $ckey => $cvalue ) {
 			if ( ! isset( $data[ $ckey ] ) || $data[ $ckey ] != $cvalue ) {
-				$status = FALSE;
+				$status = false;
 				break;
 			}
 		}
@@ -115,7 +116,7 @@ function px_filter( array $source, array $conditionals, $single = TRUE ) {
 	}, ARRAY_FILTER_USE_BOTH );
 
 	if ( count( $data ) === 0 ) {
-		return $single ? FALSE : array();
+		return $single ? false : array();
 	}
 
 	return $single ? array_shift( $data ) : $data;
@@ -132,7 +133,7 @@ function px_payment_method_instance( $order ) {
 	$order = wc_get_order( $order );
 
 	if ( ! $order ) {
-		return FALSE;
+		return false;
 	}
 
 	$payment_method = px_obj_prop( $order, 'payment_method' );
@@ -144,7 +145,7 @@ function px_payment_method_instance( $order ) {
 		return $gateways[ $payment_method ];
 	}
 
-	return FALSE;
+	return false;
 }
 
 /**
@@ -158,7 +159,7 @@ function px_payment_method( $payment_id ) {
 	// @todo Use payment_gateways() instead?
 	$gateways = WC()->payment_gateways()->get_available_payment_gateways();
 
-	return isset( $gateways[ $payment_id ] ) ? $gateways[ $payment_id ] : FALSE;
+	return isset( $gateways[ $payment_id ] ) ? $gateways[ $payment_id ] : false;
 }
 
 /**
@@ -180,7 +181,7 @@ function px_uuid( $node ) {
  *
  * @throws \Exception
  */
-function px_capture_payment( $order, $amount = FALSE ) {
+function px_capture_payment( $order, $amount = false ) {
 	if ( is_int( $order ) ) {
 		$order = wc_get_order( $order );
 	}
@@ -241,12 +242,12 @@ function px_cancel_payment( $order ) {
  * Perform Capture Action
  *
  * @param WC_Order|int $order
- * @param float|bool   $amount
- * @param string       $reason
+ * @param float|bool $amount
+ * @param string $reason
  *
  * @throws \Exception
  */
-function px_refund_payment( $order, $amount = FALSE, $reason = '' ) {
+function px_refund_payment( $order, $amount = false, $reason = '' ) {
 	if ( is_int( $order ) ) {
 		$order = wc_get_order( $order );
 	}

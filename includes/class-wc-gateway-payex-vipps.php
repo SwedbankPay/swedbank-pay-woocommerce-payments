@@ -50,7 +50,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		$this->transactions = WC_Payex_Transactions::instance();
 
 		$this->id           = 'payex_psp_vipps';
-		$this->has_fields   = TRUE;
+		$this->has_fields   = true;
 		$this->method_title = __( 'Vipps', 'payex-woocommerce-payments' );
 		$this->icon         = apply_filters( 'woocommerce_payex_vipps_icon', plugins_url( '/assets/images/vipps.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
@@ -77,7 +77,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
-		if ( ! filter_var($this->terms_url, FILTER_VALIDATE_URL) ) {
+		if ( ! filter_var( $this->terms_url, FILTER_VALIDATE_URL ) ) {
 			$this->terms_url = '';
 		} elseif ( 'https' !== parse_url( $this->terms_url, PHP_URL_SCHEME ) ) {
 			$this->terms_url = '';
@@ -181,7 +181,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				'description' => __( 'Checkout Method', 'payex-woocommerce-payments' ),
 				'default'     => $this->method
 			),
-			'terms_url'        => array(
+			'terms_url'      => array(
 				'title'       => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
 				'type'        => 'text',
 				'description' => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
@@ -214,10 +214,11 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		preg_match( '/^(\+47)(?:4[015-8]|5[89]|87|9\d)\d{6}$/u', $billing_phone, $matches );
 		if ( ! isset( $matches[0] ) || $matches[0] !== $billing_phone ) {
 			wc_add_notice( __( 'Input your number like this +47xxxxxxxxx', 'payex-woocommerce-payments' ), 'error' );
-			return FALSE;
+
+			return false;
 		}
 
-		return TRUE;
+		return true;
 	}
 
 	/**
@@ -250,7 +251,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 
 		// Get Customer UUID
 		if ( $user_id > 0 ) {
-			$customer_uuid = get_user_meta( $user_id, '_payex_customer_uuid', TRUE );
+			$customer_uuid = get_user_meta( $user_id, '_payex_customer_uuid', true );
 			if ( empty( $customer_uuid ) ) {
 				$customer_uuid = px_uuid( $user_id );
 				update_user_meta( $user_id, '_payex_customer_uuid', $customer_uuid );
@@ -279,14 +280,14 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				'userAgent'      => $_SERVER['HTTP_USER_AGENT'],
 				'language'       => $this->culture,
 				'urls'           => [
-					'completeUrl' => html_entity_decode( $this->get_return_url( $order ) ),
-					'cancelUrl'   => $order->get_cancel_order_url_raw(),
-					'callbackUrl' => WC()->api_request_url( __CLASS__ ),
+					'completeUrl'       => html_entity_decode( $this->get_return_url( $order ) ),
+					'cancelUrl'         => $order->get_cancel_order_url_raw(),
+					'callbackUrl'       => WC()->api_request_url( __CLASS__ ),
 					'termsOfServiceUrl' => $this->terms_url
 				],
 				'payeeInfo'      => [
 					'payeeId'        => $this->payee_id,
-					'payeeReference' => str_replace('-', '', $order_uuid),
+					'payeeReference' => str_replace( '-', '', $order_uuid ),
 				],
 				'prefillInfo'    => [
 					'msisdn' => apply_filters( 'payex_vipps_phone_format', $phone, $order )
@@ -300,7 +301,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 			$this->log( sprintf( '[ERROR] Process payment: %s', $e->getMessage() ) );
 			wc_add_notice( $e->getMessage(), 'error' );
 
-			return FALSE;
+			return false;
 		}
 
 		// Save payment ID
@@ -332,7 +333,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 					$this->log( sprintf( '[ERROR] Create Authorization: %s', $e->getMessage() ) );
 					wc_add_notice( $e->getMessage(), 'error' );
 
-					return FALSE;
+					return false;
 				}
 
 				return array(
@@ -345,21 +346,21 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 			default:
 				wc_add_notice( __( 'Wrong method', 'payex-woocommerce-payments' ), 'error' );
 
-				return FALSE;
+				return false;
 		}
 
 	}
-	
+
 	/**
 	 * Capture
 	 *
 	 * @param WC_Order|int $order
-	 * @param bool         $amount
+	 * @param bool $amount
 	 *
-	 * @throws \Exception
 	 * @return void
+	 * @throws \Exception
 	 */
-	public function capture_payment( $order, $amount = FALSE ) {
+	public function capture_payment( $order, $amount = false ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -370,7 +371,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		}
 
 		$order_id   = px_obj_prop( $order, 'id' );
-		$payment_id = get_post_meta( $order_id, '_payex_payment_id', TRUE );
+		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
 			throw new \Exception( 'Unable to get payment ID' );
 		}
@@ -428,6 +429,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 
 	/**
 	 * Format phone
+	 *
 	 * @param string $phone
 	 * @param WC_Order $order
 	 *

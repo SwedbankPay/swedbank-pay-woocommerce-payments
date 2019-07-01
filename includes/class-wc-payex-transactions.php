@@ -10,7 +10,7 @@ class WC_Payex_Transactions {
 	 *
 	 * @var WC_Payex_Transactions
 	 */
-	protected static $_instance = NULL;
+	protected static $_instance = null;
 
 	/**
 	 * Allowed Fields
@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 			return $wpdb->insert_id;
 		}
 
-		return FALSE;
+		return false;
 	}
 
 	/**
@@ -172,7 +172,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 *
 	 * @return array|null|object
 	 */
-	public function get_by( $field, $value, $single = TRUE ) {
+	public function get_by( $field, $value, $single = true ) {
 		global $wpdb;
 		if ( ! in_array( $field, self::$_allowed_fields ) ) {
 			$field = 'transaction_id';
@@ -232,7 +232,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 			return in_array( $key, $allowed );
 		}, ARRAY_FILTER_USE_BOTH );
 
-		$data['transaction_data'] = json_encode( $data, TRUE );
+		$data['transaction_data'] = json_encode( $data, true );
 		$data['order_id']         = $order_id;
 		$data['created']          = gmdate( 'Y-m-d H:i:s', strtotime( $data['created'] ) );
 		$data['updated']          = gmdate( 'Y-m-d H:i:s', strtotime( $data['updated'] ) );

@@ -41,15 +41,15 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		if ( ! $this->client ) {
 			global $wp_version;
 			$plugin_version = get_file_data(
-				dirname(__FILE__) . '/../../payex-woocommerce-payments.php',
-				array('Version'),
+				dirname( __FILE__ ) . '/../../payex-woocommerce-payments.php',
+				array( 'Version' ),
 				'payex-woocommerce-payments'
 			);
 
 			$this->client = new \PayEx\Api\Client();
 			$this->client->setMerchantToken( $this->merchant_token );
 			$this->client->setMode( $this->testmode === 'yes' ? \PayEx\Api\Client::MODE_TEST : \PayEx\Api\Client::MODE_PRODUCTION );
-			$this->client->setPlatform( sprintf("WordPress/%s WooCommerce/%s PayEx.Psp.WooCommerce/%s",
+			$this->client->setPlatform( sprintf( "WordPress/%s WooCommerce/%s PayEx.Psp.WooCommerce/%s",
 				$wp_version,
 				WC_VERSION,
 				$plugin_version[0]
@@ -65,9 +65,9 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @param $message
 	 * @param $level
 	 *
+	 * @return void
 	 * @see WC_Log_Levels
 	 *
-	 * @return void
 	 */
 	protected function log( $message, $level = 'notice' ) {
 		// Is Enabled
@@ -80,13 +80,13 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 		// Write message to log
 		if ( ! is_string( $message ) ) {
-			$message = var_export( $message, TRUE );
+			$message = var_export( $message, true );
 		}
 
 		if ( $this->is_wc3() ) {
 			$log->log( $level, $message, array(
 				'source'  => $this->id,
-				'_legacy' => TRUE
+				'_legacy' => true
 			) );
 		} else {
 			$log->add( $this->id, sprintf( '[%s] %s', $level, $message ) );
@@ -104,9 +104,9 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @throws \Exception
 	 */
 	public function request( $method, $url, $params = array() ) {
-		$start = microtime(true);
+		$start = microtime( true );
 		if ( $this->debug === 'yes' ) {
-			$this->log( sprintf('Request: %s %s %s', $method, $url, json_encode( $params, JSON_PRETTY_PRINT ) ) );
+			$this->log( sprintf( 'Request: %s %s %s', $method, $url, json_encode( $params, JSON_PRETTY_PRINT ) ) );
 		}
 
 		try {
@@ -115,14 +115,14 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			$result   = $response->toArray();
 
 			if ( $this->debug === 'yes' ) {
-                $time = microtime(true) - $start;
+				$time = microtime( true ) - $start;
 				$this->log( sprintf( '[%.4F] Response: %s', $time, $response->getBody() ) );
 			}
 
 			return $result;
 		} catch ( \PayEx\Api\Exception $e ) {
 			if ( $this->debug === 'yes' ) {
-                $time = microtime(true) - $start;
+				$time = microtime( true ) - $start;
 				$this->log( sprintf( '[%.4F] Exception: %s', $time, $e->getMessage() ) );
 			}
 
@@ -143,17 +143,17 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			return wc_get_order( $order_id );
 		}
 
-		return FALSE;
+		return false;
 	}
 
 	/**
 	 * Get Post Id by Meta
 	 *
-	 * @deprecated
 	 * @param $key
 	 * @param $value
 	 *
 	 * @return null|string
+	 * @deprecated
 	 */
 	protected function get_post_id_by_meta( $key, $value ) {
 		return px_get_post_id_by_meta( $key, $value );
@@ -182,8 +182,8 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		if ( $this->is_wc3() ) {
 			foreach ( $order->get_items() as $order_item ) {
 				/** @var WC_Order_Item_Product $order_item */
-				$price        = $order->get_line_subtotal( $order_item, FALSE, FALSE );
-				$priceWithTax = $order->get_line_subtotal( $order_item, TRUE, FALSE );
+				$price        = $order->get_line_subtotal( $order_item, false, false );
+				$priceWithTax = $order->get_line_subtotal( $order_item, true, false );
 				$tax          = $priceWithTax - $price;
 				$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 
@@ -236,9 +236,9 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			}
 
 			// Add discount line
-			if ( $order->get_total_discount( FALSE ) > 0 ) {
-				$discount        = $order->get_total_discount( TRUE );
-				$discountWithTax = $order->get_total_discount( FALSE );
+			if ( $order->get_total_discount( false ) > 0 ) {
+				$discount        = $order->get_total_discount( true );
+				$discountWithTax = $order->get_total_discount( false );
 				$tax             = $discountWithTax - $discount;
 				$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
@@ -258,8 +258,8 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 		// WooCommerce 2.6
 		foreach ( $order->get_items() as $order_item ) {
-			$price        = $order->get_line_subtotal( $order_item, FALSE, FALSE );
-			$priceWithTax = $order->get_line_subtotal( $order_item, TRUE, FALSE );
+			$price        = $order->get_line_subtotal( $order_item, false, false );
+			$priceWithTax = $order->get_line_subtotal( $order_item, true, false );
 			$tax          = $priceWithTax - $price;
 			$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 
@@ -305,9 +305,9 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		}
 
 		// Add discount line
-		if ( $order->get_total_discount( FALSE ) > 0 ) {
-			$discount        = $order->get_total_discount( TRUE );
-			$discountWithTax = $order->get_total_discount( FALSE );
+		if ( $order->get_total_discount( false ) > 0 ) {
+			$discount        = $order->get_total_discount( true );
+			$discountWithTax = $order->get_total_discount( false );
 			$tax             = $discountWithTax - $discount;
 			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
@@ -359,13 +359,13 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	/**
 	 * Extract operation value from operations list
 	 *
-	 * @param array  $operations
+	 * @param array $operations
 	 * @param string $operation_id
-	 * @param bool   $single
+	 * @param bool $single
 	 *
 	 * @return bool|string|array
 	 */
-	protected static function get_operation( $operations, $operation_id, $single = TRUE ) {
+	protected static function get_operation( $operations, $operation_id, $single = true ) {
 		$operation = array_filter( $operations, function ( $value, $key ) use ( $operation_id ) {
 			return ( is_array( $value ) && $value['rel'] === $operation_id );
 		}, ARRAY_FILTER_USE_BOTH );
@@ -376,7 +376,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			return $single ? $operation['href'] : $operation;
 		}
 
-		return FALSE;
+		return false;
 	}
 
 	/**
@@ -385,16 +385,16 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * If the gateway declares 'refunds' support, this will allow it to refund
 	 * a passed in amount.
 	 *
-	 * @param  int    $order_id
-	 * @param  float  $amount
-	 * @param  string $reason
+	 * @param int $order_id
+	 * @param float $amount
+	 * @param string $reason
 	 *
 	 * @return  bool|wp_error True or false based on success, or a WP_Error object
 	 */
-	public function process_refund( $order_id, $amount = NULL, $reason = '' ) {
+	public function process_refund( $order_id, $amount = null, $reason = '' ) {
 		$order = wc_get_order( $order_id );
 		if ( ! $order ) {
-			return FALSE;
+			return false;
 		}
 
 		// Full Refund
@@ -405,7 +405,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		try {
 			px_refund_payment( $order, $amount, $reason );
 
-			return TRUE;
+			return true;
 		} catch ( \Exception $e ) {
 			return new WP_Error( 'refund', $e->getMessage() );
 		}
@@ -413,12 +413,13 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 	/**
 	 * Process Transaction
+	 *
 	 * @param array $transaction
 	 * @param WC_Order $order
 	 *
 	 * @throws Exception
 	 */
-	public function process_transaction($transaction, $order) {
+	public function process_transaction( $transaction, $order ) {
 		// Disable status change hook
 		remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
 
@@ -427,7 +428,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			switch ( $transaction['type'] ) {
 				case 'Authorization':
 					// Check is action was performed
-					if ( $state = $order->get_meta('_payex_payment_state' ) && ! empty( $state ) ) {
+					if ( $state = $order->get_meta( '_payex_payment_state' ) && ! empty( $state ) ) {
 						throw new Exception( sprintf( 'Action of Transaction #%s already performed', $transaction['number'] ) );
 					}
 
@@ -435,7 +436,11 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 						$order->update_meta_data( '_transaction_id', $transaction['number'] );
 						$order->save_meta_data();
 
-						$reason = implode('; ', [$transaction['failedReason'], $transaction['failedErrorCode'], $transaction['failedErrorDescription']]);
+						$reason = implode( '; ', [
+							$transaction['failedReason'],
+							$transaction['failedErrorCode'],
+							$transaction['failedErrorDescription']
+						] );
 						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', 'payex-woocommerce-payments' ), $reason ) );
 						break;
 					}
@@ -467,19 +472,18 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 						$payment_id = $order->get_meta( '_payex_payment_id' );
 						$result     = $this->request( 'GET', $payment_id . '/authorizations' );
 						if ( isset( $result['authorizations']['authorizationList'][0] ) &&
-						     isset( $result['authorizations']['authorizationList'][0]['paymentToken'] ) )
-						{
+						     isset( $result['authorizations']['authorizationList'][0]['paymentToken'] ) ) {
 							$authorization = $result['authorizations']['authorizationList'][0];
 							$paymentToken  = $authorization['paymentToken'];
 							$cardBrand     = $authorization['cardBrand'];
 							$maskedPan     = $authorization['maskedPan'];
-							$expiryDate    = explode('/', $authorization['expiryDate'] );
+							$expiryDate    = explode( '/', $authorization['expiryDate'] );
 
 							// Create Payment Token
 							$token = new WC_Payment_Token_Payex();
 							$token->set_gateway_id( $this->id );
 							$token->set_token( $paymentToken );
-							$token->set_last4( substr( $maskedPan, -4 ) );
+							$token->set_last4( substr( $maskedPan, - 4 ) );
 							$token->set_expiry_year( $expiryDate[1] );
 							$token->set_expiry_month( $expiryDate[0] );
 							$token->set_card_type( strtolower( $cardBrand ) );
@@ -498,7 +502,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				case 'Capture':
 				case 'Sale':
 					// Check is action was performed
-					if ( $order->get_meta('_payex_payment_state' ) === 'Captured' ) {
+					if ( $order->get_meta( '_payex_payment_state' ) === 'Captured' ) {
 						throw new Exception( sprintf( 'Action of Transaction #%s already performed', $transaction['number'] ) );
 					}
 
@@ -506,7 +510,11 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 						$order->update_meta_data( '_transaction_id', $transaction['number'] );
 						$order->save_meta_data();
 
-						$reason = implode('; ', [$transaction['failedReason'], $transaction['failedErrorCode'], $transaction['failedErrorDescription']]);
+						$reason = implode( '; ', [
+							$transaction['failedReason'],
+							$transaction['failedErrorCode'],
+							$transaction['failedErrorDescription']
+						] );
 						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', 'payex-woocommerce-payments' ), $reason ) );
 						break;
 					}
@@ -527,7 +535,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 					break;
 				case 'Cancellation':
 					// Check is action was performed
-					if ( $order->get_meta('_payex_payment_state' ) === 'Cancellation' ) {
+					if ( $order->get_meta( '_payex_payment_state' ) === 'Cancellation' ) {
 						throw new Exception( sprintf( 'Action of Transaction #%s already performed', $transaction['number'] ) );
 					}
 
@@ -555,7 +563,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			}
 		} catch ( Exception $e ) {
 			if ( $this->debug === 'yes' ) {
-				$this->log( sprintf(  '%s::%s Exception: %s', __CLASS__, __METHOD__, $e->getMessage() ) );
+				$this->log( sprintf( '%s::%s Exception: %s', __CLASS__, __METHOD__, $e->getMessage() ) );
 			}
 
 			// Enable status change hook
@@ -570,15 +578,16 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 	/**
 	 * Checks an order to see if it contains a subscription.
-	 * @see wcs_order_contains_subscription()
 	 *
 	 * @param WC_Order $order
 	 *
 	 * @return bool
+	 * @see wcs_order_contains_subscription()
+	 *
 	 */
 	public static function order_contains_subscription( $order ) {
 		if ( ! function_exists( 'wcs_order_contains_subscription' ) ) {
-			return FALSE;
+			return false;
 		}
 
 		return wcs_order_contains_subscription( $order );
@@ -589,7 +598,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @return bool
 	 */
 	public static function wcs_is_payment_change() {
-		return class_exists( 'WC_Subscriptions_Change_Payment_Gateway', FALSE ) &&
+		return class_exists( 'WC_Subscriptions_Change_Payment_Gateway', false ) &&
 		       WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
 	}
 
@@ -598,18 +607,18 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @return bool
 	 */
 	public static function wcs_cart_have_subscription() {
-		if ( ! class_exists( 'WC_Product_Subscription', FALSE ) ) {
-			return FALSE;
+		if ( ! class_exists( 'WC_Product_Subscription', false ) ) {
+			return false;
 		}
 
 		// Check is Recurring Payment
 		$cart = WC()->cart->get_cart();
 		foreach ( $cart as $key => $item ) {
 			if ( is_object( $item['data'] ) && get_class( $item['data'] ) === 'WC_Product_Subscription' ) {
-				return TRUE;
+				return true;
 			}
 		}
 
-		return FALSE;
+		return false;
 	}
 }

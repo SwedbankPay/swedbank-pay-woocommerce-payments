@@ -63,21 +63,21 @@ class WC_Background_Payex_Queue extends WC_Background_Process {
 		$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
 		$results = array();
-		$data = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$column} LIKE %s ORDER BY {$key_column} ASC", $key ) ); // @codingStandardsIgnoreLine.
-		foreach ($data as $id => $result) {
+		$data    = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$column} LIKE %s ORDER BY {$key_column} ASC", $key ) ); // @codingStandardsIgnoreLine.
+		foreach ( $data as $id => $result ) {
 			$task = array_filter( (array) maybe_unserialize( $result->$value_column ) );
 
 			$batch       = new stdClass();
 			$batch->key  = $result->$column;
 			$batch->data = $task;
 
-			$results[$id] = $batch;
+			$results[ $id ] = $batch;
 
 			// Create Sorting Flow by Transaction Number
-			$sorting_flow[$id] = 0;
-			$webhook = @json_decode( $task[0]['webhook_data'], true );
+			$sorting_flow[ $id ] = 0;
+			$webhook             = @json_decode( $task[0]['webhook_data'], true );
 			if ( $webhook && isset( $webhook['transaction']['number'] ) ) {
-				$sorting_flow[$id] = $webhook['transaction']['number'];
+				$sorting_flow[ $id ] = $webhook['transaction']['number'];
 			}
 		}
 
@@ -87,6 +87,7 @@ class WC_Background_Payex_Queue extends WC_Background_Process {
 
 		// Get first result
 		$batch = array_shift( $results );
+
 		return $batch;
 	}
 
@@ -95,7 +96,7 @@ class WC_Background_Payex_Queue extends WC_Background_Process {
 	 *
 	 * @param $message
 	 */
-	private function log($message) {
+	private function log( $message ) {
 		$this->logger->info( $message, array( 'source' => 'wc_payex_queue' ) );
 	}
 
@@ -103,6 +104,7 @@ class WC_Background_Payex_Queue extends WC_Background_Process {
 	 * Code to execute for each item in the queue.
 	 *
 	 * @param mixed $item Queue item to iterate over.
+	 *
 	 * @return bool
 	 */
 	protected function task( $item ) {
@@ -143,6 +145,7 @@ class WC_Background_Payex_Queue extends WC_Background_Process {
 			}
 		} catch ( Exception $e ) {
 			$this->log( sprintf( '[ERROR]: Validation error: %s', $e->getMessage() ) );
+
 			return false;
 		}
 
@@ -153,10 +156,10 @@ class WC_Background_Payex_Queue extends WC_Background_Process {
 			$gateway->transactions->import_transactions( $transactions, $order_id );
 
 			// Extract transaction from list
-			$transaction_id = $data['transaction']['number'];
+			$transaction_id    = $data['transaction']['number'];
 			$transaction_state = $data['transaction']['state'];
-			$transaction = px_filter( $transactions, array( 'number' => $transaction_id ) );
-			$this->log( sprintf( 'Transaction: %s', var_export( $transaction, TRUE ) ) );
+			$transaction       = px_filter( $transactions, array( 'number' => $transaction_id ) );
+			$this->log( sprintf( 'Transaction: %s', var_export( $transaction, true ) ) );
 			if ( ! is_array( $transaction ) || count( $transaction ) === 0 ) {
 				throw new Exception( sprintf( 'Failed to fetch transaction number #%s', $transaction_id ) );
 			}
@@ -164,7 +167,7 @@ class WC_Background_Payex_Queue extends WC_Background_Process {
 			// Prevent
 			//wp_cache_delete( 'payex_transaction_' . $transaction_id . $transaction_state, 'site_transient' );
 			//if ( get_site_transient( 'payex_transaction_' . $transaction_id . $transaction_state ) !== FALSE ) {
-				//throw new Exception( sprintf( 'WEBHOOK: Error: Transaction #%s rejected (duplicate request)', $transaction_id ) );
+			//	throw new Exception( sprintf( 'WEBHOOK: Error: Transaction #%s rejected (duplicate request)', $transaction_id ) );
 			//}
 
 			//set_site_transient( 'payex_transaction_' . $transaction_id . $transaction_state, TRUE, MINUTE_IN_SECONDS * 5 );
