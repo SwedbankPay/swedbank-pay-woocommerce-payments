@@ -1,6 +1,6 @@
 <?php
 /*
- * Plugin Name: PayEx WooCommerce payments
+ * Plugin Name: PayEx WooCommerce Payments
  * Plugin URI: http://payex.com/
  * Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
  * Author: PayEx

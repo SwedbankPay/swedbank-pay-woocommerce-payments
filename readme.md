@@ -1,4 +1,4 @@
-# WooCommerce plugin for the RESTful PayEx eCommerce API Platform
+# PayEx WooCommerce Payments
 
 This plugin provides the PayEx Payment Gateway for WooCommerce.
 
