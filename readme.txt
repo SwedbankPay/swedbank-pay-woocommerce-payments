@@ -3,7 +3,7 @@ Contributors: payex
 Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, payex, payment gateway
 Requires at least: 4.7
 Tested up to: 5.2
-Stable tag: 1.3.0
+Stable tag: 1.3.1
 License: Apache License 2.0
 License URI: http://www.apache.org/licenses/LICENSE-2.0
 

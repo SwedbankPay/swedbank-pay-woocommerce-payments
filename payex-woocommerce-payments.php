@@ -7,7 +7,7 @@
  * Author URI: http://payex.com/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
- * Version: 1.3.0
+ * Version: 1.3.1
  * Text Domain: payex-woocommerce-payments
  * Domain Path: /languages
  * WC requires at least: 3.0.0
