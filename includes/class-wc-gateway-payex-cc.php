@@ -504,6 +504,9 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		// Get Order UUID
 		$order_uuid = px_uuid( uniqid( $order_id ) );
 
+		// Order Info
+		$info = $this->get_order_info( $order );
+
 		// Change Payment Method
 		// Orders with Zero Amount
 		if ( $order->get_total() == 0 || self::wcs_is_payment_change() ) {
@@ -583,7 +586,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					array(
 						'type'      => 'CreditCard',
 						'amount'    => round( $amount * 100 ),
-						'vatAmount' => '0'
+						'vatAmount' => round( $info['vat_amount'] * 100 ),
 					)
 				),
 				'description'          => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
@@ -1284,6 +1287,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			$user_id    = $renewal_order->get_user_id();
 			$email      = $renewal_order->get_billing_email();
 			$order_uuid = px_uuid( uniqid( $renewal_order->get_id() ) );
+			$info       = $this->get_order_info( $renewal_order );
 
 			if ( $user_id > 0 ) {
 				$customer_uuid = get_user_meta( $user_id, '_payex_customer_uuid', true );
@@ -1306,6 +1310,8 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					throw new Exception( 'Invalid Token Id' );
 				}
 
+				// @todo Use generateRecurrenceToken
+				// @todo Check vatAmount can be incorrect
 				$params = array(
 					'payment' => array(
 						'operation'      => 'Recur',
@@ -1313,6 +1319,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 						'paymentToken'   => $token->get_token(),
 						'currency'       => $renewal_order->get_currency(),
 						'amount'         => round( $amount_to_charge * 100 ),
+						'vatAmount'      => round( $info['vat_amount'] * 100 ),
 						'description'    => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $renewal_order->get_order_number() ),
 						'payerReference' => $customer_uuid,
 						'userAgent'      => $renewal_order->get_customer_user_agent(),
@@ -1332,6 +1339,8 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					$result = $this->request( 'POST', '/psp/creditcard/payments', $params );
 				} catch ( Exception $e ) {
 					$this->log( sprintf( '[WC_Subscriptions]: API Exception: %s', $e->getMessage() ) );
+
+					throw $e;
 				}
 
 				$payment_id = $result['payment']['id'];

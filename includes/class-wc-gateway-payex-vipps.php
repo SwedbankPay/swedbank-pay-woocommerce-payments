@@ -246,6 +246,9 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		// Get Order UUID
 		$order_uuid = mb_strimwidth( px_uuid( $order_id ), 0, 30, '', 'UTF-8' );
 
+		// Order Info
+		$info = $this->get_order_info( $order );
+
 		$params = [
 			'payment' => [
 				'operation'      => 'Purchase',
@@ -255,7 +258,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 					[
 						'type'      => 'Vipps',
 						'amount'    => round( $amount * 100 ),
-						'vatAmount' => '0'
+						'vatAmount' => round( $info['vat_amount'] * 100 )
 					]
 				],
 				'description'    => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
