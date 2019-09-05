@@ -290,7 +290,7 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 				'payeeInfo'      => [
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => str_replace( '-', '', $order_uuid ),
-					'orderReference' => $order->get_order_number()
+					'orderReference' => $order->get_id()
 				],
 				'prefillInfo'    => [
 					'msisdn' => apply_filters( 'payex_vipps_phone_format', $phone, $order )
