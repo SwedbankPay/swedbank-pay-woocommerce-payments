@@ -34,6 +34,30 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	public $debug = 'no';
 
 	/**
+	 * Reject Credit Cards
+	 * @var string
+	 */
+	public $reject_credit_cards = 'no';
+
+	/**
+	 * Reject Debit Cards
+	 * @var string
+	 */
+	public $reject_debit_cards = 'no';
+
+	/**
+	 * Reject Consumer Cards
+	 * @var string
+	 */
+	public $reject_consumer_cards = 'no';
+
+	/**
+	 * Reject Corporate Cards
+	 * @var string
+	 */
+	public $reject_corporate_cards = 'no';
+
+	/**
 	 * Get PayEx Client
 	 * @return \PayEx\Api\Client
 	 */
@@ -393,6 +417,19 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				'zipCode' => $order->get_billing_postcode(),
 				'countryCode' => $order->get_billing_country()
 			],
+		];
+	}
+
+	/**
+	 * Get Card Options
+	 * @return array
+	 */
+	public function get_card_options() {
+		return [
+			'rejectCreditCards' => $this->reject_credit_cards === 'yes',
+			'rejectDebitCards' => $this->reject_debit_cards === 'yes',
+			'rejectConsumerCards' => $this->reject_consumer_cards === 'yes',
+			'rejectCorporateCards' => $this->reject_corporate_cards === 'yes'
 		];
 	}
 

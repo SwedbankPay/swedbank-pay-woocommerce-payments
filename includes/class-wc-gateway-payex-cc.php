@@ -100,6 +100,12 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		$this->save_cc        = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
 		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
+		// Reject Cards
+		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
+		$this->reject_debit_cards     = isset( $this->settings['reject_debit_cards'] ) ? $this->settings['reject_debit_cards'] : $this->reject_debit_cards;
+		$this->reject_consumer_cards  = isset( $this->settings['reject_consumer_cards'] ) ? $this->settings['reject_consumer_cards'] : $this->reject_consumer_cards;
+		$this->reject_corporate_cards = isset( $this->settings['reject_corporate_cards'] ) ? $this->settings['reject_corporate_cards'] : $this->reject_corporate_cards;
+
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
 		if ( ! filter_var( $this->terms_url, FILTER_VALIDATE_URL ) ) {
 			$this->terms_url = '';
@@ -249,6 +255,30 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'description' => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
 				'default'     => get_site_url()
 			),
+			'reject_credit_cards' => array(
+				'title'   => __( 'Reject Credit Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Credit Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_credit_cards
+			),
+			'reject_debit_cards' => array(
+				'title'   => __( 'Reject Debit Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Debit Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_debit_cards
+			),
+			'reject_consumer_cards' => array(
+				'title'   => __( 'Reject Consumer Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Consumer Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_consumer_cards
+			),
+			'reject_corporate_cards' => array(
+				'title'   => __( 'Reject Corporate Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Corporate Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_corporate_cards
+			),
 		);
 	}
 
@@ -338,6 +368,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => px_uuid( uniqid( 'add_payment_method' ) ),
 				),
+                'creditCard'           => $this->get_card_options()
 			)
 		);
 
@@ -503,6 +534,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 							'orderReference' => $order->get_id()
 						),
 						'cardholder' => self::get_card_holder( $order ),
+						'creditCard' => $this->get_card_options()
 					)
 				);
 
@@ -572,6 +604,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					'orderReference' => $order->get_id()
 				),
 				'cardholder' => self::get_card_holder( $order ),
+				'creditCard' => $this->get_card_options(),
 				'prefillInfo'          => array(
 					'msisdn' => '+' . ltrim( $phone, '+' )
 				),
