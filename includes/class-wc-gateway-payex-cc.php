@@ -338,9 +338,6 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => px_uuid( uniqid( 'add_payment_method' ) ),
 				),
-				'creditCard'           => array(
-					'no3DSecure' => false
-				)
 			)
 		);
 
@@ -504,9 +501,6 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 							'payeeId'        => $this->payee_id,
 							'payeeReference' => $order_uuid,
 						),
-						'creditCard'           => array(
-							'no3DSecure' => false
-						)
 					)
 				);
 
@@ -577,9 +571,6 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'prefillInfo'          => array(
 					'msisdn' => '+' . ltrim( $phone, '+' )
 				),
-				'creditCard'           => array(
-					'no3DSecure' => false
-				)
 			)
 		);
 
