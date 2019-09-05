@@ -357,6 +357,46 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	}
 
 	/**
+	 * Get card holder's information
+	 *
+	 * @param WC_Order $order
+	 *
+	 * @return array
+	 */
+	public static function get_card_holder( $order ) {
+		return [
+			'firstName' => $order->get_billing_first_name(),
+			'lastName' => $order->get_billing_last_name(),
+			'email' => $order->get_billing_email(),
+			'msisdn' => $order->get_billing_phone(),
+			'homePhoneNumber' => $order->get_billing_phone(),
+			'workPhoneNumber' => $order->get_billing_phone(),
+			'shippingAddress' => [
+				'firstName' => $order->get_shipping_first_name(),
+				'lastName' => $order->get_shipping_last_name(),
+				'email' => $order->get_billing_email(),
+				'msisdn' => $order->get_billing_phone(),
+				'streetAddress' => implode(', ', [$order->get_shipping_address_1(), $order->get_shipping_address_2()]),
+				'coAddress' => '',
+				'city' => $order->get_shipping_city(),
+				'zipCode' => $order->get_shipping_postcode(),
+				'countryCode' => $order->get_shipping_country()
+			],
+			'billingAddress' => [
+				'firstName' => $order->get_billing_first_name(),
+				'lastName' => $order->get_billing_last_name(),
+				'email' => $order->get_billing_email(),
+				'msisdn' => $order->get_billing_phone(),
+				'streetAddress' => implode(', ', [$order->get_billing_address_1(), $order->get_billing_address_2()]),
+				'coAddress' => '',
+				'city' => $order->get_billing_city(),
+				'zipCode' => $order->get_billing_postcode(),
+				'countryCode' => $order->get_billing_country()
+			],
+		];
+	}
+
+	/**
 	 * Extract operation value from operations list
 	 *
 	 * @param array $operations

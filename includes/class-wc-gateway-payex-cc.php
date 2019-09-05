@@ -501,6 +501,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 							'payeeId'        => $this->payee_id,
 							'payeeReference' => $order_uuid,
 						),
+						'cardholder' => self::get_card_holder( $order ),
 					)
 				);
 
@@ -568,6 +569,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => $order_uuid,
 				),
+				'cardholder' => self::get_card_holder( $order ),
 				'prefillInfo'          => array(
 					'msisdn' => '+' . ltrim( $phone, '+' )
 				),
