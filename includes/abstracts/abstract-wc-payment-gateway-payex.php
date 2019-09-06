@@ -549,17 +549,23 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 						$payment_id = $order->get_meta( '_payex_payment_id' );
 						$result     = $this->request( 'GET', $payment_id . '/authorizations' );
 						if ( isset( $result['authorizations']['authorizationList'][0] ) &&
-						     isset( $result['authorizations']['authorizationList'][0]['paymentToken'] ) ) {
-							$authorization = $result['authorizations']['authorizationList'][0];
-							$paymentToken  = $authorization['paymentToken'];
-							$cardBrand     = $authorization['cardBrand'];
-							$maskedPan     = $authorization['maskedPan'];
-							$expiryDate    = explode( '/', $authorization['expiryDate'] );
+						     (
+							     ! empty( $result['authorizations']['authorizationList'][0]['paymentToken'] ) ||
+							     ! empty( $result['authorizations']['authorizationList'][0]['recurrenceToken'] )
+						     )
+						) {
+							$authorization   = $result['authorizations']['authorizationList'][0];
+							$paymentToken    = isset( $authorization['paymentToken'] ) ? $authorization['paymentToken'] : '';
+							$recurrenceToken = isset( $authorization['recurrenceToken'] ) ? $authorization['recurrenceToken'] : '';
+							$cardBrand       = $authorization['cardBrand'];
+							$maskedPan       = $authorization['maskedPan'];
+							$expiryDate      = explode( '/', $authorization['expiryDate'] );
 
 							// Create Payment Token
 							$token = new WC_Payment_Token_Payex();
 							$token->set_gateway_id( $this->id );
 							$token->set_token( $paymentToken );
+							$token->set_recurrence_token( $recurrenceToken );
 							$token->set_last4( substr( $maskedPan, - 4 ) );
 							$token->set_expiry_year( $expiryDate[1] );
 							$token->set_expiry_month( $expiryDate[0] );
