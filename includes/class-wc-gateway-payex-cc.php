@@ -545,7 +545,10 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 							'orderReference' => $order->get_id()
 						],
 						'cardholder' => self::get_card_holder( $order ),
-						'creditCard' => $this->get_card_options()
+						'creditCard' => $this->get_card_options(),
+						'metadata'   => [
+							'order_id' => $order_id
+						],
 					]
                 ];
 
@@ -619,6 +622,9 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'creditCard' => $this->get_card_options(),
 				'prefillInfo'          => [
 					'msisdn' => '+' . ltrim( $phone, '+' )
+				],
+				'metadata'   => [
+					'order_id' => $order_id
 				],
 			]
         ];
@@ -1345,6 +1351,9 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 							'payeeId'        => $this->payee_id,
 							'payeeReference' => $order_uuid,
 							'orderReference' => $renewal_order->get_id()
+						],
+						'metadata'        => [
+							'order_id' => $renewal_order->get_id()
 						],
 					]
                 ];

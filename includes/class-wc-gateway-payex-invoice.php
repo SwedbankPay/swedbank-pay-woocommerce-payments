@@ -309,6 +309,9 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 					"productCategory" => "PC1234",
 					'orderReference'  => $order->get_id()
 				],
+				'metadata'       => [
+					'order_id' => $order_id
+				],
 			],
 			'invoice' => [
 				'invoiceType' => 'PayExFinancing' . ucfirst( strtolower( $country ) )

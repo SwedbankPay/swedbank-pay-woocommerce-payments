@@ -278,7 +278,10 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				],
 				'prefillInfo'    => [
 					'msisdn' => apply_filters( 'payex_vipps_phone_format', $phone, $order )
-				]
+				],
+				'metadata'   => [
+					'order_id' => $order_id
+				],
 			]
 		];
 

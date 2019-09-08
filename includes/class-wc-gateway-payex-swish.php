@@ -300,7 +300,10 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 				],
 				'swish'          => [
 					'ecomOnlyEnabled' => true // @todo
-				]
+				],
+				'metadata'   => [
+					'order_id' => $order_id
+				],
 			]
 		];
 
