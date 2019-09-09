@@ -362,7 +362,8 @@ class WC_Payex_Psp {
 	public static function admin_enqueue_scripts( $hook ) {
 		if ( $hook === 'post.php' ) {
 			// Scripts
-			wp_register_script( 'payex-admin-js', plugin_dir_url( __FILE__ ) . 'assets/js/admin.js' );
+			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+			wp_register_script( 'payex-admin-js', plugin_dir_url( __FILE__ ) . 'assets/js/admin' . $suffix . '.js' );
 
 			// Localize the script
 			$translation_array = array(
