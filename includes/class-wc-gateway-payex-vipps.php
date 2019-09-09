@@ -38,12 +38,6 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 	public $culture = 'en-US';
 
 	/**
-	 * Checkout Method
-	 * @var string
-	 */
-	public $method = 'redirect';
-
-	/**
 	 * Init
 	 */
 	public function __construct() {
@@ -73,7 +67,6 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-		$this->method         = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
 		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
@@ -171,16 +164,6 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				'description' => __( 'Language of pages displayed by PayEx during payment.', 'payex-woocommerce-payments' ),
 				'default'     => $this->culture
 			),
-			'method'         => array(
-				'title'       => __( 'Checkout Method', 'payex-woocommerce-payments' ),
-				'type'        => 'select',
-				'options'     => array(
-					'redirect' => __( 'Redirect', 'payex-woocommerce-payments' ),
-					'direct'   => __( 'Direct', 'payex-woocommerce-payments' ),
-				),
-				'description' => __( 'Checkout Method', 'payex-woocommerce-payments' ),
-				'default'     => $this->method
-			),
 			'terms_url'      => array(
 				'title'       => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
 				'type'        => 'text',
@@ -263,6 +246,9 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		// Get Order UUID
 		$order_uuid = mb_strimwidth( px_uuid( $order_id ), 0, 30, '', 'UTF-8' );
 
+		// Order Info
+		$info = $this->get_order_info( $order );
+
 		$params = [
 			'payment' => [
 				'operation'      => 'Purchase',
@@ -272,12 +258,12 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 					[
 						'type'      => 'Vipps',
 						'amount'    => round( $amount * 100 ),
-						'vatAmount' => '0'
+						'vatAmount' => round( $info['vat_amount'] * 100 )
 					]
 				],
 				'description'    => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
 				'payerReference' => $customer_uuid,
-				'userAgent'      => $_SERVER['HTTP_USER_AGENT'],
+				'userAgent'      => $order->get_customer_user_agent(),
 				'language'       => $this->culture,
 				'urls'           => [
 					'completeUrl'       => html_entity_decode( $this->get_return_url( $order ) ),
@@ -288,10 +274,14 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				'payeeInfo'      => [
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => str_replace( '-', '', $order_uuid ),
+					'orderReference' => $order->get_id()
 				],
 				'prefillInfo'    => [
 					'msisdn' => apply_filters( 'payex_vipps_phone_format', $phone, $order )
-				]
+				],
+				'metadata'   => [
+					'order_id' => $order_id
+				],
 			]
 		];
 
@@ -307,48 +297,13 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		// Save payment ID
 		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
 
-		switch ( $this->method ) {
-			case 'redirect':
-				// Get Redirect
-				$redirect = self::get_operation( $result['operations'], 'redirect-authorization' );
+		// Get Redirect
+		$redirect = self::get_operation( $result['operations'], 'redirect-authorization' );
 
-				return array(
-					'result'   => 'success',
-					'redirect' => $redirect
-				);
-				break;
-			case 'direct':
-				// Authorize payment
-				$authorization = self::get_operation( $result['operations'], 'create-authorization' );
-
-				try {
-					$params = [
-						'transaction' => [
-							'msisdn' => apply_filters( 'payex_vipps_phone_format', $phone, $order )
-						]
-					];
-
-					$result = $this->request( 'POST', $authorization, $params );
-				} catch ( \Exception $e ) {
-					$this->log( sprintf( '[ERROR] Create Authorization: %s', $e->getMessage() ) );
-					wc_add_notice( $e->getMessage(), 'error' );
-
-					return false;
-				}
-
-				return array(
-					'result'   => 'success',
-					'redirect' => $this->get_return_url( $order )
-				);
-
-				break;
-
-			default:
-				wc_add_notice( __( 'Wrong method', 'payex-woocommerce-payments' ), 'error' );
-
-				return false;
-		}
-
+		return array(
+			'result'   => 'success',
+			'redirect' => $redirect
+		);
 	}
 
 	/**

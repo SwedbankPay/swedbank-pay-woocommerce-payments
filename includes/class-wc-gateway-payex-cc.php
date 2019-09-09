@@ -100,6 +100,12 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		$this->save_cc        = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
 		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
+		// Reject Cards
+		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
+		$this->reject_debit_cards     = isset( $this->settings['reject_debit_cards'] ) ? $this->settings['reject_debit_cards'] : $this->reject_debit_cards;
+		$this->reject_consumer_cards  = isset( $this->settings['reject_consumer_cards'] ) ? $this->settings['reject_consumer_cards'] : $this->reject_consumer_cards;
+		$this->reject_corporate_cards = isset( $this->settings['reject_corporate_cards'] ) ? $this->settings['reject_corporate_cards'] : $this->reject_corporate_cards;
+
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
 		if ( ! filter_var( $this->terms_url, FILTER_VALIDATE_URL ) ) {
 			$this->terms_url = '';
@@ -249,6 +255,30 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'description' => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
 				'default'     => get_site_url()
 			),
+			'reject_credit_cards' => array(
+				'title'   => __( 'Reject Credit Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Credit Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_credit_cards
+			),
+			'reject_debit_cards' => array(
+				'title'   => __( 'Reject Debit Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Debit Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_debit_cards
+			),
+			'reject_consumer_cards' => array(
+				'title'   => __( 'Reject Consumer Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Consumer Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_consumer_cards
+			),
+			'reject_corporate_cards' => array(
+				'title'   => __( 'Reject Corporate Cards', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Reject Corporate Cards', 'payex-woocommerce-payments' ),
+				'default' => $this->reject_corporate_cards
+			),
 		);
 	}
 
@@ -319,30 +349,29 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			$customer_uuid = px_uuid( uniqid( 'add_payment_method' ) );
 		}
 
-		$params = array(
-			'payment' => array(
-				'operation'            => 'Verify',
-				'currency'             => get_woocommerce_currency(),
-				'description'          => __( 'Verification of Credit Card', 'payex-woocommerce-payments' ),
-				'payerReference'       => $customer_uuid,
-				'generatePaymentToken' => true,
-				'pageStripdown'        => false,
-				'userAgent'            => $_SERVER['HTTP_USER_AGENT'],
-				'language'             => $this->culture,
-				'urls'                 => array(
+		$params = [
+			'payment' => [
+				'operation'               => 'Verify',
+				'currency'                => get_woocommerce_currency(),
+				'description'             => __( 'Verification of Credit Card', 'payex-woocommerce-payments' ),
+				'payerReference'          => $customer_uuid,
+				'generatePaymentToken'    => true,
+				'generateRecurrenceToken' => true,
+				'pageStripdown'           => false,
+				'userAgent'               => isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '',
+				'language'                => $this->culture,
+				'urls'                    => [
 					'completeUrl' => add_query_arg( 'action', 'payex_card_store', admin_url( 'admin-ajax.php' ) ),
 					'cancelUrl'   => wc_get_account_endpoint_url( 'payment-methods' ),
 					'callbackUrl' => WC()->api_request_url( __CLASS__ )
-				),
-				'payeeInfo'            => array(
+				],
+				'payeeInfo'               => [
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => px_uuid( uniqid( 'add_payment_method' ) ),
-				),
-				'creditCard'           => array(
-					'no3DSecure' => false
-				)
-			)
-		);
+				],
+				'creditCard'              => $this->get_card_options()
+			]
+        ];
 
 		try {
 			$result = $this->request( 'POST', '/psp/creditcard/payments', $params );
@@ -351,10 +380,10 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 			WC()->session->__unset( 'verification_payment_id' );
 
-			return array(
+			return [
 				'result'   => 'failure',
 				'redirect' => wc_get_account_endpoint_url( 'payment-methods' ),
-			);
+            ];
 		}
 
 		WC()->session->set( 'verification_payment_id', $result['payment']['id'] );
@@ -377,17 +406,23 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 			$result = $this->request( 'GET', $payment_id . '/verifications' );
 			if ( isset( $result['verifications']['verificationList'][0] ) &&
-			     isset( $result['verifications']['verificationList'][0]['paymentToken'] ) ) {
-				$verification = $result['verifications']['verificationList'][0];
-				$paymentToken = $verification['paymentToken'];
-				$cardBrand    = $verification['cardBrand'];
-				$maskedPan    = $verification['maskedPan'];
-				$expiryDate   = explode( '/', $verification['expiryDate'] );
+                 (
+	                 ! empty( $result['verifications']['verificationList'][0]['paymentToken'] ) ||
+	                 ! empty( $result['verifications']['verificationList'][0]['recurrenceToken'] )
+                 )
+            ) {
+				$verification    = $result['verifications']['verificationList'][0];
+				$paymentToken    = isset( $verification['paymentToken'] ) ? $verification['paymentToken'] : '';
+				$recurrenceToken = isset( $verification['recurrenceToken'] ) ? $verification['recurrenceToken'] : '';
+				$cardBrand       = $verification['cardBrand'];
+				$maskedPan       = $verification['maskedPan'];
+				$expiryDate      = explode( '/', $verification['expiryDate'] );
 
 				// Create Payment Token
 				$token = new WC_Payment_Token_Payex();
 				$token->set_gateway_id( $this->id );
 				$token->set_token( $paymentToken );
+				$token->set_recurrence_token( $recurrenceToken );
 				$token->set_last4( substr( $maskedPan, - 4 ) );
 				$token->set_expiry_year( $expiryDate[1] );
 				$token->set_expiry_month( $expiryDate[0] );
@@ -476,39 +511,46 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		// Get Order UUID
 		$order_uuid = px_uuid( uniqid( $order_id ) );
 
+		// Order Info
+		$info = $this->get_order_info( $order );
+
 		// Change Payment Method
 		// Orders with Zero Amount
 		if ( $order->get_total() == 0 || self::wcs_is_payment_change() ) {
 			// Store new Card
 			if ( $token_id === 'new' ) {
-				$params = array(
-					'payment' => array(
-						'operation'            => 'Verify',
-						'currency'             => $currency,
-						'description'          => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
-						'payerReference'       => $customer_uuid,
-						'generatePaymentToken' => true,
-						'pageStripdown'        => false,
-						'userAgent'            => $order->get_customer_user_agent(),
-						'language'             => $this->culture,
-						'urls'                 => array(
-							'completeUrl'       => add_query_arg( array(
+				$params = [
+					'payment' => [
+						'operation'               => 'Verify',
+						'currency'                => $currency,
+						'description'             => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
+						'payerReference'          => $customer_uuid,
+						'generatePaymentToken'    => true,
+						'generateRecurrenceToken' => true,
+						'pageStripdown'           => false,
+						'userAgent'               => $order->get_customer_user_agent(),
+						'language'                => $this->culture,
+						'urls'                    => [
+							'completeUrl'       => add_query_arg( [
 								'verify' => 'true',
 								'key'    => $order->get_order_key()
-							), $this->get_return_url( $order ) ),
+							], $this->get_return_url( $order ) ),
 							'cancelUrl'         => $order->get_cancel_order_url_raw(),
 							'callbackUrl'       => WC()->api_request_url( __CLASS__ ),
 							'termsOfServiceUrl' => $this->terms_url
-						),
-						'payeeInfo'            => array(
+						],
+						'payeeInfo'            => [
 							'payeeId'        => $this->payee_id,
 							'payeeReference' => $order_uuid,
-						),
-						'creditCard'           => array(
-							'no3DSecure' => false
-						)
-					)
-				);
+							'orderReference' => $order->get_id()
+						],
+						'cardholder' => self::get_card_holder( $order ),
+						'creditCard' => $this->get_card_options(),
+						'metadata'   => [
+							'order_id' => $order_id
+						],
+					]
+                ];
 
 				try {
 					$result = $this->request( 'POST', '/psp/creditcard/payments', $params );
@@ -529,10 +571,10 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				// Redirect
 				$order->add_order_note( __( 'Customer has been redirected to PayEx.', 'payex-woocommerce-payments' ) );
 
-				return array(
+				return [
 					'result'   => 'success',
 					'redirect' => self::get_operation( $result['operations'], 'redirect-verification' )
-				);
+                ];
 			} else {
 				// Replace token
 				delete_post_meta( $order->get_id(), '_payment_tokens' );
@@ -546,46 +588,51 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		}
 
 		// Process payment
-		$params = array(
-			'payment' => array(
-				'operation'            => 'Purchase',
-				'intent'               => $this->auto_capture === 'no' ? 'Authorization' : 'AutoCapture',
-				'currency'             => $currency,
-				'prices'               => array(
-					array(
+		$params = [
+			'payment' => [
+				'operation'              => 'Purchase',
+				'intent'                 => $this->auto_capture === 'no' ? 'Authorization' : 'AutoCapture',
+				'currency'               => $currency,
+				'prices'                 => [
+					[
 						'type'      => 'CreditCard',
 						'amount'    => round( $amount * 100 ),
-						'vatAmount' => '0'
-					)
-				),
-				'description'          => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
-				'payerReference'       => $customer_uuid,
-				'generatePaymentToken' => $generate_token,
-				'pageStripdown'        => false,
-				'userAgent'            => $order->get_customer_user_agent(),
-				'language'             => $this->culture,
-				'urls'                 => array(
+						'vatAmount' => round( $info['vat_amount'] * 100 ),
+					]
+				],
+				'description'             => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
+				'payerReference'          => $customer_uuid,
+				'generatePaymentToken'    => $generate_token,
+				'generateRecurrenceToken' => $generate_token,
+				'pageStripdown'           => false,
+				'userAgent'               => $order->get_customer_user_agent(),
+				'language'                => $this->culture,
+				'urls'                    => [
 					'completeUrl'       => $this->get_return_url( $order ),
 					'cancelUrl'         => $order->get_cancel_order_url_raw(),
 					'callbackUrl'       => WC()->api_request_url( __CLASS__ ),
 					'termsOfServiceUrl' => $this->terms_url
-				),
-				'payeeInfo'            => array(
+				],
+				'payeeInfo'               => [
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => $order_uuid,
-				),
-				'prefillInfo'          => array(
+					'orderReference' => $order->get_id()
+				],
+				'cardholder' => self::get_card_holder( $order ),
+				'creditCard' => $this->get_card_options(),
+				'prefillInfo'          => [
 					'msisdn' => '+' . ltrim( $phone, '+' )
-				),
-				'creditCard'           => array(
-					'no3DSecure' => false
-				)
-			)
-		);
+				],
+				'metadata'   => [
+					'order_id' => $order_id
+				],
+			]
+        ];
 
 		if ( $token->get_id() ) {
-			$params['payment']['paymentToken']         = $token->get_token();
-			$params['payment']['generatePaymentToken'] = false;
+			$params['payment']['paymentToken']            = $token->get_token();
+			$params['payment']['generatePaymentToken']    = false;
+			$params['payment']['generateRecurrenceToken'] = false;
 		}
 
 		try {
@@ -614,10 +661,10 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		// Redirect
 		$order->add_order_note( __( 'Customer has been redirected to PayEx.', 'payex-woocommerce-payments' ) );
 
-		return array(
+		return [
 			'result'   => 'success',
 			'redirect' => self::get_operation( $result['operations'], 'redirect-authorization' )
-		);
+        ];
 	}
 
 	/**
@@ -664,17 +711,20 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				// Orders with Zero Amount
 				if ( $order->get_meta( '_payex_replace_token' ) === '1' ) {
 					if ( isset( $result['payment']['verifications']['verificationList'][0] ) &&
-					     isset( $result['payment']['verifications']['verificationList'][0]['paymentToken'] ) ) {
+					     isset( $result['payment']['verifications']['verificationList'][0]['paymentToken'] ) )
+					{
 						$verification = $result['payment']['verifications']['verificationList'][0];
-						$paymentToken = $verification['paymentToken'];
-						$cardBrand    = $verification['cardBrand'];
-						$maskedPan    = $verification['maskedPan'];
-						$expiryDate   = explode( '/', $verification['expiryDate'] );
+						$paymentToken    = $verification['paymentToken'];
+						$recurrenceToken = $verification['recurrenceToken'];
+						$cardBrand       = $verification['cardBrand'];
+						$maskedPan       = $verification['maskedPan'];
+						$expiryDate      = explode( '/', $verification['expiryDate'] );
 
 						// Create Payment Token
 						$token = new WC_Payment_Token_Payex();
 						$token->set_gateway_id( $this->id );
 						$token->set_token( $paymentToken );
+						$token->set_recurrence_token( $recurrenceToken );
 						$token->set_last4( substr( $maskedPan, - 4 ) );
 						$token->set_expiry_year( $expiryDate[1] );
 						$token->set_expiry_month( $expiryDate[0] );
@@ -734,10 +784,10 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 			// Create Background Process Task
 			$background_process = new WC_Background_Payex_Queue();
-			$background_process->push_to_queue( array(
+			$background_process->push_to_queue( [
 				'payment_method_id' => $this->id,
 				'webhook_data'      => $raw_body,
-			) );
+            ] );
 			$background_process->save();
 
 			$this->log( sprintf( 'Incoming Callback: Task enqueued. Transaction ID: %s', $data['transaction']['number'] ) );
@@ -1256,6 +1306,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			$user_id    = $renewal_order->get_user_id();
 			$email      = $renewal_order->get_billing_email();
 			$order_uuid = px_uuid( uniqid( $renewal_order->get_id() ) );
+			$info       = $this->get_order_info( $renewal_order );
 
 			if ( $user_id > 0 ) {
 				$customer_uuid = get_user_meta( $user_id, '_payex_customer_uuid', true );
@@ -1278,31 +1329,48 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					throw new Exception( 'Invalid Token Id' );
 				}
 
-				$params = array(
-					'payment' => array(
-						'operation'      => 'Recur',
-						'intent'         => $this->auto_capture === 'no' ? 'Authorization' : 'AutoCapture',
-						'paymentToken'   => $token->get_token(),
-						'currency'       => $renewal_order->get_currency(),
-						'amount'         => round( $amount_to_charge * 100 ),
-						'description'    => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $renewal_order->get_order_number() ),
-						'payerReference' => $customer_uuid,
-						'userAgent'      => $renewal_order->get_customer_user_agent(),
-						'language'       => $this->culture,
-						'urls'           => array(
+				$paymentToken = $token->get_token();
+				$recurrenceToken = $token->get_recurrence_token();
+
+				// @todo Check vatAmount can be incorrect
+				$params = [
+					'payment' => [
+						'operation'       => 'Recur',
+						'intent'          => $this->auto_capture === 'no' ? 'Authorization' : 'AutoCapture',
+						'currency'        => $renewal_order->get_currency(),
+						'amount'          => round( $amount_to_charge * 100 ),
+						'vatAmount'       => round( $info['vat_amount'] * 100 ),
+						'description'     => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $renewal_order->get_order_number() ),
+						'payerReference'  => $customer_uuid,
+						'userAgent'       => $renewal_order->get_customer_user_agent(),
+						'language'        => $this->culture,
+						'urls'            => [
 							'callbackUrl' => WC()->api_request_url( __CLASS__ )
-						),
-						'payeeInfo'      => array(
+						],
+						'payeeInfo'       => [
 							'payeeId'        => $this->payee_id,
 							'payeeReference' => $order_uuid,
-						),
-					)
-				);
+							'orderReference' => $renewal_order->get_id()
+						],
+						'metadata'        => [
+							'order_id' => $renewal_order->get_id()
+						],
+					]
+                ];
+
+				// Use Recurrence Token if it's exist
+				if ( ! empty( $recurrenceToken ) ) {
+					$params['payment']['recurrenceToken'] = $recurrenceToken;
+                } else {
+					$params['payment']['paymentToken'] = $paymentToken;
+                }
 
 				try {
 					$result = $this->request( 'POST', '/psp/creditcard/payments', $params );
 				} catch ( Exception $e ) {
 					$this->log( sprintf( '[WC_Subscriptions]: API Exception: %s', $e->getMessage() ) );
+
+					throw $e;
 				}
 
 				$payment_id = $result['payment']['id'];
@@ -1328,7 +1396,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					}
 
 					// Extract transaction from list
-					$transaction = px_filter( $transactions, array( 'number' => $transaction_id ) );
+					$transaction = px_filter( $transactions, [ 'number' => $transaction_id ] );
 					if ( is_array( $transaction ) ) {
 						// Process transaction
 						try {
@@ -1341,12 +1409,12 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				}
 
 				// We are wait for Authorization transaction
-				$transactions = $this->transactions->select( array(
+				$transactions = $this->transactions->select( [
 					'order_id' => $renewal_order->get_id(),
 					'type'     => 'Authorization'
-				) );
+                ] );
 
-				if ( $transaction = px_filter( $transactions, array( 'state' => 'Failed' ) ) ) {
+				if ( $transaction = px_filter( $transactions, [ 'state' => 'Failed' ] ) ) {
 					$this->log( sprintf( '[WC_Subscriptions]: Failed to perform payment: %s', $transaction['id'] ) );
 					throw new Exception( __( 'Failed to perform payment', 'payex-woocommerce-payments' ), 'error' );
 				}

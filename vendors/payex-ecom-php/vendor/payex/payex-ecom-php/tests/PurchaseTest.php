@@ -37,9 +37,6 @@ class PurchaseTest extends TestCase
                     'payeeId'        => PAYEE_ID,
                     'payeeReference' => 'ef291c34-0343-481b-b563-0a629d57c62c',
                 ],
-                'creditCard'           => [
-                    'no3DSecure' => false
-                ]
             ]
         ];
 

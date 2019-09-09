@@ -44,6 +44,12 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 	public $method = 'redirect';
 
 	/**
+	 * ecomOnlyEnabled Flag
+	 * @var string
+	 */
+	public $ecom_only = 'yes';
+
+	/**
 	 * Init
 	 */
 	public function __construct() {
@@ -74,6 +80,7 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->method         = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
+		$this->ecom_only      = isset( $this->settings['ecom_only'] ) ? $this->settings['ecom_only'] : $this->ecom_only;
 		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
@@ -181,6 +188,13 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 				'description' => __( 'Checkout Method', 'payex-woocommerce-payments' ),
 				'default'     => $this->method
 			),
+			'ecom_only'      => array(
+				'title'   => __( 'Ecom Only', 'payex-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable logging', 'payex-woocommerce-payments' ),
+				'description' => __( 'If enabled then trigger the redirect payment scenario by default' ),
+				'default' => $this->ecom_only,
+			),
 			'terms_url'      => array(
 				'title'       => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
 				'type'        => 'text',
@@ -263,6 +277,9 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 		// Get Order UUID
 		$order_uuid = mb_strimwidth( px_uuid( $order_id ), 0, 30, '', 'UTF-8' );
 
+		// Order Info
+		$info = $this->get_order_info( $order );
+
 		$params = [
 			'payment' => [
 				'operation'      => 'Purchase',
@@ -272,12 +289,12 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 					[
 						'type'      => 'Swish',
 						'amount'    => round( $amount * 100 ),
-						'vatAmount' => '0'
+						'vatAmount' => round( $info['vat_amount'] * 100 )
 					]
 				],
 				'description'    => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
 				'payerReference' => $customer_uuid,
-				'userAgent'      => $_SERVER['HTTP_USER_AGENT'],
+				'userAgent'      => $order->get_customer_user_agent(),
 				'language'       => $this->culture,
 				'urls'           => [
 					'completeUrl'       => html_entity_decode( $this->get_return_url( $order ) ),
@@ -290,14 +307,17 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 				'payeeInfo'      => [
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => str_replace( '-', '', $order_uuid ),
-					'orderReference' => $order->get_order_number()
+					'orderReference' => $order->get_id()
 				],
 				'prefillInfo'    => [
 					'msisdn' => apply_filters( 'payex_vipps_phone_format', $phone, $order )
 				],
 				'swish'          => [
-					'ecomOnlyEnabled' => true // @todo
-				]
+					'ecomOnlyEnabled' => $this->ecom_only === 'yes'
+				],
+				'metadata'   => [
+					'order_id' => $order_id
+				],
 			]
 		];
 
