@@ -358,7 +358,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'generatePaymentToken'    => true,
 				'generateRecurrenceToken' => true,
 				'pageStripdown'           => false,
-				'userAgent'               => $_SERVER['HTTP_USER_AGENT'],
+				'userAgent'               => isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '',
 				'language'                => $this->culture,
 				'urls'                    => [
 					'completeUrl' => add_query_arg( 'action', 'payex_card_store', admin_url( 'admin-ajax.php' ) ),
