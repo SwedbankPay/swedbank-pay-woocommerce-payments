@@ -434,6 +434,51 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	}
 
 	/**
+	 * Get risks information
+	 *
+	 * @param WC_Order $order
+	 *
+	 * @return array
+	 */
+	public function get_risk_indicator( $order ) {
+		$result = [];
+
+		// Downloadable
+		if ( $order->has_downloadable_item() ) {
+			// For electronic delivery, the email address to which the merchandise was delivered
+			$result['deliveryEmailAddress'] = $order->get_billing_email();
+
+			// Electronic Delivery
+			$result['deliveryTimeFrameIndicator'] = '01';
+
+			// Digital goods, includes online services, electronic giftcards and redemption codes
+			$result['shipIndicator'] = '05';
+		}
+
+		// Shippable
+		if ( $order->needs_processing() ) {
+			// Two-day or more shipping
+			$result['deliveryTimeFrameIndicator'] = '04';
+
+			// Compare billing and shipping addresses
+			$billing  = $order->get_address( 'billing' );
+			$shipping = $order->get_address( 'shipping' );
+			$diff     = array_diff($billing, $shipping);
+			if ( count($diff) === 0 ) {
+				// Ship to cardholder's billing address
+				$result['shipIndicator'] = '01';
+			} else {
+				// Ship to address that is different than cardholder's billing address
+				$result['shipIndicator'] = '03';
+			}
+		}
+
+		// @todo Add features of WooThemes Order Delivery and Pre-Orders WooCommerce Extensions
+
+		return apply_filters( 'payex_payment_risk_indicator', $result, $order, $this );
+	}
+
+	/**
 	 * Extract operation value from operations list
 	 *
 	 * @param array $operations
