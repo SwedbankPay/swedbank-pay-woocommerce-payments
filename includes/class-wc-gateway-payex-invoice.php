@@ -177,14 +177,14 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 	public function payment_fields() {
 		parent::payment_fields();
 		?>
-        <p class="form-row form-row-wide">
-            <label for="social-security-number">
+		<p class="form-row form-row-wide">
+			<label for="social-security-number">
 				<?php echo __( 'Social Security Number', 'payex-woocommerce-payments' ); ?>
-                <abbr class="required">*</abbr>
-            </label>
-            <input type="text" class="input-text required-entry" name="social-security-number"
-                   id="social-security-number" value="" autocomplete="off">
-        </p>
+				<abbr class="required">*</abbr>
+			</label>
+			<input type="text" class="input-text required-entry" name="social-security-number"
+				   id="social-security-number" value="" autocomplete="off">
+		</p>
 		<?php
 	}
 
@@ -307,7 +307,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 					'payeeReference'  => str_replace( '-', '', $order_uuid ),
 					'orderReference'  => $order->get_id()
 				],
-                'riskIndicator'  => $this->get_risk_indicator( $order ),
+				'riskIndicator'  => $this->get_risk_indicator( $order ),
 				'metadata'       => [
 					'order_id' => $order_id
 				],

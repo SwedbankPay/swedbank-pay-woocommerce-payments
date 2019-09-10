@@ -589,15 +589,15 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 					// Save Payment Token
 					if ( $order->get_meta( '_payex_generate_token' ) === '1' &&
-					     count( $order->get_payment_tokens() ) === 0
+						 count( $order->get_payment_tokens() ) === 0
 					) {
 						$payment_id = $order->get_meta( '_payex_payment_id' );
 						$result     = $this->request( 'GET', $payment_id . '/authorizations' );
 						if ( isset( $result['authorizations']['authorizationList'][0] ) &&
-						     (
-							     ! empty( $result['authorizations']['authorizationList'][0]['paymentToken'] ) ||
-							     ! empty( $result['authorizations']['authorizationList'][0]['recurrenceToken'] )
-						     )
+							 (
+								 ! empty( $result['authorizations']['authorizationList'][0]['paymentToken'] ) ||
+								 ! empty( $result['authorizations']['authorizationList'][0]['recurrenceToken'] )
+							 )
 						) {
 							$authorization   = $result['authorizations']['authorizationList'][0];
 							$paymentToken    = isset( $authorization['paymentToken'] ) ? $authorization['paymentToken'] : '';
@@ -727,7 +727,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 */
 	public static function wcs_is_payment_change() {
 		return class_exists( 'WC_Subscriptions_Change_Payment_Gateway', false ) &&
-		       WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
+			   WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment;
 	}
 
 	/**
