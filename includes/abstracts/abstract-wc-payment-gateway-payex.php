@@ -4,10 +4,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use PayEx\Api\Client\Client as PayExClient;
+
 abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	implements WC_Payment_Gateway_Payex_Interface {
 
-	/** @var \PayEx\Api\Client */
+	/** @var PayExClient */
 	public $client;
 
 	/**
@@ -59,25 +61,13 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 	/**
 	 * Get PayEx Client
-	 * @return \PayEx\Api\Client
+	 * @return PayExClient
 	 */
 	public function getClient() {
 		if ( ! $this->client ) {
-			global $wp_version;
-			$plugin_version = get_file_data(
-				dirname( __FILE__ ) . '/../../payex-woocommerce-payments.php',
-				array( 'Version' ),
-				'payex-woocommerce-payments'
-			);
-
-			$this->client = new \PayEx\Api\Client();
-			$this->client->setMerchantToken( $this->merchant_token );
-			$this->client->setMode( $this->testmode === 'yes' ? \PayEx\Api\Client::MODE_TEST : \PayEx\Api\Client::MODE_PRODUCTION );
-			$this->client->setPlatform( sprintf( "WordPress/%s WooCommerce/%s PayEx.Psp.WooCommerce/%s",
-				$wp_version,
-				WC_VERSION,
-				$plugin_version[0]
-			) );
+			$this->client = (new PayExClient())
+				->setMerchantToken( $this->merchant_token )
+				->setMode( $this->testmode === 'yes' ? PayExClient::MODE_TEST : PayExClient::MODE_PRODUCTION );
 		}
 
 		return $this->client;
@@ -129,25 +119,22 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 */
 	public function request( $method, $url, $params = array() ) {
 		$start = microtime( true );
-		if ( $this->debug === 'yes' ) {
-			$this->log( sprintf( 'Request: %s %s %s', $method, $url, json_encode( $params, JSON_PRETTY_PRINT ) ) );
-		}
 
 		try {
-			/** @var \PayEx\Api\Response $response */
+			/** @var PayExClient $response */
 			$response = $this->getClient()->request( $method, $url, $params );
-			$result   = $response->toArray();
+			$result   = json_decode( $response->getResponseBody(), true );
 
 			if ( $this->debug === 'yes' ) {
 				$time = microtime( true ) - $start;
-				$this->log( sprintf( '[%.4F] Response: %s', $time, $response->getBody() ) );
+				$this->log( sprintf( '[%.4F] %s', $time, $response->getDebugInfo() ) );
 			}
 
 			return $result;
-		} catch ( \PayEx\Api\Exception $e ) {
+		} catch ( \PayEx\Api\Client\Exception $e ) {
 			if ( $this->debug === 'yes' ) {
 				$time = microtime( true ) - $start;
-				$this->log( sprintf( '[%.4F] Exception: %s', $time, $e->getMessage() ) );
+				$this->log( sprintf( '[%.4F] %s Exception: %s', $time, $response->getDebugInfo(), $e->getMessage() ) );
 			}
 
 			throw $e;
