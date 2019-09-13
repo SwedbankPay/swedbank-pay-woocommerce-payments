@@ -276,6 +276,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 					'payeeReference' => str_replace( '-', '', $order_uuid ),
 					'orderReference' => $order->get_id()
 				],
+				'riskIndicator'  => $this->get_risk_indicator( $order ),
 				'prefillInfo'    => [
 					'msisdn' => apply_filters( 'payex_vipps_phone_format', $phone, $order )
 				],

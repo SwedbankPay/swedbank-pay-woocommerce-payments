@@ -297,23 +297,23 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				// Lock "Save to Account" for Recurring Payments / Payment Change
 				if ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() ):
 					?>
-                    <script type="application/javascript">
-                        (function ($) {
-                            $(document).ready(function () {
-                                $('input[name="wc-payex_psp_cc-new-payment-method"]').prop({
-                                    'checked': true,
-                                    'disabled': true
-                                });
-                            });
+					<script type="application/javascript">
+						(function ($) {
+							$(document).ready(function () {
+								$('input[name="wc-payex_psp_cc-new-payment-method"]').prop({
+									'checked': true,
+									'disabled': true
+								});
+							});
 
-                            $(document).on('updated_checkout', function () {
-                                $('input[name="wc-payex_psp_cc-new-payment-method"]').prop({
-                                    'checked': true,
-                                    'disabled': true
-                                });
-                            });
-                        }(jQuery));
-                    </script>
+							$(document).on('updated_checkout', function () {
+								$('input[name="wc-payex_psp_cc-new-payment-method"]').prop({
+									'checked': true,
+									'disabled': true
+								});
+							});
+						}(jQuery));
+					</script>
 				<?php
 				endif;
 			endif;
@@ -371,7 +371,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				],
 				'creditCard'              => $this->get_card_options()
 			]
-        ];
+		];
 
 		try {
 			$result = $this->request( 'POST', '/psp/creditcard/payments', $params );
@@ -383,7 +383,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			return [
 				'result'   => 'failure',
 				'redirect' => wc_get_account_endpoint_url( 'payment-methods' ),
-            ];
+			];
 		}
 
 		WC()->session->set( 'verification_payment_id', $result['payment']['id'] );
@@ -406,11 +406,11 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 			$result = $this->request( 'GET', $payment_id . '/verifications' );
 			if ( isset( $result['verifications']['verificationList'][0] ) &&
-                 (
-	                 ! empty( $result['verifications']['verificationList'][0]['paymentToken'] ) ||
-	                 ! empty( $result['verifications']['verificationList'][0]['recurrenceToken'] )
-                 )
-            ) {
+				 (
+					 ! empty( $result['verifications']['verificationList'][0]['paymentToken'] ) ||
+					 ! empty( $result['verifications']['verificationList'][0]['recurrenceToken'] )
+				 )
+			) {
 				$verification    = $result['verifications']['verificationList'][0];
 				$paymentToken    = isset( $verification['paymentToken'] ) ? $verification['paymentToken'] : '';
 				$recurrenceToken = isset( $verification['recurrenceToken'] ) ? $verification['recurrenceToken'] : '';
@@ -544,13 +544,14 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 							'payeeReference' => $order_uuid,
 							'orderReference' => $order->get_id()
 						],
-						'cardholder' => self::get_card_holder( $order ),
-						'creditCard' => $this->get_card_options(),
-						'metadata'   => [
+						'riskIndicator' => $this->get_risk_indicator( $order ),
+						'cardholder'    => self::get_card_holder( $order ),
+						'creditCard'    => $this->get_card_options(),
+						'metadata'      => [
 							'order_id' => $order_id
 						],
 					]
-                ];
+				];
 
 				try {
 					$result = $this->request( 'POST', '/psp/creditcard/payments', $params );
@@ -574,7 +575,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				return [
 					'result'   => 'success',
 					'redirect' => self::get_operation( $result['operations'], 'redirect-verification' )
-                ];
+				];
 			} else {
 				// Replace token
 				delete_post_meta( $order->get_id(), '_payment_tokens' );
@@ -620,8 +621,9 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					'payeeReference' => $order_uuid,
 					'orderReference' => $order->get_id()
 				],
-				'cardholder' => self::get_card_holder( $order ),
-				'creditCard' => $this->get_card_options(),
+				'riskIndicator' => $this->get_risk_indicator( $order ),
+				'cardholder'    => self::get_card_holder( $order ),
+				'creditCard'    => $this->get_card_options(),
 				'prefillInfo'          => [
 					'msisdn' => '+' . ltrim( $phone, '+' )
 				],
@@ -629,7 +631,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					'order_id' => $order_id
 				],
 			]
-        ];
+		];
 
 		if ( $token->get_id() ) {
 			$params['payment']['paymentToken']            = $token->get_token();
@@ -666,7 +668,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		return [
 			'result'   => 'success',
 			'redirect' => self::get_operation( $result['operations'], 'redirect-authorization' )
-        ];
+		];
 	}
 
 	/**
@@ -791,7 +793,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			$background_process->push_to_queue( [
 				'payment_method_id' => $this->id,
 				'webhook_data'      => $raw_body,
-            ] );
+			] );
 			$background_process->save();
 
 			$this->log( sprintf( 'Incoming Callback: Task enqueued. Transaction ID: %s', $data['transaction']['number'] ) );
@@ -1356,18 +1358,19 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 							'payeeReference' => $order_uuid,
 							'orderReference' => $renewal_order->get_id()
 						],
+						'riskIndicator'   => $this->get_risk_indicator( $renewal_order ),
 						'metadata'        => [
 							'order_id' => $renewal_order->get_id()
 						],
 					]
-                ];
+				];
 
 				// Use Recurrence Token if it's exist
 				if ( ! empty( $recurrenceToken ) ) {
 					$params['payment']['recurrenceToken'] = $recurrenceToken;
-                } else {
+				} else {
 					$params['payment']['paymentToken'] = $paymentToken;
-                }
+				}
 
 				try {
 					$result = $this->request( 'POST', '/psp/creditcard/payments', $params );
@@ -1416,7 +1419,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				$transactions = $this->transactions->select( [
 					'order_id' => $renewal_order->get_id(),
 					'type'     => 'Authorization'
-                ] );
+				] );
 
 				if ( $transaction = px_filter( $transactions, [ 'state' => 'Failed' ] ) ) {
 					$this->log( sprintf( '[WC_Subscriptions]: Failed to perform payment: %s', $transaction['id'] ) );
