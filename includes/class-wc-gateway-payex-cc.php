@@ -581,6 +581,8 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				delete_post_meta( $order->get_id(), '_payment_tokens' );
 				$order->add_payment_token( $token );
 
+				wc_add_notice( __( 'Payment method was updated.', 'payex-woocommerce-payments' ) );
+
 				return array(
 					'result'   => 'success',
 					'redirect' => $this->get_return_url( $order )
@@ -713,8 +715,8 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				// Orders with Zero Amount
 				if ( $order->get_meta( '_payex_replace_token' ) === '1' ) {
 					if ( isset( $result['payment']['verifications']['verificationList'][0] ) &&
-						 isset( $result['payment']['verifications']['verificationList'][0]['paymentToken'] ) )
-					{
+					     isset( $result['payment']['verifications']['verificationList'][0]['paymentToken'] )
+                    ) {
 						$verification = $result['payment']['verifications']['verificationList'][0];
 						$paymentToken    = $verification['paymentToken'];
 						$recurrenceToken = $verification['recurrenceToken'];
@@ -741,6 +743,8 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 						delete_post_meta( $order->get_id(), '_payex_replace_token' );
 						delete_post_meta( $order->get_id(), '_payment_tokens' );
 						$order->add_payment_token( $token );
+
+						wc_add_notice( __( 'Payment method was updated.', 'payex-woocommerce-payments' ) );
 					}
 				}
 
