@@ -68,6 +68,9 @@ class WC_Payex_Psp {
 		// Add meta boxes
 		add_action( 'add_meta_boxes', __CLASS__ . '::add_meta_boxes' );
 
+		// Add action buttons
+		add_action( 'woocommerce_order_item_add_action_buttons', __CLASS__ . '::add_action_buttons', 10, 1 );
+
 		// Add scripts and styles for admin
 		add_action( 'admin_enqueue_scripts', __CLASS__ . '::admin_enqueue_scripts' );
 
@@ -353,6 +356,31 @@ class WC_Payex_Psp {
 	}
 
 	/**
+     * Add action buttons to Order view
+	 * @param WC_Order $order
+	 */
+	public static function add_action_buttons( $order ) {
+        // Get Payment Gateway
+		$payment_method = $order->get_payment_method();
+		if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
+			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+
+			/** @var WC_Gateway_Payex_Cc $gateway */
+			$gateway = 	$gateways[ $payment_method ];
+
+			wc_get_template(
+				'admin/action-buttons.php',
+				array(
+					'gateway'    => $gateway,
+					'order'      => $order
+				),
+				'',
+				dirname( __FILE__ ) . '/templates/'
+			);
+		}
+	}
+
+	/**
 	 * Enqueue Scripts in admin
 	 *
 	 * @param $hook
@@ -470,14 +498,14 @@ class WC_Payex_Psp {
 	public static function upgrade_notice() {
 		if ( current_user_can( 'update_plugins' ) ) {
 			?>
-            <div id="message" class="error">
-                <p>
+			<div id="message" class="error">
+				<p>
 					<?php
 					echo esc_html__( 'Warning! PayEx WooCommerce payments plugin requires to update the database structure.', 'payex-woocommerce-payments' );
 					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', 'payex-woocommerce-payments' ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">', '</a>' );
 					?>
-                </p>
-            </div>
+				</p>
+			</div>
 			<?php
 		}
 	}
