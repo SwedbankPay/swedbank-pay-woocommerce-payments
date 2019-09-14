@@ -118,11 +118,20 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @throws \Exception
 	 */
 	public function request( $method, $url, $params = array() ) {
+		$client = $this->getClient();
+		if ( mb_substr( $url, 0, 1, 'UTF-8' ) === '/' ) {
+			$endpoint = $url;
+		} else {
+			$info = parse_url( $url );
+			$endpoint = $info['path'] . ( ! empty( $info['query'] ) ? '?' . $info['query'] : '' );
+			$client->setBaseUrl($info['scheme'] . '://' . $info['host']);
+		}
+
 		$start = microtime( true );
 
 		try {
 			/** @var PayExClient $response */
-			$response = $this->getClient()->request( $method, $url, $params );
+			$response = $client->request( $method, $endpoint, $params );
 			$result   = json_decode( $response->getResponseBody(), true );
 
 			if ( $this->debug === 'yes' ) {
@@ -134,7 +143,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		} catch ( \PayEx\Api\Client\Exception $e ) {
 			if ( $this->debug === 'yes' ) {
 				$time = microtime( true ) - $start;
-				$this->log( sprintf( '[%.4F] %s Exception: %s', $time, $response->getDebugInfo(), $e->getMessage() ) );
+				$this->log( sprintf( '[%.4F] Exception: %s', $time, $e->getMessage() ) );
 			}
 
 			throw $e;
