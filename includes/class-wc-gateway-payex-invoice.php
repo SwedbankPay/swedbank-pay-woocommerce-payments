@@ -46,7 +46,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 		$this->id           = 'payex_psp_invoice';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Invoice', 'payex-woocommerce-payments' );
-		$this->icon         = apply_filters( 'woocommerce_payex_psp_invoice_icon', plugins_url( '/assets/images/invoice.png', dirname( __FILE__ ) ) );
+		//$this->icon         = apply_filters( 'woocommerce_payex_psp_invoice_icon', plugins_url( '/assets/images/invoice.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
 			'refunds',
