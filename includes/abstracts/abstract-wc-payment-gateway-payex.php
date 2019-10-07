@@ -146,7 +146,16 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				$this->log( sprintf( '[%.4F] Exception: %s', $time, $e->getMessage() ) );
 			}
 
-			throw $e;
+			// https://tools.ietf.org/html/rfc7807
+			$message = $client->getResponseBody();
+			$decoded = @json_decode( $message, true );
+			if ( json_last_error() === JSON_ERROR_NONE ) {
+				if ( isset( $decoded['title'] ) ) {
+					$message = $decoded['title'];
+				}
+			}
+
+			throw new Exception( $message );
 		}
 	}
 
