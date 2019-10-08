@@ -754,7 +754,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 				return;
 			case 'Aborted':
-				$order->cancel_order( __( 'Payment canceled.', 'payex-woocommerce-payments' ) );
+				$order->update_status( 'cancelled', __( 'Payment canceled.', 'payex-woocommerce-payments' ) );
 
 				return;
 			default:
