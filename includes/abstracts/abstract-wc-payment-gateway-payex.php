@@ -13,6 +13,12 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	public $client;
 
 	/**
+	 * Last Response
+	 * @var string|null
+	 */
+	public $response_body;
+
+	/**
 	 * @var \WC_Payex_Transactions
 	 */
 	public $transactions;
@@ -118,6 +124,8 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @throws \Exception
 	 */
 	public function request( $method, $url, $params = array() ) {
+		$this->response_body = null;
+
 		$client = $this->getClient();
 		if ( mb_substr( $url, 0, 1, 'UTF-8' ) === '/' ) {
 			$endpoint = $url;
@@ -132,6 +140,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		try {
 			/** @var PayExClient $response */
 			$response = $client->request( $method, $endpoint, $params );
+			$this->response_body = $response->getResponseBody();
 			$result   = json_decode( $response->getResponseBody(), true );
 
 			if ( $this->debug === 'yes' ) {
@@ -141,12 +150,22 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 			return $result;
 		} catch ( \PayEx\Api\Client\Exception $e ) {
+			$this->response_body = $client->getResponseBody();
 			if ( $this->debug === 'yes' ) {
 				$time = microtime( true ) - $start;
 				$this->log( sprintf( '[%.4F] Exception: %s', $time, $e->getMessage() ) );
 			}
 
-			throw $e;
+			// https://tools.ietf.org/html/rfc7807
+			$message = $this->response_body;
+			$decoded = @json_decode( $message, true );
+			if ( json_last_error() === JSON_ERROR_NONE ) {
+				if ( isset( $decoded['title'] ) ) {
+					$message = $decoded['title'];
+				}
+			}
+
+			throw new Exception( $message );
 		}
 	}
 
