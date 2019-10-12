@@ -124,6 +124,55 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @throws \Exception
 	 */
 	public function request( $method, $url, $params = array() ) {
+		$client = new \PayEx\Api\Client();
+		$client->setMerchantToken( $this->merchant_token );
+		$client->setMode( $this->testmode === 'yes' ? \PayEx\Api\Client::MODE_TEST : \PayEx\Api\Client::MODE_PRODUCTION );
+
+		$start = microtime( true );
+		if ( $this->debug === 'yes' ) {
+			$this->log( sprintf( 'Request: %s %s %s', $method, $url, json_encode( $params, JSON_PRETTY_PRINT ) ) );
+		}
+
+		try {
+			/** @var \PayEx\Api\Response $response */
+			$response = $client->request( $method, $url, $params );
+			$result   = $response->toArray();
+
+			if ( $this->debug === 'yes' ) {
+				$time = microtime( true ) - $start;
+				$this->log( sprintf( '[%.4F] Response: %s', $time, $response->getBody() ) );
+			}
+
+			return $result;
+		} catch ( \PayEx\Api\Exception $e ) {
+			if ( $this->debug === 'yes' ) {
+				$time = microtime( true ) - $start;
+				$this->log( sprintf( '[%.4F] Exception: %s', $time, $e->getMessage() ) );
+			}
+
+			// Message for invalid Msisdn
+			$message = $e->getMessage();
+			if ( ( strpos( $message, 'The Msisdn is not valid' ) !== false ) ||
+			     ( strpos( $message, 'The field Msisdn must match the regular expression' ) !== false )
+			) {
+				throw new Exception( __( 'Input your number like this +46xxxxxxxxx', 'payex-woocommerce-payments'  ));
+			}
+
+			throw $e;
+		}
+	}
+
+	/**
+	 * Do API Request
+	 *
+	 * @param       $method
+	 * @param       $url
+	 * @param array $params
+	 *
+	 * @return array|mixed|object
+	 * @throws \Exception
+	 */
+	public function request1( $method, $url, $params = array() ) {
 		$this->response_body = null;
 
 		$client = $this->getClient();

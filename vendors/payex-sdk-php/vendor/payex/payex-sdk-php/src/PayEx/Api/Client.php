@@ -106,7 +106,7 @@ class Client
     public function setMode($mode)
     {
         $this->mode = $mode;
-        $this->api_endpoint = 'https://api.payex.com';
+        $this->api_endpoint = 'https://api.externalintegration.payex.com';
 
         if ($this->mode === self::MODE_PRODUCTION) {
             $this->api_endpoint = 'https://api.payex.com';
