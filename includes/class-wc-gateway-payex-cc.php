@@ -20,6 +20,12 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 	public $payee_id = '';
 
 	/**
+     * Subsite
+	 * @var string
+	 */
+	public $subsite = '';
+
+	/**
 	 * Test Mode
 	 * @var string
 	 */
@@ -93,6 +99,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 		$this->description    = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 		$this->merchant_token = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
 		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite        = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
 		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
@@ -213,6 +220,12 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'type'        => 'text',
 				'description' => __( 'Payee Id', 'payex-woocommerce-payments' ),
 				'default'     => $this->payee_id
+			),
+			'subsite'         => array(
+				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => $this->subsite
 			),
 			'testmode'       => array(
 				'title'   => __( 'Test Mode', 'payex-woocommerce-payments' ),
@@ -372,6 +385,11 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'creditCard'              => $this->get_card_options()
 			]
 		];
+
+		// Add subsite
+		if ( ! empty( $this->subsite ) ) {
+			$params['payment']['payeeInfo']['subsite'] = $this->subsite;
+        }
 
 		try {
 			$result = $this->request( 'POST', '/psp/creditcard/payments', $params );
@@ -553,6 +571,11 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					]
 				];
 
+				// Add subsite
+				if ( ! empty( $this->subsite ) ) {
+					$params['payment']['payeeInfo']['subsite'] = $this->subsite;
+				}
+
 				try {
 					$result = $this->request( 'POST', '/psp/creditcard/payments', $params );
 				} catch ( Exception $e ) {
@@ -637,6 +660,11 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			$params['payment']['paymentToken']            = $token->get_token();
 			$params['payment']['generatePaymentToken']    = false;
 			$params['payment']['generateRecurrenceToken'] = false;
+		}
+
+		// Add subsite
+		if ( ! empty( $this->subsite ) ) {
+			$params['payment']['payeeInfo']['subsite'] = $this->subsite;
 		}
 
 		try {
@@ -1370,6 +1398,11 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 					$params['payment']['recurrenceToken'] = $recurrenceToken;
 				} else {
 					$params['payment']['paymentToken'] = $paymentToken;
+				}
+
+				// Add subsite
+				if ( ! empty( $this->subsite ) ) {
+					$params['payment']['payeeInfo']['subsite'] = $this->subsite;
 				}
 
 				try {
