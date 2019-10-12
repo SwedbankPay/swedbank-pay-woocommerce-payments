@@ -165,6 +165,13 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				}
 			}
 
+			// Message for invalid Msisdn
+			if ( ( strpos( $message, 'The Msisdn is not valid' ) !== false ) ||
+			     ( strpos( $message, 'The field Msisdn must match the regular expression' ) !== false )
+			) {
+				$message = __( 'Input your number like this +46xxxxxxxxx', 'payex-woocommerce-payments' );
+			}
+
 			throw new Exception( $message );
 		}
 	}
