@@ -318,7 +318,8 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 				'payeeInfo'      => [
 					'payeeId'         => $this->payee_id,
 					'payeeReference'  => str_replace( '-', '', $order_uuid ),
-					'orderReference'  => $order->get_id()
+					'payeeName'       => get_bloginfo( 'name' ),
+					'orderReference'  => $order->get_id(),
 				],
 				'riskIndicator'  => $this->get_risk_indicator( $order ),
 				'metadata'       => [
