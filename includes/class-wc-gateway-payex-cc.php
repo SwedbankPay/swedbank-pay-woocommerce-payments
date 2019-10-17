@@ -560,7 +560,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 						'payeeInfo'            => [
 							'payeeId'        => $this->payee_id,
 							'payeeReference' => $order_uuid,
-							'orderReference' => $order->get_id()
+							'orderReference' => $order->get_order_number()
 						],
 						'riskIndicator' => $this->get_risk_indicator( $order ),
 						'cardholder'    => self::get_card_holder( $order ),
@@ -642,7 +642,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 				'payeeInfo'               => [
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => $order_uuid,
-					'orderReference' => $order->get_id()
+					'orderReference' => $order->get_order_number()
 				],
 				'riskIndicator' => $this->get_risk_indicator( $order ),
 				'cardholder'    => self::get_card_holder( $order ),
@@ -976,7 +976,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			'transaction' => array(
 				'amount'         => (int) round( $amount * 100 ),
 				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
-				'description'    => sprintf( 'Capture for Order #%s', $order_id ),
+				'description'    => sprintf( 'Capture for Order #%s', $order->get_order_number() ),
 				'payeeReference' => $payeeReference
 			)
 		);
@@ -1042,7 +1042,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 
 		$params = array(
 			'transaction' => array(
-				'description'    => sprintf( 'Cancellation for Order #%s', $order_id ),
+				'description'    => sprintf( 'Cancellation for Order #%s', $order->get_order_number() ),
 				'payeeReference' => $payeeReference
 			),
 		);
@@ -1116,7 +1116,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 			'transaction' => array(
 				'amount'         => round( $amount * 100 ),
 				'vatAmount'      => 0,
-				'description'    => sprintf( 'Refund for Order #%s. Reason: %s', $order_id, $reason ),
+				'description'    => sprintf( 'Refund for Order #%s. Reason: %s', $order->get_order_number(), $reason ),
 				'payeeReference' => $payeeReference
 			)
 		);
@@ -1384,7 +1384,7 @@ class WC_Gateway_Payex_Cc extends WC_Payment_Gateway_Payex
 						'payeeInfo'       => [
 							'payeeId'        => $this->payee_id,
 							'payeeReference' => $order_uuid,
-							'orderReference' => $renewal_order->get_id()
+							'orderReference' => $renewal_order->get_order_number()
 						],
 						'riskIndicator'   => $this->get_risk_indicator( $renewal_order ),
 						'metadata'        => [

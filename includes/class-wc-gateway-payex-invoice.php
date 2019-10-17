@@ -319,7 +319,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 					'payeeId'         => $this->payee_id,
 					'payeeReference'  => str_replace( '-', '', $order_uuid ),
 					'payeeName'       => get_bloginfo( 'name' ),
-					'orderReference'  => $order->get_id(),
+					'orderReference'  => $order->get_order_number(),
 				],
 				'riskIndicator'  => $this->get_risk_indicator( $order ),
 				'metadata'       => [
@@ -494,7 +494,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 				'activity'       => 'FinancingConsumer',
 				'amount'         => (int) round( $amount * 100 ),
 				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
-				'description'    => sprintf( 'Capture for Order #%s', $order_id ),
+				'description'    => sprintf( 'Capture for Order #%s', $order->get_order_number() ),
 				'payeeReference' => str_replace( '-', '', $payeeReference )
 			),
 			'itemDescriptions' => $info['items']
@@ -561,7 +561,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 		$params = array(
 			'transaction' => array(
 				'activity'       => 'FinancingConsumer',
-				'description'    => sprintf( 'Cancellation for Order #%s', $order_id ),
+				'description'    => sprintf( 'Cancellation for Order #%s', $order->get_order_number() ),
 				'payeeReference' => str_replace( '-', '', $payeeReference )
 			),
 		);
@@ -636,7 +636,7 @@ class WC_Gateway_Payex_Invoice extends WC_Gateway_Payex_Cc
 				'activity'       => 'FinancingConsumer',
 				'amount'         => (int) round( $amount * 100 ),
 				'vatAmount'      => 0,
-				'description'    => sprintf( 'Refund for Order #%s. Reason: %s', $order_id, $reason ),
+				'description'    => sprintf( 'Refund for Order #%s. Reason: %s', $order->get_order_number(), $reason ),
 				'payeeReference' => str_replace( '-', '', $payeeReference )
 			)
 		);

@@ -320,7 +320,7 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 				'payeeInfo'      => [
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => str_replace( '-', '', $order_uuid ),
-					'orderReference' => $order->get_id()
+					'orderReference' => $order->get_order_number()
 				],
 				'riskIndicator'  => $this->get_risk_indicator( $order ),
 				'prefillInfo'    => [
@@ -442,7 +442,7 @@ class WC_Gateway_Payex_Psp_Swish extends WC_Gateway_Payex_Cc
 			'transaction' => array(
 				'amount'         => (int) round( $amount * 100 ),
 				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
-				'description'    => sprintf( 'Capture for Order #%s', $order_id ),
+				'description'    => sprintf( 'Capture for Order #%s', $order->get_order_number() ),
 				'payeeReference' => str_replace( '-', '', $payeeReference )
 			)
 		);
