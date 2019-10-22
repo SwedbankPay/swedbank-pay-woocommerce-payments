@@ -22,6 +22,11 @@ class Client
      */
     protected $curl;
 
+	/**
+	 * @var string|null
+	 */
+    protected $last_response;
+
     /**
      * Merchant Token
      *
@@ -94,7 +99,7 @@ class Client
      *
      * @return string
      */
-    public function getMerhcantToken()
+    public function getMerchantToken()
     {
         return $this->merchant_token;
     }
@@ -142,6 +147,26 @@ class Client
     public function getPlatform()
     {
         return $this->platform;
+    }
+
+	/**
+	 * Get Last Response
+	 *
+	 * @return string|null
+	 */
+    public function getLastResponse()
+    {
+    	return $this->last_response;
+    }
+
+	/**
+	 * Set Last Response
+	 *
+	 * @param $last_response
+	 */
+    public function setLastResponse($last_response)
+    {
+    	$this->last_response = $last_response;
     }
 
     /**
@@ -205,6 +230,10 @@ class Client
         $body = curl_exec($this->curl);
         $info = curl_getinfo($this->curl);
         $code = (int)($info['http_code'] / 100);
+
+        // Set Last response
+        $this->last_response = $body;
+
         switch ($code) {
             case 0:
                 $error = curl_error($this->curl);

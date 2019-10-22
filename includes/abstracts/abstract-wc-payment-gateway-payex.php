@@ -137,6 +137,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			/** @var \PayEx\Api\Response $response */
 			$response = $client->request( $method, $url, $params );
 			$result   = $response->toArray();
+			$this->response_body = $client->getLastResponse();
 
 			if ( $this->debug === 'yes' ) {
 				$time = microtime( true ) - $start;
@@ -150,10 +151,11 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				$this->log( sprintf( '[%.4F] Exception: %s', $time, $e->getMessage() ) );
 			}
 
+			$this->response_body = $client->getLastResponse();
+
 			// Message for invalid Msisdn
-			$message = $e->getMessage();
-			if ( ( strpos( $message, 'The Msisdn is not valid' ) !== false ) ||
-			     ( strpos( $message, 'The field Msisdn must match the regular expression' ) !== false )
+			if ( ( strpos( $this->response_body, 'The Msisdn is not valid' ) !== false ) ||
+			     ( strpos( $this->response_body, 'The field Msisdn must match the regular expression' ) !== false )
 			) {
 				throw new Exception( __( 'Input your number like this +46xxxxxxxxx', 'payex-woocommerce-payments'  ));
 			}
