@@ -160,6 +160,14 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				throw new Exception( __( 'Input your number like this +46xxxxxxxxx', 'payex-woocommerce-payments'  ));
 			}
 
+			// https://tools.ietf.org/html/rfc7807
+			$decoded = @json_decode( $this->response_body, true );
+			if ( json_last_error() === JSON_ERROR_NONE ) {
+				if ( isset( $decoded['title'] ) ) {
+					throw new Exception( $decoded['title'] );
+				}
+			}
+
 			throw $e;
 		}
 	}
