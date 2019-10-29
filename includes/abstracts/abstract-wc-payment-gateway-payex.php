@@ -153,19 +153,27 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 			$this->response_body = $client->getLastResponse();
 
-			// Message for invalid Msisdn
-			if ( ( strpos( $this->response_body, 'The Msisdn is not valid' ) !== false ) ||
-			     ( strpos( $this->response_body, 'The field Msisdn must match the regular expression' ) !== false )
-			) {
-				throw new Exception( __( 'Input your number like this +46xxxxxxxxx', 'payex-woocommerce-payments'  ));
-			}
-
 			// https://tools.ietf.org/html/rfc7807
-			$decoded = @json_decode( $this->response_body, true );
-			if ( json_last_error() === JSON_ERROR_NONE ) {
-				if ( isset( $decoded['title'] ) ) {
-					throw new Exception( $decoded['title'] );
+			$data = @json_decode( $this->response_body, true );
+			if ( json_last_error() === JSON_ERROR_NONE &&
+			     isset( $data['title'] ) &&
+			     isset( $data['detail'] )
+			) {
+				// Format error message
+				$message = sprintf( '%s. %s', $data['title'], $data['detail'] );
+
+				// Get details
+				$detailed = '';
+				$problems = $data['problems'];
+				foreach ($problems as $problem) {
+					$detailed .= sprintf( '%s: %s', $problem['name'], $problem['description'] ) . "\r\n";
 				}
+
+				if ( ! empty( $detailed ) ) {
+					$message .= "\r\n" . $detailed;
+				}
+
+				throw new Exception( $message );
 			}
 
 			throw $e;
