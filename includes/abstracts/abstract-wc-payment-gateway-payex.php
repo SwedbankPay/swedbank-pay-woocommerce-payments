@@ -163,14 +163,16 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				$message = sprintf( '%s. %s', $data['title'], $data['detail'] );
 
 				// Get details
-				$detailed = '';
-				$problems = $data['problems'];
-				foreach ($problems as $problem) {
-					$detailed .= sprintf( '%s: %s', $problem['name'], $problem['description'] ) . "\r\n";
-				}
+				if ( isset( $data['problems'] ) ) {
+					$detailed = '';
+					$problems = $data['problems'];
+					foreach ($problems as $problem) {
+						$detailed .= sprintf( '%s: %s', $problem['name'], $problem['description'] ) . "\r\n";
+					}
 
-				if ( ! empty( $detailed ) ) {
-					$message .= "\r\n" . $detailed;
+					if ( ! empty( $detailed ) ) {
+						$message .= "\r\n" . $detailed;
+					}
 				}
 
 				throw new Exception( $message );
