@@ -122,6 +122,7 @@ class WC_Payex_Psp {
 		}
 
 		require_once( dirname( __FILE__ ) . '/includes/class-wc-payex-transactions.php' );
+		require_once( dirname( __FILE__ ) . '/includes/class-wc-sb-payee-reference.php' );
 		require_once( dirname( __FILE__ ) . '/includes/class-wc-payex-queue.php' );
 		require_once( dirname( __FILE__ ) . '/includes/class-wc-payex-icon.php' );
 	}
