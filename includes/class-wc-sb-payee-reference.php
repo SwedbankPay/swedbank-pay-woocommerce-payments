@@ -21,19 +21,17 @@ class WC_SB_Payee_Reference
 	 * @return mixed|string
 	 */
 	public function get_payee_reference( $reference, $order_id, $add_suffix = false ) {
-		if ( ! $reference ) {
-			if ( is_object( $order_id ) ) {
-				$order = $order_id;
-			} else {
-				$order = wc_get_order( $order_id );
-			}
+		if ( is_object( $order_id ) ) {
+			$order = $order_id;
+		} else {
+			$order = wc_get_order( $order_id );
+		}
 
-			$reference = $order->get_meta( '_sb_payee_reference' );
-			if ( empty( $reference ) ) {
-				$reference = $this->generate_payee_reference( $order, $add_suffix );
-				$order->add_meta_data( '_sb_payee_reference', $reference, true );
-				$order->save_meta_data();
-			}
+		$reference = $order->get_meta( '_sb_payee_reference' );
+		if ( empty( $reference ) ) {
+			$reference = $this->generate_payee_reference( $order, $add_suffix );
+			$order->add_meta_data( '_sb_payee_reference', $reference, true );
+			$order->save_meta_data();
 		}
 
 		return $reference;
@@ -48,18 +46,16 @@ class WC_SB_Payee_Reference
 	 * @return bool|string|null
 	 */
 	public function get_orderid_by_payee_reference( $order_id, $reference ) {
-		if ( ! $order_id ) {
-			global $wpdb;
+		global $wpdb;
 
-			$query = "
-			SELECT post_id FROM {$wpdb->prefix}postmeta 
-			LEFT JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.ID = {$wpdb->prefix}postmeta.post_id)
-			WHERE meta_key = %s AND meta_value = %s;";
-			$sql = $wpdb->prepare( $query, '_sb_payee_reference', $reference );
-			$order_id = $wpdb->get_var( $sql );
-			if ( ! $order_id ) {
-				return false;
-			}
+		$query = "
+		SELECT post_id FROM {$wpdb->prefix}postmeta 
+		LEFT JOIN {$wpdb->prefix}posts ON ({$wpdb->prefix}posts.ID = {$wpdb->prefix}postmeta.post_id)
+		WHERE meta_key = %s AND meta_value = %s;";
+		$sql = $wpdb->prepare( $query, '_sb_payee_reference', $reference );
+		$order_id = $wpdb->get_var( $sql );
+		if ( ! $order_id ) {
+			return false;
 		}
 
 		return $order_id;
