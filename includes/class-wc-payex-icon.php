@@ -37,9 +37,9 @@ class WC_Payex_Icon {
 	 */
 	public function add_icon_settings( $form_fields ) {
 		$form_fields['gateway_icon'] = array(
-			'title' => __( 'Checkout Icon', 'payex-woocommerce-payments' ),
+			'title' => __( 'Checkout Icon', WC_Payex_Psp::TEXT_DOMAIN ),
 			'type' => 'text',
-			'description' => __( 'Enter an image URL to change the icon.', 'payex-woocommerce-payments' ),
+			'description' => __( 'Enter an image URL to change the icon.', WC_Payex_Psp::TEXT_DOMAIN ),
 			'desc_tip' => true,
 			'default' => '',
 		);

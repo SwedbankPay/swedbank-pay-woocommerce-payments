@@ -1,14 +1,14 @@
 <?php
 /*
- * Plugin Name: PayEx WooCommerce Payments
- * Plugin URI: http://payex.com/
- * Description: Provides a Credit Card Payment Gateway through PayEx for WooCommerce.
- * Author: PayEx
- * Author URI: http://payex.com/
+ * Plugin Name: Swedbank Pay WooCommerce Payments
+ * Plugin URI: https://www.swedbankpay.se/
+ * Description: Provides a Credit Card Payment Gateway through Swedbank Pay for WooCommerce.
+ * Author: Swedbank Pay
+ * Author URI: https://www.swedbankpay.se/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
  * Version: 1.3.1
- * Text Domain: payex-woocommerce-payments
+ * Text Domain: sb-woocommerce-payments
  * Domain Path: /languages
  * WC requires at least: 3.0.0
  * WC tested up to: 3.6.4
@@ -28,6 +28,8 @@ class WC_Payex_Psp {
 		'payex_psp_vipps',
 		'payex_psp_swish'
 	);
+
+	const TEXT_DOMAIN = 'sb-woocommerce-payments';
 
 	/**
 	 * @var WC_Background_Payex_Queue
@@ -149,7 +151,7 @@ class WC_Payex_Psp {
 	 */
 	public function plugin_action_links( $links ) {
 		$plugin_links = array(
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_cc' ) . '">' . __( 'Settings', 'payex-woocommerce-payments' ) . '</a>'
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_cc' ) . '">' . __( 'Settings', WC_Payex_Psp::TEXT_DOMAIN ) . '</a>'
 		);
 
 		return array_merge( $plugin_links, $links );
@@ -160,7 +162,7 @@ class WC_Payex_Psp {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( 'payex-woocommerce-payments', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( WC_Payex_Psp::TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		// Functions
 		include_once( dirname( __FILE__ ) . '/includes/functions-payex-checkout.php' );
@@ -272,7 +274,7 @@ class WC_Payex_Psp {
 						WC_Admin_Meta_Boxes::add_error( $message );
 
 						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'payex-woocommerce-payments' ), $message ) );
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', WC_Payex_Psp::TEXT_DOMAIN ), $message ) );
 					}
 				}
 				break;
@@ -287,7 +289,7 @@ class WC_Payex_Psp {
 						WC_Admin_Meta_Boxes::add_error( $message );
 
 						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', 'payex-woocommerce-payments' ), $message ) );
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', WC_Payex_Psp::TEXT_DOMAIN ), $message ) );
 					}
 				}
 				break;
@@ -309,7 +311,7 @@ class WC_Payex_Psp {
 				if ( ! empty( $payment_id ) ) {
 					add_meta_box(
 						'payex_payment_actions',
-						__( 'PayEx Payments Actions', 'payex-woocommerce-payments' ),
+						__( 'Swedbank Pay Payments Actions', WC_Payex_Psp::TEXT_DOMAIN ),
 						__CLASS__ . '::order_meta_box_payment_actions',
 						'shop_order',
 						'side',
@@ -397,7 +399,7 @@ class WC_Payex_Psp {
 			// Localize the script
 			$translation_array = array(
 				'ajax_url'  => admin_url( 'admin-ajax.php' ),
-				'text_wait' => __( 'Please wait...', 'payex-woocommerce-payments' ),
+				'text_wait' => __( 'Please wait...', WC_Payex_Psp::TEXT_DOMAIN ),
 			);
 			wp_localize_script( 'payex-admin-js', 'Payex_Admin', $translation_array );
 
@@ -418,7 +420,7 @@ class WC_Payex_Psp {
 
 		try {
 			px_capture_payment( $order_id );
-			wp_send_json_success( __( 'Capture success.', 'payex-woocommerce-payments' ) );
+			wp_send_json_success( __( 'Capture success.', WC_Payex_Psp::TEXT_DOMAIN ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -437,7 +439,7 @@ class WC_Payex_Psp {
 
 		try {
 			px_cancel_payment( $order_id );
-			wp_send_json_success( __( 'Cancel success.', 'payex-woocommerce-payments' ) );
+			wp_send_json_success( __( 'Cancel success.', WC_Payex_Psp::TEXT_DOMAIN ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -490,7 +492,7 @@ class WC_Payex_Psp {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-payex-psp-update.php' );
 		WC_Payex_Psp_Update::update();
 
-		echo esc_html__( 'Upgrade finished.', 'payex-woocommerce-payments' );
+		echo esc_html__( 'Upgrade finished.', WC_Payex_Psp::TEXT_DOMAIN );
 	}
 
 	/**
@@ -502,8 +504,8 @@ class WC_Payex_Psp {
 			<div id="message" class="error">
 				<p>
 					<?php
-					echo esc_html__( 'Warning! PayEx WooCommerce payments plugin requires to update the database structure.', 'payex-woocommerce-payments' );
-					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', 'payex-woocommerce-payments' ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">', '</a>' );
+					echo esc_html__( 'Warning! Swedbank Pay WooCommerce payments plugin requires to update the database structure.', WC_Payex_Psp::TEXT_DOMAIN );
+					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', WC_Payex_Psp::TEXT_DOMAIN ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">', '</a>' );
 					?>
 				</p>
 			</div>
