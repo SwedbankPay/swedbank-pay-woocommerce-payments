@@ -1,7 +1,7 @@
-Installation and configuration manual for PayEx WooCommerce Payments 
+Installation and configuration manual for Swedbank Pay WooCommerce Payments 
 ------------
 
-This plugin is using PayEx RESTful API and specifically the PayEx Payment Instruments section. For documentation about the API see https://developer.payex.com/xwiki/wiki/developer/view/Main/ecommerce/payex-payment-instruments/
+This plugin is using Swedbank Pay RESTful API and specifically the Swedbank Pay Payment Instruments section. For documentation about the API see https://developer.swedbankpay.com/payments/
 
 ## Prerequisites
 

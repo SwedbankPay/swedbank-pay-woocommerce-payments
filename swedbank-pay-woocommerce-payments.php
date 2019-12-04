@@ -1,14 +1,14 @@
 <?php
 /*
  * Plugin Name: Swedbank Pay WooCommerce Payments
- * Plugin URI: https://www.swedbankpay.se/
+ * Plugin URI: https://www.swedbankpay.com/
  * Description: Provides a Credit Card Payment Gateway through Swedbank Pay for WooCommerce.
  * Author: Swedbank Pay
- * Author URI: https://www.swedbankpay.se/
+ * Author URI: https://www.swedbankpay.com/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
  * Version: 1.3.1
- * Text Domain: sb-woocommerce-payments
+ * Text Domain: swedbank-pay-woocommerce-payments
  * Domain Path: /languages
  * WC requires at least: 3.0.0
  * WC tested up to: 3.6.4
