@@ -29,7 +29,7 @@ class WC_Payex_Psp {
 		'payex_psp_swish'
 	);
 
-	const TEXT_DOMAIN = 'sb-woocommerce-payments';
+	const TEXT_DOMAIN = 'swedbank-pay-woocommerce-payments';
 
 	/**
 	 * @var WC_Background_Payex_Queue
