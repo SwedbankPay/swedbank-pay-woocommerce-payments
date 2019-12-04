@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			type="button" class="button button-primary"
 			data-nonce="<?php echo wp_create_nonce( 'payex' ); ?>"
 			data-order-id="<?php echo esc_html( $order->get_id() ); ?>">
-		<?php _e( 'Capture Payment', 'payex-woocommerce-payments' ) ?>
+		<?php _e( 'Capture Payment', WC_Payex_Psp::TEXT_DOMAIN ) ?>
 	</button>
 <?php endif; ?>
 
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			type="button" class="button button-primary"
 			data-nonce="<?php echo wp_create_nonce( 'payex' ); ?>"
 			data-order-id="<?php echo esc_html( $order->get_id() ); ?>">
-		<?php _e( 'Cancel Payment', 'payex-woocommerce-payments' ) ?>
+		<?php _e( 'Cancel Payment', WC_Payex_Psp::TEXT_DOMAIN ) ?>
 	</button>
 <?php endif; ?>
 

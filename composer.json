@@ -1,7 +1,7 @@
 {
-    "name": "payex/woocommerce-payments",
-    "description": "PayEx Payment Provider for WooCommerce",
-    "homepage": "https://github.com/PayEx/payex-woocommerce-payments",
+    "name": "swedbank-pay/woocommerce-payments",
+    "description": "Swedbank Pay Payment Provider for WooCommerce",
+    "homepage": "https://github.com/SwedbankPay/swedbank-pay-woocommerce-payments",
     "type": "wordpress-plugin",
     "license": "Apache-2.0",
     "prefer-stable": true,

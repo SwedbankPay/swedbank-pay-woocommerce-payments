@@ -20,6 +20,12 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 	public $payee_id = '';
 
 	/**
+	 * Subsite
+	 * @var string
+	 */
+	public $subsite = '';
+
+	/**
 	 * Test Mode
 	 * @var string
 	 */
@@ -45,7 +51,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 
 		$this->id           = 'payex_psp_vipps';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Vipps', 'payex-woocommerce-payments' );
+		$this->method_title = __( 'Vipps', WC_Payex_Psp::TEXT_DOMAIN );
 		$this->icon         = apply_filters( 'woocommerce_payex_vipps_icon', plugins_url( '/assets/images/vipps.png', dirname( __FILE__ ) ) );
 		$this->supports     = array(
 			'products',
@@ -64,6 +70,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 		$this->description    = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
 		$this->merchant_token = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
 		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite        = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
 		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
@@ -112,62 +119,68 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 	public function init_form_fields() {
 		$this->form_fields = array(
 			'enabled'        => array(
-				'title'   => __( 'Enable/Disable', 'payex-woocommerce-payments' ),
+				'title'   => __( 'Enable/Disable', WC_Payex_Psp::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', 'payex-woocommerce-payments' ),
+				'label'   => __( 'Enable plugin', WC_Payex_Psp::TEXT_DOMAIN ),
 				'default' => 'no'
 			),
 			'title'          => array(
-				'title'       => __( 'Title', 'payex-woocommerce-payments' ),
+				'title'       => __( 'Title', WC_Payex_Psp::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', 'payex-woocommerce-payments' ),
-				'default'     => __( 'Vipps payment', 'payex-woocommerce-payments' )
+				'description' => __( 'This controls the title which the user sees during checkout.', WC_Payex_Psp::TEXT_DOMAIN ),
+				'default'     => __( 'Vipps payment', WC_Payex_Psp::TEXT_DOMAIN )
 			),
 			'description'    => array(
-				'title'       => __( 'Description', 'payex-woocommerce-payments' ),
+				'title'       => __( 'Description', WC_Payex_Psp::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', 'payex-woocommerce-payments' ),
-				'default'     => __( 'Vipps payment', 'payex-woocommerce-payments' ),
+				'description' => __( 'This controls the description which the user sees during checkout.', WC_Payex_Psp::TEXT_DOMAIN ),
+				'default'     => __( 'Vipps payment', WC_Payex_Psp::TEXT_DOMAIN ),
 			),
 			'merchant_token' => array(
-				'title'       => __( 'Merchant Token', 'payex-woocommerce-payments' ),
+				'title'       => __( 'Merchant Token', WC_Payex_Psp::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'payex-woocommerce-payments' ),
+				'description' => __( 'Merchant Token', WC_Payex_Psp::TEXT_DOMAIN ),
 				'default'     => $this->merchant_token
 			),
 			'payee_id'       => array(
-				'title'       => __( 'Payee Id', 'payex-woocommerce-payments' ),
+				'title'       => __( 'Payee Id', WC_Payex_Psp::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Payee Id', 'payex-woocommerce-payments' ),
+				'description' => __( 'Payee Id', WC_Payex_Psp::TEXT_DOMAIN ),
 				'default'     => $this->payee_id
 			),
+			'subsite'         => array(
+				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
+				'type'        => 'text',
+				'description' => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
+				'default'     => $this->subsite
+			),
 			'testmode'       => array(
-				'title'   => __( 'Test Mode', 'payex-woocommerce-payments' ),
+				'title'   => __( 'Test Mode', WC_Payex_Psp::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable PayEx Test Mode', 'payex-woocommerce-payments' ),
+				'label'   => __( 'Enable Swedbank Pay Test Mode', WC_Payex_Psp::TEXT_DOMAIN ),
 				'default' => $this->testmode
 			),
 			'debug'          => array(
-				'title'   => __( 'Debug', 'payex-woocommerce-payments' ),
+				'title'   => __( 'Debug', WC_Payex_Psp::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable logging', 'payex-woocommerce-payments' ),
+				'label'   => __( 'Enable logging', WC_Payex_Psp::TEXT_DOMAIN ),
 				'default' => $this->debug
 			),
 			'culture'        => array(
-				'title'       => __( 'Language', 'payex-woocommerce-payments' ),
+				'title'       => __( 'Language', WC_Payex_Psp::TEXT_DOMAIN ),
 				'type'        => 'select',
 				'options'     => array(
 					'en-US' => 'English',
 					'sv-SE' => 'Swedish',
 					'nb-NO' => 'Norway',
 				),
-				'description' => __( 'Language of pages displayed by PayEx during payment.', 'payex-woocommerce-payments' ),
+				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.', WC_Payex_Psp::TEXT_DOMAIN ),
 				'default'     => $this->culture
 			),
 			'terms_url'      => array(
-				'title'       => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
+				'title'       => __( 'Terms & Conditions Url', WC_Payex_Psp::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Terms & Conditions Url', 'payex-woocommerce-payments' ),
+				'description' => __( 'Terms & Conditions Url', WC_Payex_Psp::TEXT_DOMAIN ),
 				'default'     => get_site_url()
 			),
 		);
@@ -190,13 +203,13 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 	public function validate_fields() {
 		$billing_phone = wc_clean( isset( $_POST['billing_phone'] ) ? $_POST['billing_phone'] : '' );
 		if ( empty( $billing_phone ) ) {
-			wc_add_notice( __( 'Phone number required.', 'payex-woocommerce-payments' ), 'error' );
+			wc_add_notice( __( 'Phone number required.', WC_Payex_Psp::TEXT_DOMAIN ), 'error' );
 		}
 
 		$matches = array();
 		preg_match( '/^(\+47)(?:4[015-8]|5[89]|87|9\d)\d{6}$/u', $billing_phone, $matches );
 		if ( ! isset( $matches[0] ) || $matches[0] !== $billing_phone ) {
-			wc_add_notice( __( 'Input your number like this +47xxxxxxxxx', 'payex-woocommerce-payments' ), 'error' );
+			wc_add_notice( __( 'Input your number like this +47xxxxxxxxx', WC_Payex_Psp::TEXT_DOMAIN ), 'error' );
 
 			return false;
 		}
@@ -261,7 +274,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 						'vatAmount' => round( $info['vat_amount'] * 100 )
 					]
 				],
-				'description'    => sprintf( __( 'Order #%s', 'payex-woocommerce-payments' ), $order->get_order_number() ),
+				'description'    => sprintf( __( 'Order #%s', WC_Payex_Psp::TEXT_DOMAIN ), $order->get_order_number() ),
 				'payerReference' => $customer_uuid,
 				'userAgent'      => $order->get_customer_user_agent(),
 				'language'       => $this->culture,
@@ -274,7 +287,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				'payeeInfo'      => [
 					'payeeId'        => $this->payee_id,
 					'payeeReference' => str_replace( '-', '', $order_uuid ),
-					'orderReference' => $order->get_id()
+					'orderReference' => $order->get_order_number()
 				],
 				'riskIndicator'  => $this->get_risk_indicator( $order ),
 				'prefillInfo'    => [
@@ -285,6 +298,11 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				],
 			]
 		];
+
+		// Add subsite
+		if ( ! empty( $this->subsite ) ) {
+			$params['payment']['payeeInfo']['subsite'] = $this->subsite;
+		}
 
 		try {
 			$result = $this->request( 'POST', '/psp/vipps/payments', $params );
@@ -340,7 +358,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 
 		$capture_href = self::get_operation( $result['operations'], 'create-capture' );
 		if ( empty( $capture_href ) ) {
-			throw new \Exception( __( 'Capture unavailable', 'payex-woocommerce-payments' ) );
+			throw new \Exception( __( 'Capture unavailable', WC_Payex_Psp::TEXT_DOMAIN ) );
 		}
 
 		// Order Info
@@ -353,7 +371,7 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 			'transaction' => array(
 				'amount'         => (int) round( $amount * 100 ),
 				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
-				'description'    => sprintf( 'Capture for Order #%s', $order_id ),
+				'description'    => sprintf( 'Capture for Order #%s', $order->get_order_number() ),
 				'payeeReference' => str_replace( '-', '', $payeeReference )
 			)
 		);
@@ -368,16 +386,16 @@ class WC_Gateway_Payex_Vipps extends WC_Gateway_Payex_Cc
 				update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
 				update_post_meta( $order_id, '_payex_transaction_capture', $transaction['id'] );
 
-				$order->add_order_note( __( 'Transaction captured.', 'payex-woocommerce-payments' ) );
+				$order->add_order_note( __( 'Transaction captured.', WC_Payex_Psp::TEXT_DOMAIN ) );
 				$order->payment_complete( $transaction['number'] );
 
 				break;
 			case 'Initialized':
-				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', 'payex-woocommerce-payments' ), $transaction['state'] ) );
+				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', WC_Payex_Psp::TEXT_DOMAIN ), $transaction['state'] ) );
 				break;
 			case 'Failed':
 			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', 'payex-woocommerce-payments' );
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', WC_Payex_Psp::TEXT_DOMAIN );
 				throw new \Exception( $message );
 				break;
 		}
