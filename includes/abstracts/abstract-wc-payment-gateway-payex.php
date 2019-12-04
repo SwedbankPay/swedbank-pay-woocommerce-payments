@@ -183,69 +183,6 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	}
 
 	/**
-	 * Do API Request
-	 *
-	 * @param       $method
-	 * @param       $url
-	 * @param array $params
-	 *
-	 * @return array|mixed|object
-	 * @throws \Exception
-	 */
-	public function request1( $method, $url, $params = array() ) {
-		$this->response_body = null;
-
-		$client = $this->getClient();
-		if ( mb_substr( $url, 0, 1, 'UTF-8' ) === '/' ) {
-			$endpoint = $url;
-		} else {
-			$info = parse_url( $url );
-			$endpoint = $info['path'] . ( ! empty( $info['query'] ) ? '?' . $info['query'] : '' );
-			$client->setBaseUrl($info['scheme'] . '://' . $info['host']);
-		}
-
-		$start = microtime( true );
-
-		try {
-			/** @var PayExClient $response */
-			$response = $client->request( $method, $endpoint, $params );
-			$this->response_body = $response->getResponseBody();
-			$result   = json_decode( $response->getResponseBody(), true );
-
-			if ( $this->debug === 'yes' ) {
-				$time = microtime( true ) - $start;
-				$this->log( sprintf( '[%.4F] %s', $time, $response->getDebugInfo() ) );
-			}
-
-			return $result;
-		} catch ( \PayEx\Api\Client\Exception $e ) {
-			$this->response_body = $client->getResponseBody();
-			if ( $this->debug === 'yes' ) {
-				$time = microtime( true ) - $start;
-				$this->log( sprintf( '[%.4F] Exception: %s', $time, $e->getMessage() ) );
-			}
-
-			// https://tools.ietf.org/html/rfc7807
-			$message = $this->response_body;
-			$decoded = @json_decode( $message, true );
-			if ( json_last_error() === JSON_ERROR_NONE ) {
-				if ( isset( $decoded['title'] ) ) {
-					$message = $decoded['title'];
-				}
-			}
-
-			// Message for invalid Msisdn
-			if ( ( strpos( $message, 'The Msisdn is not valid' ) !== false ) ||
-			     ( strpos( $message, 'The field Msisdn must match the regular expression' ) !== false )
-			) {
-				$message = __( 'Input your number like this +46xxxxxxxxx', WC_Payex_Psp::TEXT_DOMAIN );
-			}
-
-			throw new Exception( $message );
-		}
-	}
-
-	/**
 	 * Finds an Order based on an order key.
 	 *
 	 * @param $order_key
