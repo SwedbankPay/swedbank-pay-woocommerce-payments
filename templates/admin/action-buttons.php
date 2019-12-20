@@ -1,5 +1,5 @@
 <?php
-/** @var WC_Gateway_Payex_Cc $gateway */
+/** @var WC_Gateway_Swedbank_Cc $gateway */
 /** @var WC_Order $order */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -9,20 +9,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 ?>
 
 <?php if ( $gateway->can_capture( $order ) ): ?>
-	<button id="payex_capture"
+	<button id="swedbank_capture"
 			type="button" class="button button-primary"
-			data-nonce="<?php echo wp_create_nonce( 'payex' ); ?>"
+			data-nonce="<?php echo wp_create_nonce( 'swedbank' ); ?>"
 			data-order-id="<?php echo esc_html( $order->get_id() ); ?>">
-		<?php _e( 'Capture Payment', WC_Payex_Psp::TEXT_DOMAIN ) ?>
+		<?php _e( 'Capture Payment', WC_Swedbank_Psp::TEXT_DOMAIN ) ?>
 	</button>
 <?php endif; ?>
 
 <?php if ( $gateway->can_cancel( $order ) ): ?>
-	<button id="payex_cancel"
+	<button id="swedbank_cancel"
 			type="button" class="button button-primary"
-			data-nonce="<?php echo wp_create_nonce( 'payex' ); ?>"
+			data-nonce="<?php echo wp_create_nonce( 'swedbank' ); ?>"
 			data-order-id="<?php echo esc_html( $order->get_id() ); ?>">
-		<?php _e( 'Cancel Payment', WC_Payex_Psp::TEXT_DOMAIN ) ?>
+		<?php _e( 'Cancel Payment', WC_Swedbank_Psp::TEXT_DOMAIN ) ?>
 	</button>
 <?php endif; ?>
 

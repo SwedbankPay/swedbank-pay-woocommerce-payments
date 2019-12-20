@@ -4,11 +4,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Payex_Transactions {
+class WC_Swedbank_Transactions {
 	/**
 	 * The single instance of the class.
 	 *
-	 * @var WC_Payex_Transactions
+	 * @var WC_Swedbank_Transactions
 	 */
 	protected static $_instance = null;
 
@@ -16,7 +16,7 @@ class WC_Payex_Transactions {
 	 * Allowed Fields
 	 * @var array
 	 */
-	protected static $_allowed_fields = array(
+	protected static $_allowed_fields = [
 		'transaction_id',
 		'transaction_data',
 		'order_id',
@@ -30,13 +30,13 @@ class WC_Payex_Transactions {
 		'amount',
 		'vatAmount',
 		'description'
-	);
+	];
 
 	/**
-	 * Main Payex_Transactions Instance.
+	 * Main WC_Swedbank_Transactions Instance.
 	 *
 	 * @static
-	 * @return WC_Payex_Transactions
+	 * @return WC_Swedbank_Transactions
 	 */
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 
 		return $wpdb->delete(
 			$wpdb->prefix . 'payex_transactions',
-			array( 'id' => (int) $transaction_id )
+			[ 'id' => (int) $transaction_id ]
 		);
 	}
 
@@ -141,9 +141,9 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 		return $wpdb->update(
 			$wpdb->prefix . 'payex_transactions',
 			$fields,
-			array(
+			[
 				'transaction_id' => (int) $transaction_id
-			)
+			]
 		);
 	}
 
@@ -194,7 +194,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 */
 	public function select( array $conditionals ) {
 		global $wpdb;
-		$lines = array();
+		$lines = [];
 		foreach ( $conditionals as $key => $value ) {
 			if ( ! in_array( $key, self::$_allowed_fields ) ) {
 				_doing_it_wrong( __METHOD__, __( 'Cheatin&#8217; huh?', 'woocommerce' ), '1.0.0' );
@@ -273,7 +273,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 * @return array
 	 */
 	public function import_transactions( $transactions, $order_id ) {
-		$result = array();
+		$result = [];
 		foreach ( $transactions as $transaction ) {
 			$result[] = $this->import( $transaction, $order_id );
 		}

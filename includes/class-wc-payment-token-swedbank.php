@@ -4,27 +4,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Payment_Token_Payex extends WC_Payment_Token_CC {
+class WC_Payment_Token_Swedbank extends WC_Payment_Token_CC {
 	/**
 	 * Token Type String.
 	 *
 	 * @var string
 	 */
-	protected $type = 'Payex';
+	protected $type = 'Swedbank';
 
 	/**
 	 * Stores Credit Card payment token data.
 	 *
 	 * @var array
 	 */
-	protected $extra_data = array(
+	protected $extra_data = [
 		'last4'            => '',
 		'expiry_year'      => '',
 		'expiry_month'     => '',
 		'card_type'        => '',
 		'masked_pan'       => '',
-        'recurrence_token' => ''
-	);
+		'recurrence_token' => ''
+	];
 
 	/**
 	 * Get type to display to user.
@@ -36,8 +36,8 @@ class WC_Payment_Token_Payex extends WC_Payment_Token_CC {
 	public function get_display_name( $deprecated = '' ) {
 		ob_start();
 		?>
-        <img src="<?php echo WC_HTTPS::force_https_url( WC()->plugin_url() . '/assets/images/icons/credit-cards/' . $this->get_card_type() . '.png' ) ?>"
-             alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
+		<img src="<?php echo WC_HTTPS::force_https_url( WC()->plugin_url() . '/assets/images/icons/credit-cards/' . $this->get_card_type() . '.png' ) ?>"
+			 alt="<?php echo wc_get_credit_card_type_label( $this->get_card_type() ); ?>"/>
 		<?php echo esc_html( $this->get_meta( 'masked_pan' ) ); ?>
 		<?php echo esc_html( $this->get_expiry_month() . '/' . substr( $this->get_expiry_year(), 2 ) ); ?>
 
@@ -120,9 +120,9 @@ class WC_Payment_Token_Payex extends WC_Payment_Token_CC {
 	 */
 	public function is_default() {
 		// Mark Method as Checked on "Payment Change" page
-		if ( WC_Gateway_Payex_Cc::wcs_is_payment_change() &&
-		     isset( $_GET['change_payment_method'] ) &&
-		     abs( $_GET['change_payment_method'] ) > 0 )
+		if ( WC_Gateway_Swedbank_Cc::wcs_is_payment_change() &&
+			 isset( $_GET['change_payment_method'] ) &&
+			 abs( $_GET['change_payment_method'] ) > 0 )
 		{
 			$subscription = wcs_get_subscription( $_GET['change_payment_method'] );
 			$tokens       = $subscription->get_payment_tokens();
@@ -147,7 +147,7 @@ class WC_Payment_Token_Payex extends WC_Payment_Token_CC {
 	 * @return array                           Filtered item.
 	 */
 	public static function wc_get_account_saved_payment_methods_list_item( $item, $payment_token ) {
-		if ( 'payex' !== strtolower( $payment_token->get_type() ) ) {
+		if ( 'swedbank' !== strtolower( $payment_token->get_type() ) || 'payex' !== strtolower( $payment_token->get_type() ) ) {
 			return $item;
 		}
 
@@ -169,7 +169,7 @@ class WC_Payment_Token_Payex extends WC_Payment_Token_CC {
 	 */
 	public static function wc_account_payment_methods_column_method( $method ) {
 		if ( $method['method']['gateway'] === 'payex_psp_cc' ) {
-			$token = new WC_Payment_Token_Payex( $method['method']['id'] );
+			$token = new WC_Payment_Token_Swedbank( $method['method']['id'] );
 			echo $token->get_display_name();
 
 			return;
@@ -202,9 +202,26 @@ class WC_Payment_Token_Payex extends WC_Payment_Token_CC {
 
 		return $html;
 	}
+
+	/**
+	 * @param $class_name
+	 * @param $type
+	 *
+	 * @return string
+	 */
+	public static function payment_token_class( $class_name, $type ) {
+		if ( $type === 'Payex' ) {
+			$class_name = 'WC_Payment_Token_Swedbank';
+		}
+
+		return $class_name;
+	}
 }
 
 // Improve Payment Method output
-add_filter( 'woocommerce_payment_methods_list_item', 'WC_Payment_Token_Payex::wc_get_account_saved_payment_methods_list_item', 10, 2 );
-add_action( 'woocommerce_account_payment_methods_column_method', 'WC_Payment_Token_Payex::wc_account_payment_methods_column_method', 10, 1 );
-add_filter( 'woocommerce_payment_gateway_get_saved_payment_method_option_html', 'WC_Payment_Token_Payex::wc_get_saved_payment_method_option_html', 10, 3 );
+add_filter( 'woocommerce_payment_methods_list_item', 'WC_Payment_Token_Swedbank::wc_get_account_saved_payment_methods_list_item', 10, 2 );
+add_action( 'woocommerce_account_payment_methods_column_method', 'WC_Payment_Token_Swedbank::wc_account_payment_methods_column_method', 10, 1 );
+add_filter( 'woocommerce_payment_gateway_get_saved_payment_method_option_html', 'WC_Payment_Token_Swedbank::wc_get_saved_payment_method_option_html', 10, 3 );
+
+// Backward compatibility
+add_filter( 'woocommerce_payment_token_class', 'WC_Payment_Token_Swedbank::payment_token_class', 10, 2 );

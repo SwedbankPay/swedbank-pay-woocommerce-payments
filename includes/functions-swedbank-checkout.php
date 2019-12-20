@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @see wcs_get_objects_property()
  *
  */
-function px_obj_prop( $object, $property ) {
+function swedbank_obj_prop( $object, $property ) {
 	switch ( $property ) {
 		case 'order_currency' :
 		case 'currency' :
@@ -26,7 +26,7 @@ function px_obj_prop( $object, $property ) {
 			break;
 		default:
 			$function_name = 'get_' . $property;
-			if ( is_callable( array( $object, $function_name ) ) ) {
+			if ( is_callable( [ $object, $function_name ] ) ) {
 				$value = $object->$function_name();
 			} else {
 				$value = isset( $object->$property ) ? $object->$property : null;
@@ -41,8 +41,8 @@ function px_obj_prop( $object, $property ) {
  * Get Remove Address
  * @return string
  */
-function px_get_remote_address() {
-	$headers = array(
+function swedbank_get_remote_address() {
+	$headers = [
 		'CLIENT_IP',
 		'FORWARDED',
 		'FORWARDED_FOR',
@@ -62,7 +62,7 @@ function px_get_remote_address() {
 		'VIA',
 		'X_FORWARDED',
 		'X_FORWARDED_FOR'
-	);
+	];
 
 	$remote_address = false;
 	foreach ( $headers as $header ) {
@@ -85,7 +85,7 @@ function px_get_remote_address() {
 	// Remove port if exists (IPv4 only)
 	$regEx = "/^([1-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/";
 	if ( preg_match( $regEx, $remote_address )
-	     && ( $pos_temp = stripos( $remote_address, ':' ) ) !== false
+		 && ( $pos_temp = stripos( $remote_address, ':' ) ) !== false
 	) {
 		$remote_address = substr( $remote_address, 0, $pos_temp );
 	}
@@ -102,7 +102,7 @@ function px_get_remote_address() {
  *
  * @return array|bool
  */
-function px_filter( array $source, array $conditionals, $single = true ) {
+function swedbank_filter( array $source, array $conditionals, $single = true ) {
 	$data = array_filter( $source, function ( $data, $key ) use ( $conditionals ) {
 		$status = true;
 		foreach ( $conditionals as $ckey => $cvalue ) {
@@ -116,7 +116,7 @@ function px_filter( array $source, array $conditionals, $single = true ) {
 	}, ARRAY_FILTER_USE_BOTH );
 
 	if ( count( $data ) === 0 ) {
-		return $single ? false : array();
+		return $single ? false : [];
 	}
 
 	return $single ? array_shift( $data ) : $data;
@@ -129,14 +129,14 @@ function px_filter( array $source, array $conditionals, $single = true ) {
  *
  * @return false|WC_Payment_Gateway
  */
-function px_payment_method_instance( $order ) {
+function swedbank_payment_method_instance( $order ) {
 	$order = wc_get_order( $order );
 
 	if ( ! $order ) {
 		return false;
 	}
 
-	$payment_method = px_obj_prop( $order, 'payment_method' );
+	$payment_method = swedbank_obj_prop( $order, 'payment_method' );
 
 	// Get Payment Gateway
 	$gateways = WC()->payment_gateways()->get_available_payment_gateways();
@@ -155,7 +155,7 @@ function px_payment_method_instance( $order ) {
  *
  * @return false|WC_Payment_Gateway
  */
-function px_payment_method( $payment_id ) {
+function swedbank_payment_method( $payment_id ) {
 	// @todo Use payment_gateways() instead?
 	$gateways = WC()->payment_gateways()->get_available_payment_gateways();
 
@@ -169,8 +169,8 @@ function px_payment_method( $payment_id ) {
  *
  * @return string
  */
-function px_uuid( $node ) {
-	return apply_filters( 'payex_generate_uuid', $node );
+function swedbank_uuid( $node ) {
+	return apply_filters( 'swedbank_generate_uuid', $node );
 }
 
 /**
@@ -181,23 +181,23 @@ function px_uuid( $node ) {
  *
  * @throws \Exception
  */
-function px_capture_payment( $order, $amount = false ) {
+function swedbank_capture_payment( $order, $amount = false ) {
 	if ( is_int( $order ) ) {
 		$order = wc_get_order( $order );
 	}
 
-	/** @var WC_Payment_Gateway_Payex_Interface $gateway */
-	$gateway = px_payment_method_instance( $order );
+	/** @var WC_Payment_Gateway_Swedbank_Interface $gateway */
+	$gateway = swedbank_payment_method_instance( $order );
 	if ( ! $gateway ) {
-		throw new \Exception( __( 'Unable to get payment instance.', WC_Payex_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Unable to get payment instance.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
 	}
 
 	if ( ! method_exists( $gateway, 'capture_payment' ) ) {
-		throw new \Exception( sprintf( __( 'Capture failure: %s', WC_Payex_Psp::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
+		throw new \Exception( sprintf( __( 'Capture failure: %s', WC_Swedbank_Psp::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
 	}
 
 	if ( ! $gateway->can_capture( $order, $amount ) ) {
-		throw new \Exception( __( 'Capture action is not available.', WC_Payex_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Capture action is not available.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
 	}
 
 	// Disable status change hook
@@ -213,23 +213,23 @@ function px_capture_payment( $order, $amount = false ) {
  *
  * @throws \Exception
  */
-function px_cancel_payment( $order ) {
+function swedbank_cancel_payment( $order ) {
 	if ( is_int( $order ) ) {
 		$order = wc_get_order( $order );
 	}
 
-	/** @var WC_Payment_Gateway_Payex_Interface $gateway */
-	$gateway = px_payment_method_instance( $order );
+	/** @var WC_Payment_Gateway_Swedbank_Interface $gateway */
+	$gateway = swedbank_payment_method_instance( $order );
 	if ( ! $gateway ) {
-		throw new \Exception( __( 'Unable to get payment instance.', WC_Payex_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Unable to get payment instance.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
 	}
 
 	if ( ! method_exists( $gateway, 'cancel_payment' ) ) {
-		throw new \Exception( sprintf( __( 'Cancel failure: %s', WC_Payex_Psp::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
+		throw new \Exception( sprintf( __( 'Cancel failure: %s', WC_Swedbank_Psp::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
 	}
 
 	if ( ! $gateway->can_cancel( $order ) ) {
-		throw new \Exception( __( 'Cancel action is not available.', WC_Payex_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Cancel action is not available.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
 	}
 
 	// Disable status change hook
@@ -247,23 +247,23 @@ function px_cancel_payment( $order ) {
  *
  * @throws \Exception
  */
-function px_refund_payment( $order, $amount = false, $reason = '' ) {
+function swedbank_refund_payment( $order, $amount = false, $reason = '' ) {
 	if ( is_int( $order ) ) {
 		$order = wc_get_order( $order );
 	}
 
-	/** @var WC_Payment_Gateway_Payex_Interface $gateway */
-	$gateway = px_payment_method_instance( $order );
+	/** @var WC_Payment_Gateway_Swedbank_Interface $gateway */
+	$gateway = swedbank_payment_method_instance( $order );
 	if ( ! $gateway ) {
-		throw new \Exception( __( 'Unable to get payment instance.', WC_Payex_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Unable to get payment instance.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
 	}
 
 	if ( ! method_exists( $gateway, 'refund_payment' ) ) {
-		throw new \Exception( sprintf( __( 'Refund failure: %s', WC_Payex_Psp::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
+		throw new \Exception( sprintf( __( 'Refund failure: %s', WC_Swedbank_Psp::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
 	}
 
 	if ( ! $gateway->can_refund( $order, $amount ) ) {
-		throw new \Exception( __( 'Refund action is not available.', WC_Payex_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Refund action is not available.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
 	}
 
 	$gateway->refund_payment( $order, $amount, $reason );
@@ -277,7 +277,7 @@ function px_refund_payment( $order, $amount = false, $reason = '' ) {
  *
  * @return null|string
  */
-function px_get_post_id_by_meta( $key, $value ) {
+function swedbank_get_post_id_by_meta( $key, $value ) {
 	global $wpdb;
 
 	return $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;", $key, $value ) );

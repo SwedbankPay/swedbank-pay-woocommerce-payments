@@ -4,13 +4,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class WC_Payex_Psp_Update {
+class WC_Swedbank_Psp_Update {
 
 	/** @var array DB updates that need to be run */
-	private static $db_updates = array(
+	private static $db_updates = [
 		'1.1.0' => 'updates/update-1.1.0.php',
 		'1.2.0' => 'updates/update-1.2.0.php',
-	);
+	];
 
 	/**
 	 * Handle updates
