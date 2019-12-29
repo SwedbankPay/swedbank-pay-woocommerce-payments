@@ -490,7 +490,7 @@ abstract class WC_Payment_Gateway_Swedbank_Pay extends WC_Payment_Gateway
 
 		// @todo Add features of WooThemes Order Delivery and Pre-Orders WooCommerce Extensions
 
-		return apply_filters( 'sweden_bank_pay_risk_indicator', $result, $order, $this );
+		return apply_filters( 'swedbank_pay_risk_indicator', $result, $order, $this );
 	}
 
 	/**
