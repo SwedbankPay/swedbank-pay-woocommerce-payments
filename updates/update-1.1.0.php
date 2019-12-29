@@ -13,12 +13,12 @@ $log     = new WC_Logger();
 $handler = 'wc-payex-psp-update';
 
 // Gateway
-$gateway = new WC_Swedbank_Psp();
+$gateway = new WC_Swedbank_Pay();
 
 $log->add( $handler, 'Start upgrade....' );
 
 // Install Schema
-WC_Swedbank_Transactions::instance()->install_schema();
-WC_Swedbank_Queue::instance()->install_schema();
+WC_Swedbank_Pay_Transactions::instance()->install_schema();
+WC_Swedbank_Pay_Queue::instance()->install_schema();
 
 $log->add( $handler, 'Upgrade has been completed!' );

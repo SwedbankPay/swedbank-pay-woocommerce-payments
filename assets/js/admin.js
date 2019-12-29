@@ -1,21 +1,21 @@
 jQuery(document).ready(function ($) {
-    $( document ).on( 'click', '#swedbank_capture', function (e) {
+    $( document ).on( 'click', '#swedbank_pay_capture', function (e) {
         e.preventDefault();
 
         var nonce = $( this ).data( 'nonce' );
         var order_id = $( this ).data( 'order-id' );
         var self = $( this );
         $.ajax( {
-            url: Swedbank_Admin.ajax_url,
+            url: SwedbankPay_Admin.ajax_url,
             type: 'POST',
             data: {
-                action: 'swedbank_capture',
+                action: 'swedbank_pay_capture',
                 nonce: nonce,
                 order_id: order_id
             },
             beforeSend: function () {
                 self.data( 'text', self.html() );
-                self.html( Swedbank_Admin.text_wait );
+                self.html( SwedbankPay_Admin.text_wait );
                 self.prop( 'disabled', true );
             },
             success: function ( response ) {
@@ -31,23 +31,23 @@ jQuery(document).ready(function ($) {
         } );
     } );
 
-    $( document ).on( 'click', '#swedbank_cancel', function (e) {
+    $( document ).on( 'click', '#swedbank_pay_cancel', function (e) {
         e.preventDefault();
 
         var nonce = $( this ).data( 'nonce' );
         var order_id = $( this ).data( 'order-id' );
         var self = $( this );
         $.ajax( {
-            url: Swedbank_Admin.ajax_url,
+            url: SwedbankPay_Admin.ajax_url,
             type: 'POST',
             data: {
-                action: 'swedbank_cancel',
+                action: 'swedbank_pay_cancel',
                 nonce: nonce,
                 order_id: order_id
             },
             beforeSend: function () {
                 self.data( 'text', self.html() );
-                self.html( Swedbank_Admin.text_wait );
+                self.html( SwedbankPay_Admin.text_wait );
                 self.prop( 'disabled', true );
             },
             success: function ( response ) {

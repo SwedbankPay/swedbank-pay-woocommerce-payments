@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class WC_Swedbank_Icon {
+class WC_Swedbank_Pay_Icon {
 	/**
 	 * Constructor
 	 */
@@ -37,9 +37,9 @@ class WC_Swedbank_Icon {
 	 */
 	public function add_icon_settings( $form_fields ) {
 		$form_fields['gateway_icon'] = [
-			'title' => __( 'Checkout Icon', WC_Swedbank_Psp::TEXT_DOMAIN ),
+			'title' => __( 'Checkout Icon', WC_Swedbank_Pay::TEXT_DOMAIN ),
 			'type' => 'text',
-			'description' => __( 'Enter an image URL to change the icon.', WC_Swedbank_Psp::TEXT_DOMAIN ),
+			'description' => __( 'Enter an image URL to change the icon.', WC_Swedbank_Pay::TEXT_DOMAIN ),
 			'desc_tip' => true,
 			'default' => '',
 		];
@@ -57,7 +57,7 @@ class WC_Swedbank_Icon {
 	 */
 	public function gateway_icon( $icon, $payment_id ) {
 		if ( strpos( $payment_id, 'payex_' ) !== false ) {
-			$gateway = swedbank_payment_method( $payment_id );
+			$gateway = swedbank_pay_payment_method( $payment_id );
 			if ( $gateway && ! empty( $gateway->settings['gateway_icon'] ) ) {
 				$icon = self::modify_img( $icon, $gateway->settings['gateway_icon'] );
 			}
@@ -92,4 +92,4 @@ class WC_Swedbank_Icon {
 	}
 }
 
-new WC_Swedbank_Icon();
+new WC_Swedbank_Pay_Icon();

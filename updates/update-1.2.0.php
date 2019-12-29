@@ -13,13 +13,13 @@ $log     = new WC_Logger();
 $handler = 'wc-payex-psp-update';
 
 // Gateway
-$gateway = new WC_Swedbank_Psp();
+$gateway = new WC_Swedbank_Pay();
 
 $log->add( $handler, 'Start upgrade....' );
 
 global $wpdb;
 
-$background_process = new WC_Background_Swedbank_Queue();
+$background_process = new WC_Background_Swedbank_Pay_Queue();
 
 $query   = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}payex_queue WHERE processed = %d ORDER BY transaction_number ASC;", 0 );
 $results = $wpdb->get_results( $query, ARRAY_A );

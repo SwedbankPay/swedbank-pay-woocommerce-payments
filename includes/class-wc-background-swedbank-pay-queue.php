@@ -9,7 +9,7 @@ if ( ! class_exists( 'WC_Background_Process', false ) ) {
 /**
  * Class WC_Background_Swedbank_Queue
  */
-class WC_Background_Swedbank_Queue extends WC_Background_Process {
+class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 	/**
 	 * @var WC_Logger
 	 */
@@ -23,7 +23,7 @@ class WC_Background_Swedbank_Queue extends WC_Background_Process {
 
 		// Uses unique prefix per blog so each blog has separate queue.
 		$this->prefix = 'wp_' . get_current_blog_id();
-		$this->action = 'WC_Swedbank_Queue';
+		$this->action = 'wc_swedbank_pay_queue';
 
 		// Dispatch queue after shutdown.
 		add_action( 'shutdown', [ $this, 'dispatch_queue' ], 100 );
@@ -97,7 +97,7 @@ class WC_Background_Swedbank_Queue extends WC_Background_Process {
 	 * @param $message
 	 */
 	private function log( $message ) {
-		$this->logger->info( $message, [ 'source' => 'WC_Swedbank_Queue' ] );
+		$this->logger->info( $message, [ 'source' => 'wc_swedbank_pay_queue' ] );
 	}
 
 	/**
@@ -117,8 +117,8 @@ class WC_Background_Swedbank_Queue extends WC_Background_Process {
 				throw new Exception( 'Invalid webhook data' );
 			}
 
-			/** @var WC_Gateway_Swedbank_Cc $gateway */
-			$gateway = swedbank_payment_method( $item['payment_method_id'] );
+			/** @var WC_Gateway_Swedbank_Pay_Cc $gateway */
+			$gateway = swedbank_pay_payment_method( $item['payment_method_id'] );
 			if ( ! $gateway ) {
 				throw new Exception( sprintf( 'Can\'t retrieve payment gateway instance: %s', $item['payment_method_id'] ) );
 			}
@@ -133,7 +133,7 @@ class WC_Background_Swedbank_Queue extends WC_Background_Process {
 
 			// Get Order by Payment Id
 			$payment_id = $data['payment']['id'];
-			$order_id   = swedbank_get_post_id_by_meta( '_payex_payment_id', $payment_id );
+			$order_id   = swedbank_pay_get_post_id_by_meta( '_payex_payment_id', $payment_id );
 			if ( ! $order_id ) {
 				throw new Exception( sprintf( 'Error: Failed to get order Id by Payment Id %s', $payment_id ) );
 			}
@@ -158,7 +158,7 @@ class WC_Background_Swedbank_Queue extends WC_Background_Process {
 			// Extract transaction from list
 			$transaction_id    = $data['transaction']['number'];
 			$transaction_state = $data['transaction']['state'];
-			$transaction       = swedbank_filter( $transactions, [ 'number' => $transaction_id ] );
+			$transaction       = swedbank_pay_filter( $transactions, [ 'number' => $transaction_id ] );
 			$this->log( sprintf( 'Transaction: %s', var_export( $transaction, true ) ) );
 			if ( ! is_array( $transaction ) || count( $transaction ) === 0 ) {
 				throw new Exception( sprintf( 'Failed to fetch transaction number #%s', $transaction_id ) );

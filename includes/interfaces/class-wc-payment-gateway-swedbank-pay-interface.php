@@ -3,7 +3,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly
 }
 
-interface WC_Payment_Gateway_Swedbank_Interface {
+interface WC_Payment_Gateway_Swedbank_Pay_Interface {
 	/**
 	 * Check is Capture possible
 	 *

@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @see wcs_get_objects_property()
  *
  */
-function swedbank_obj_prop( $object, $property ) {
+function swedbank_pay_obj_prop( $object, $property ) {
 	switch ( $property ) {
 		case 'order_currency' :
 		case 'currency' :
@@ -41,7 +41,7 @@ function swedbank_obj_prop( $object, $property ) {
  * Get Remove Address
  * @return string
  */
-function swedbank_get_remote_address() {
+function swedbank_pay_get_remote_address() {
 	$headers = [
 		'CLIENT_IP',
 		'FORWARDED',
@@ -102,7 +102,7 @@ function swedbank_get_remote_address() {
  *
  * @return array|bool
  */
-function swedbank_filter( array $source, array $conditionals, $single = true ) {
+function swedbank_pay_filter( array $source, array $conditionals, $single = true ) {
 	$data = array_filter( $source, function ( $data, $key ) use ( $conditionals ) {
 		$status = true;
 		foreach ( $conditionals as $ckey => $cvalue ) {
@@ -129,14 +129,14 @@ function swedbank_filter( array $source, array $conditionals, $single = true ) {
  *
  * @return false|WC_Payment_Gateway
  */
-function swedbank_payment_method_instance( $order ) {
+function swedbank_pay_payment_method_instance( $order ) {
 	$order = wc_get_order( $order );
 
 	if ( ! $order ) {
 		return false;
 	}
 
-	$payment_method = swedbank_obj_prop( $order, 'payment_method' );
+	$payment_method = swedbank_pay_obj_prop( $order, 'payment_method' );
 
 	// Get Payment Gateway
 	$gateways = WC()->payment_gateways()->get_available_payment_gateways();
@@ -155,7 +155,7 @@ function swedbank_payment_method_instance( $order ) {
  *
  * @return false|WC_Payment_Gateway
  */
-function swedbank_payment_method( $payment_id ) {
+function swedbank_pay_payment_method( $payment_id ) {
 	// @todo Use payment_gateways() instead?
 	$gateways = WC()->payment_gateways()->get_available_payment_gateways();
 
@@ -169,8 +169,8 @@ function swedbank_payment_method( $payment_id ) {
  *
  * @return string
  */
-function swedbank_uuid( $node ) {
-	return apply_filters( 'swedbank_generate_uuid', $node );
+function swedbank_pay_uuid( $node ) {
+	return apply_filters( 'swedbank_pay_generate_uuid', $node );
 }
 
 /**
@@ -181,23 +181,23 @@ function swedbank_uuid( $node ) {
  *
  * @throws \Exception
  */
-function swedbank_capture_payment( $order, $amount = false ) {
+function swedbank_pay_capture_payment( $order, $amount = false ) {
 	if ( is_int( $order ) ) {
 		$order = wc_get_order( $order );
 	}
 
-	/** @var WC_Payment_Gateway_Swedbank_Interface $gateway */
-	$gateway = swedbank_payment_method_instance( $order );
+	/** @var WC_Payment_Gateway_Swedbank_Pay_Interface $gateway */
+	$gateway = swedbank_pay_payment_method_instance( $order );
 	if ( ! $gateway ) {
-		throw new \Exception( __( 'Unable to get payment instance.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Unable to get payment instance.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 	}
 
 	if ( ! method_exists( $gateway, 'capture_payment' ) ) {
-		throw new \Exception( sprintf( __( 'Capture failure: %s', WC_Swedbank_Psp::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
+		throw new \Exception( sprintf( __( 'Capture failure: %s', WC_Swedbank_Pay::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
 	}
 
 	if ( ! $gateway->can_capture( $order, $amount ) ) {
-		throw new \Exception( __( 'Capture action is not available.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Capture action is not available.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 	}
 
 	// Disable status change hook
@@ -213,23 +213,23 @@ function swedbank_capture_payment( $order, $amount = false ) {
  *
  * @throws \Exception
  */
-function swedbank_cancel_payment( $order ) {
+function swedbank_pay_cancel_payment( $order ) {
 	if ( is_int( $order ) ) {
 		$order = wc_get_order( $order );
 	}
 
-	/** @var WC_Payment_Gateway_Swedbank_Interface $gateway */
-	$gateway = swedbank_payment_method_instance( $order );
+	/** @var WC_Payment_Gateway_Swedbank_Pay_Interface $gateway */
+	$gateway = swedbank_pay_payment_method_instance( $order );
 	if ( ! $gateway ) {
-		throw new \Exception( __( 'Unable to get payment instance.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Unable to get payment instance.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 	}
 
 	if ( ! method_exists( $gateway, 'cancel_payment' ) ) {
-		throw new \Exception( sprintf( __( 'Cancel failure: %s', WC_Swedbank_Psp::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
+		throw new \Exception( sprintf( __( 'Cancel failure: %s', WC_Swedbank_Pay::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
 	}
 
 	if ( ! $gateway->can_cancel( $order ) ) {
-		throw new \Exception( __( 'Cancel action is not available.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Cancel action is not available.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 	}
 
 	// Disable status change hook
@@ -247,23 +247,23 @@ function swedbank_cancel_payment( $order ) {
  *
  * @throws \Exception
  */
-function swedbank_refund_payment( $order, $amount = false, $reason = '' ) {
+function swedbank_pay_refund_payment( $order, $amount = false, $reason = '' ) {
 	if ( is_int( $order ) ) {
 		$order = wc_get_order( $order );
 	}
 
-	/** @var WC_Payment_Gateway_Swedbank_Interface $gateway */
-	$gateway = swedbank_payment_method_instance( $order );
+	/** @var WC_Payment_Gateway_Swedbank_Pay_Interface $gateway */
+	$gateway = swedbank_pay_payment_method_instance( $order );
 	if ( ! $gateway ) {
-		throw new \Exception( __( 'Unable to get payment instance.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Unable to get payment instance.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 	}
 
 	if ( ! method_exists( $gateway, 'refund_payment' ) ) {
-		throw new \Exception( sprintf( __( 'Refund failure: %s', WC_Swedbank_Psp::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
+		throw new \Exception( sprintf( __( 'Refund failure: %s', WC_Swedbank_Pay::TEXT_DOMAIN ), 'Payment method don\'t support this feature' ) );
 	}
 
 	if ( ! $gateway->can_refund( $order, $amount ) ) {
-		throw new \Exception( __( 'Refund action is not available.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+		throw new \Exception( __( 'Refund action is not available.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 	}
 
 	$gateway->refund_payment( $order, $amount, $reason );
@@ -277,7 +277,7 @@ function swedbank_refund_payment( $order, $amount = false, $reason = '' ) {
  *
  * @return null|string
  */
-function swedbank_get_post_id_by_meta( $key, $value ) {
+function swedbank_pay_get_post_id_by_meta( $key, $value ) {
 	global $wpdb;
 
 	return $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;", $key, $value ) );

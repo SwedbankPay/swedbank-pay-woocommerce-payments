@@ -4,11 +4,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Swedbank_Reference
+class WC_Swedbank_Pay_Reference
 {
 	public function __construct() {
-		add_filter( 'sb_get_payee_reference' , [ $this, 'get_payee_reference' ], 10, 3 );
-		add_filter( 'sb_get_payee_reference_order' , [ $this, 'get_orderid_by_payee_reference' ], 10, 2 );
+		add_filter( 'swedenbank_pay_get_payee_reference' , [ $this, 'get_payee_reference' ], 10, 3 );
+		add_filter( 'swedenbank_pay_get_payee_reference_order' , [ $this, 'get_orderid_by_payee_reference' ], 10, 2 );
 	}
 
 	/**
@@ -87,5 +87,5 @@ class WC_Swedbank_Reference
 	}
 }
 
-new WC_Swedbank_Reference();
+new WC_Swedbank_Pay_Reference();
 

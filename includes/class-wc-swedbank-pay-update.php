@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class WC_Swedbank_Psp_Update {
+class WC_Swedbank_Pay_Update {
 
 	/** @var array DB updates that need to be run */
 	private static $db_updates = [

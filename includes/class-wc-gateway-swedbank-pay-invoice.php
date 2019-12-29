@@ -4,8 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
-	implements WC_Payment_Gateway_Swedbank_Interface {
+class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc
+	implements WC_Payment_Gateway_Swedbank_Pay_Interface {
 
 	/**
 	 * Merchant Token
@@ -47,12 +47,12 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 	 * Init
 	 */
 	public function __construct() {
-		$this->transactions = WC_Swedbank_Transactions::instance();
+		$this->transactions = WC_Swedbank_Pay_Transactions::instance();
 
 		$this->id           = 'payex_psp_invoice';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Invoice', WC_Swedbank_Psp::TEXT_DOMAIN );
-		//$this->icon         = apply_filters( 'woocommerce_swedbank_psp_invoice_icon', plugins_url( '/assets/images/invoice.png', dirname( __FILE__ ) ) );
+		$this->method_title = __( 'Invoice', WC_Swedbank_Pay::TEXT_DOMAIN );
+		//$this->icon         = apply_filters( 'wc_swedbank_pay_invoice_icon', plugins_url( '/assets/images/invoice.png', dirname( __FILE__ ) ) );
 		$this->supports     = [
 			'products',
 			'refunds',
@@ -117,33 +117,33 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 	public function init_form_fields() {
 		$this->form_fields = [
 			'enabled'        => [
-				'title'   => __( 'Enable/Disable', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'title'   => __( 'Enable/Disable', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'label'   => __( 'Enable plugin', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default' => 'no'
 			],
 			'title'          => [
-				'title'       => __( 'Title', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'title'       => __( 'Title', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', WC_Swedbank_Psp::TEXT_DOMAIN ),
-				'default'     => __( 'Invoice', WC_Swedbank_Psp::TEXT_DOMAIN )
+				'description' => __( 'This controls the title which the user sees during checkout.', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'default'     => __( 'Invoice', WC_Swedbank_Pay::TEXT_DOMAIN )
 			],
 			'description'    => [
-				'title'       => __( 'Description', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'title'       => __( 'Description', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', WC_Swedbank_Psp::TEXT_DOMAIN ),
-				'default'     => __( 'Invoice', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'description' => __( 'This controls the description which the user sees during checkout.', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'default'     => __( 'Invoice', WC_Swedbank_Pay::TEXT_DOMAIN ),
 			],
 			'merchant_token' => [
-				'title'       => __( 'Merchant Token', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'title'       => __( 'Merchant Token', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'description' => __( 'Merchant Token', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => $this->merchant_token
 			],
 			'payee_id'       => [
-				'title'       => __( 'Payee Id', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'title'       => __( 'Payee Id', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Payee Id', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'description' => __( 'Payee Id', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => $this->payee_id
 			],
 			'subsite'         => [
@@ -153,32 +153,32 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 				'default'     => $this->subsite
 			],
 			'testmode'       => [
-				'title'   => __( 'Test Mode', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'title'   => __( 'Test Mode', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Swedbank Pay Test Mode', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'label'   => __( 'Enable Swedbank Pay Test Mode', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default' => $this->testmode
 			],
 			'debug'          => [
-				'title'   => __( 'Debug', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'title'   => __( 'Debug', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable logging', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'label'   => __( 'Enable logging', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default' => $this->debug
 			],
 			'culture'        => [
-				'title'       => __( 'Language', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'title'       => __( 'Language', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'        => 'select',
 				'options'     => [
 					'en-US' => 'English',
 					'sv-SE' => 'Swedish',
 					'nb-NO' => 'Norway',
 				],
-				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => $this->culture
 			],
 			'terms_url'      => [
-				'title'       => __( 'Terms & Conditions Url', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'title'       => __( 'Terms & Conditions Url', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'Terms & Conditions Url', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'description' => __( 'Terms & Conditions Url', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => get_site_url()
 			],
 		];
@@ -192,7 +192,7 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 		?>
 		<p class="form-row form-row-wide">
 			<label for="social-security-number">
-				<?php echo __( 'Social Security Number', WC_Swedbank_Psp::TEXT_DOMAIN ); ?>
+				<?php echo __( 'Social Security Number', WC_Swedbank_Pay::TEXT_DOMAIN ); ?>
 				<abbr class="required">*</abbr>
 			</label>
 			<input type="text" class="input-text required-entry" name="social-security-number"
@@ -210,19 +210,19 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 	 */
 	public function validate_fields() {
 		if ( empty( $_POST['billing_country'] ) ) {
-			wc_add_notice( __( 'Please specify country.', WC_Swedbank_Psp::TEXT_DOMAIN ), 'error' );
+			wc_add_notice( __( 'Please specify country.', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
 
 			return false;
 		}
 
 		if ( empty( $_POST['billing_postcode'] ) ) {
-			wc_add_notice( __( 'Please specify postcode.', WC_Swedbank_Psp::TEXT_DOMAIN ), 'error' );
+			wc_add_notice( __( 'Please specify postcode.', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
 
 			return false;
 		}
 
 		if ( ! in_array( mb_strtoupper( $_POST['billing_country'], 'UTF-8' ), [ 'SE', 'NO', 'FI' ] ) ) {
-			wc_add_notice( __( 'This country is not supported by the payment system.', WC_Swedbank_Psp::TEXT_DOMAIN ), 'error' );
+			wc_add_notice( __( 'This country is not supported by the payment system.', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
 
 			return false;
 		}
@@ -231,14 +231,14 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 		if ( in_array( $_POST['billing_country'], [ 'SE', 'NO' ] ) ) {
 			$phone_code = mb_substr( ltrim( $_POST['billing_phone'], '+' ), 0, 2, 'UTF-8' );
 			if ( ! in_array( $phone_code, [ '46', '47' ] ) ) {
-				wc_add_notice( __( 'Invalid phone number. Phone code must include country phone code.', WC_Swedbank_Psp::TEXT_DOMAIN ), 'error' );
+				wc_add_notice( __( 'Invalid phone number. Phone code must include country phone code.', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
 
 				return false;
 			}
 		}
 
 		if ( empty( $_POST['social-security-number'] ) ) {
-			wc_add_notice( __( 'Please enter your Social Security Number and confirm your order.', WC_Swedbank_Psp::TEXT_DOMAIN ), 'error' );
+			wc_add_notice( __( 'Please enter your Social Security Number and confirm your order.', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
 
 			return false;
 		}
@@ -269,11 +269,11 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 		$order = wc_get_order( $order_id );
 
 		$amount   = $order->get_total();
-		$currency = swedbank_obj_prop( $order, 'order_currency' );
-		$email    = swedbank_obj_prop( $order, 'billing_email' );
-		$phone    = swedbank_obj_prop( $order, 'billing_phone' );
-		$country  = swedbank_obj_prop( $order, 'billing_country' );
-		$postcode = swedbank_obj_prop( $order, 'billing_postcode' );
+		$currency = swedbank_pay_obj_prop( $order, 'order_currency' );
+		$email    = swedbank_pay_obj_prop( $order, 'billing_email' );
+		$phone    = swedbank_pay_obj_prop( $order, 'billing_phone' );
+		$country  = swedbank_pay_obj_prop( $order, 'billing_country' );
+		$postcode = swedbank_pay_obj_prop( $order, 'billing_postcode' );
 
 		$ssn = wc_clean( $_POST['social-security-number'] );
 
@@ -283,15 +283,15 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 		if ( $user_id > 0 ) {
 			$customer_uuid = get_user_meta( $user_id, '_payex_customer_uuid', true );
 			if ( empty( $customer_uuid ) ) {
-				$customer_uuid = swedbank_uuid( $user_id );
+				$customer_uuid = swedbank_pay_uuid( $user_id );
 				update_user_meta( $user_id, '_payex_customer_uuid', $customer_uuid );
 			}
 		} else {
-			$customer_uuid = swedbank_uuid( uniqid( $email ) );
+			$customer_uuid = swedbank_pay_uuid( uniqid( $email ) );
 		}
 
 		// Get Order UUID
-		$order_uuid = swedbank_uuid( $order_id );
+		$order_uuid = swedbank_pay_uuid( $order_id );
 
 		$params = [
 			'payment' => [
@@ -305,7 +305,7 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 						'vatAmount' => '0'
 					]
 				],
-				'description'    => sprintf( __( 'Order #%s', WC_Swedbank_Psp::TEXT_DOMAIN ), $order->get_order_number() ),
+				'description'    => sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $order->get_order_number() ),
 				'payerReference' => $customer_uuid,
 				'userAgent'      => $_SERVER['HTTP_USER_AGENT'],
 				'language'       => $this->culture,
@@ -388,7 +388,7 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 					'customerNumber'       => $user_id,
 					'email'                => $email,
 					'msisdn'               => '+' . ltrim( $phone, '+' ),
-					'ip'                   => swedbank_get_remote_address()
+					'ip'                   => swedbank_pay_get_remote_address()
 				],
 				'legalAddress' => [
 					'addressee'     => $legal_address['addressee'],
@@ -466,7 +466,7 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 			$amount = $order->get_total();
 		}
 
-		$order_id   = swedbank_obj_prop( $order, 'id' );
+		$order_id   = swedbank_pay_obj_prop( $order, 'id' );
 		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
 			throw new \Exception( 'Unable to get payment ID' );
@@ -480,14 +480,14 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 
 		$capture_href = self::get_operation( $result['operations'], 'create-capture' );
 		if ( empty( $capture_href ) ) {
-			throw new \Exception( __( 'Capture unavailable', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+			throw new \Exception( __( 'Capture unavailable', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 		}
 
 		// Order Info
 		$info = $this->get_order_info( $order );
 
 		// Get Order UUID
-		$payeeReference = swedbank_uuid( uniqid( $order_id ) );
+		$payeeReference = swedbank_pay_uuid( uniqid( $order_id ) );
 
 		$params = [
 			'transaction'      => [
@@ -510,16 +510,16 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 				update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
 				update_post_meta( $order_id, '_payex_transaction_capture', $transaction['id'] );
 
-				$order->add_order_note( __( 'Transaction captured.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+				$order->add_order_note( __( 'Transaction captured.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 				$order->payment_complete( $transaction['number'] );
 
 				break;
 			case 'Initialized':
-				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', WC_Swedbank_Psp::TEXT_DOMAIN ), $transaction['state'] ) );
+				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $transaction['state'] ) );
 				break;
 			case 'Failed':
 			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', WC_Swedbank_Psp::TEXT_DOMAIN );
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', WC_Swedbank_Pay::TEXT_DOMAIN );
 				throw new \Exception( $message );
 				break;
 		}
@@ -538,7 +538,7 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 			$order = wc_get_order( $order );
 		}
 
-		$order_id   = swedbank_obj_prop( $order, 'id' );
+		$order_id   = swedbank_pay_obj_prop( $order, 'id' );
 		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
 			throw new \Exception( 'Unable to get payment ID' );
@@ -552,11 +552,11 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 
 		$cancel_href = self::get_operation( $result['operations'], 'create-cancellation' );
 		if ( empty( $cancel_href ) ) {
-			throw new \Exception( __( 'Cancellation unavailable', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+			throw new \Exception( __( 'Cancellation unavailable', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 		}
 
 		// Get Order UUID
-		$payeeReference = swedbank_uuid( uniqid( $order_id ) );
+		$payeeReference = swedbank_pay_uuid( uniqid( $order_id ) );
 
 		$params = [
 			'transaction' => [
@@ -578,19 +578,19 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 				update_post_meta( $order_id, '_payex_transaction_cancel', $transaction['id'] );
 
 				if ( ! $order->has_status( 'cancelled' ) ) {
-					$order->update_status( 'cancelled', __( 'Transaction cancelled.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+					$order->update_status( 'cancelled', __( 'Transaction cancelled.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 				} else {
-					$order->add_order_note( __( 'Transaction cancelled.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+					$order->add_order_note( __( 'Transaction cancelled.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 				}
 
 				break;
 			case 'Initialized':
 			case 'AwaitingActivity':
-				$order->add_order_note( sprintf( __( 'Transaction cancellation status: %s.', WC_Swedbank_Psp::TEXT_DOMAIN ), $transaction['state'] ) );
+				$order->add_order_note( sprintf( __( 'Transaction cancellation status: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $transaction['state'] ) );
 				break;
 			case 'Failed':
 			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Cancel failed.', WC_Swedbank_Psp::TEXT_DOMAIN );
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Cancel failed.', WC_Swedbank_Pay::TEXT_DOMAIN );
 				throw new \Exception( $message );
 				break;
 		}
@@ -611,7 +611,7 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 			$order = wc_get_order( $order );
 		}
 
-		$order_id   = swedbank_obj_prop( $order, 'id' );
+		$order_id   = swedbank_pay_obj_prop( $order, 'id' );
 		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
 			throw new \Exception( 'Unable to get payment ID' );
@@ -625,7 +625,7 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 
 		$reversal_href = self::get_operation( $result['operations'], 'create-reversal' );
 		if ( empty( $reversal_href ) ) {
-			throw new \Exception( __( 'Refund unavailable', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+			throw new \Exception( __( 'Refund unavailable', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 		}
 
 		// Get Order UUID
@@ -654,11 +654,11 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 				break;
 			case 'Initialized':
 			case 'AwaitingActivity':
-				$order->add_order_note( sprintf( __( 'Transaction reversal status: %s.', WC_Swedbank_Psp::TEXT_DOMAIN ), $transaction['state'] ) );
+				$order->add_order_note( sprintf( __( 'Transaction reversal status: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $transaction['state'] ) );
 				break;
 			case 'Failed':
 			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Refund failed.', WC_Swedbank_Psp::TEXT_DOMAIN );
+				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Refund failed.', WC_Swedbank_Pay::TEXT_DOMAIN );
 				throw new \Exception( $message );
 				break;
 		}
@@ -666,4 +666,4 @@ class WC_Gateway_Swedbank_Invoice extends WC_Gateway_Swedbank_Cc
 }
 
 // Register Gateway
-WC_Swedbank_Psp::register_gateway( 'WC_Gateway_Swedbank_Invoice' );
+WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Invoice' );

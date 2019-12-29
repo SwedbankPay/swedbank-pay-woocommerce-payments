@@ -8,11 +8,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Class WC_Swedbank_Queue
  * @deprecated
  */
-class WC_Swedbank_Queue {
+class WC_Swedbank_Pay_Queue {
 	/**
 	 * The single instance of the class.
 	 *
-	 * @var WC_Swedbank_Queue
+	 * @var WC_Swedbank_Pay_Queue
 	 */
 	protected static $_instance = null;
 
@@ -20,7 +20,7 @@ class WC_Swedbank_Queue {
 	 * Instance.
 	 *
 	 * @static
-	 * @return WC_Swedbank_Queue
+	 * @return WC_Swedbank_Pay_Queue
 	 */
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -91,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 		$data = @json_decode( $raw_body, true );
 
 		// Get Order by Payment Id
-		$order_id = swedbank_get_post_id_by_meta( '_payex_payment_id', $data['payment']['id'] );
+		$order_id = swedbank_pay_get_post_id_by_meta( '_payex_payment_id', $data['payment']['id'] );
 
 		$result = $wpdb->insert( $wpdb->prefix . 'payex_queue', [
 			'payment_id'         => $data['payment']['id'],

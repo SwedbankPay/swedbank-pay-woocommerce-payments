@@ -4,11 +4,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Swedbank_Transactions {
+class WC_Swedbank_Pay_Transactions {
 	/**
 	 * The single instance of the class.
 	 *
-	 * @var WC_Swedbank_Transactions
+	 * @var WC_Swedbank_Pay_Transactions
 	 */
 	protected static $_instance = null;
 
@@ -36,7 +36,7 @@ class WC_Swedbank_Transactions {
 	 * Main WC_Swedbank_Transactions Instance.
 	 *
 	 * @static
-	 * @return WC_Swedbank_Transactions
+	 * @return WC_Swedbank_Pay_Transactions
 	 */
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {

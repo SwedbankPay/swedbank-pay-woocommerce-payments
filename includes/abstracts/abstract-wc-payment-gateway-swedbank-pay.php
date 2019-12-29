@@ -4,13 +4,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use PayEx\Api\Client\Client as SwedBankClient;
-use PayEx\Api\Client as SwedBankApiClient;
+use PayEx\Api\Client\Client as SwedbankPayClient;
+use PayEx\Api\Client as SwedbankPayApiClient;
 
-abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
-	implements WC_Payment_Gateway_Swedbank_Interface {
+abstract class WC_Payment_Gateway_Swedbank_Pay extends WC_Payment_Gateway
+	implements WC_Payment_Gateway_Swedbank_Pay_Interface {
 
-	/** @var SwedBankClient */
+	/** @var SwedbankPayClient */
 	public $client;
 
 	/**
@@ -20,7 +20,7 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 	public $response_body;
 
 	/**
-	 * @var \WC_Swedbank_Transactions
+	 * @var \WC_Swedbank_Pay_Transactions
 	 */
 	public $transactions;
 
@@ -67,14 +67,14 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 	public $reject_corporate_cards = 'no';
 
 	/**
-	 * Get SwedBank Client
-	 * @return SwedBankClient
+	 * Get Swedbank Pay Client
+	 * @return SwedbankPayClient
 	 */
 	public function getClient() {
 		if ( ! $this->client ) {
-			$this->client = (new SwedBankClient())
+			$this->client = (new SwedbankPayClient())
 				->setMerchantToken( $this->merchant_token )
-				->setMode( $this->testmode === 'yes' ? SwedBankClient::MODE_TEST : SwedBankClient::MODE_PRODUCTION );
+				->setMode( $this->testmode === 'yes' ? SwedbankPayClient::MODE_TEST : SwedbankPayClient::MODE_PRODUCTION );
 		}
 
 		return $this->client;
@@ -125,9 +125,9 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 	 * @throws \Exception
 	 */
 	public function request( $method, $url, $params = [] ) {
-		$client = new SwedBankApiClient();
+		$client = new SwedbankPayApiClient();
 		$client->setMerchantToken( $this->merchant_token );
-		$client->setMode( $this->testmode === 'yes' ? SwedBankApiClient::MODE_TEST : SwedBankApiClient::MODE_PRODUCTION );
+		$client->setMode( $this->testmode === 'yes' ? SwedbankPayApiClient::MODE_TEST : SwedbankPayApiClient::MODE_PRODUCTION );
 
 		$start = microtime( true );
 		if ( $this->debug === 'yes' ) {
@@ -198,20 +198,6 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 
 		return false;
 	}
-
-	/**
-	 * Get Post Id by Meta
-	 *
-	 * @param $key
-	 * @param $value
-	 *
-	 * @return null|string
-	 * @deprecated
-	 */
-	protected function get_post_id_by_meta( $key, $value ) {
-		return swedbank_get_post_id_by_meta( $key, $value );
-	}
-
 
 	/**
 	 * Check is WooCommerce >= 3.0
@@ -297,7 +283,7 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 
 				$item[] = [
 					'type'              => 'discount',
-					'name'              => __( 'Discount', WC_Swedbank_Psp::TEXT_DOMAIN ),
+					'name'              => __( 'Discount', WC_Swedbank_Pay::TEXT_DOMAIN ),
 					'qty'               => 1,
 					'price_with_tax'    => sprintf( "%.2f", - 1 * $discountWithTax ),
 					'price_without_tax' => sprintf( "%.2f", - 1 * $discount ),
@@ -366,7 +352,7 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 
 			$item[] = [
 				'type'              => 'discount',
-				'name'              => __( 'Discount', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'name'              => __( 'Discount', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'qty'               => 1,
 				'price_with_tax'    => sprintf( "%.2f", - 1 * $discountWithTax ),
 				'price_without_tax' => sprintf( "%.2f", - 1 * $discount ),
@@ -504,7 +490,7 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 
 		// @todo Add features of WooThemes Order Delivery and Pre-Orders WooCommerce Extensions
 
-		return apply_filters( 'payex_payment_risk_indicator', $result, $order, $this );
+		return apply_filters( 'sweden_bank_pay_risk_indicator', $result, $order, $this );
 	}
 
 	/**
@@ -554,7 +540,7 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 		}
 
 		try {
-			swedbank_refund_payment( $order, $amount, $reason );
+			swedbank_pay_refund_payment( $order, $amount, $reason );
 
 			return true;
 		} catch ( \Exception $e ) {
@@ -572,7 +558,7 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 	 */
 	public function process_transaction( $transaction, $order ) {
 		// Disable status change hook
-		remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
+		remove_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10 );
 
 		try {
 			// Apply action
@@ -592,14 +578,14 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 							$transaction['failedErrorCode'],
 							$transaction['failedErrorDescription']
 						] );
-						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', WC_Swedbank_Psp::TEXT_DOMAIN ), $reason ) );
+						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $reason ) );
 						break;
 					}
 
 					if ( $transaction['state'] === 'Pending' ) {
 						$order->update_meta_data( '_transaction_id', $transaction['number'] );
 						$order->save_meta_data();
-						$order->update_status( 'on-hold', __( 'Transaction pending.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+						$order->update_status( 'on-hold', __( 'Transaction pending.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 						break;
 					}
 
@@ -614,7 +600,7 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 						wc_reduce_stock_levels( $order->get_id() );
 					}
 
-					$order->update_status( 'on-hold', __( 'Payment authorized.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+					$order->update_status( 'on-hold', __( 'Payment authorized.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 
 					// Save Payment Token
 					if ( $order->get_meta( '_payex_generate_token' ) === '1' &&
@@ -636,7 +622,7 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 							$expiryDate      = explode( '/', $authorization['expiryDate'] );
 
 							// Create Payment Token
-							$token = new WC_Payment_Token_Swedbank();
+							$token = new WC_Payment_Token_Swedbank_Pay();
 							$token->set_gateway_id( $this->id );
 							$token->set_token( $paymentToken );
 							$token->set_recurrence_token( $recurrenceToken );
@@ -648,7 +634,7 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 							$token->set_masked_pan( $maskedPan );
 							$token->save();
 							if ( ! $token->get_id() ) {
-								throw new Exception( __( 'There was a problem adding the card.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+								throw new Exception( __( 'There was a problem adding the card.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 							}
 
 							// Add payment token
@@ -672,14 +658,14 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 							$transaction['failedErrorCode'],
 							$transaction['failedErrorDescription']
 						] );
-						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', WC_Swedbank_Psp::TEXT_DOMAIN ), $reason ) );
+						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $reason ) );
 						break;
 					}
 
 					if ( $transaction['state'] === 'Pending' ) {
 						$order->update_meta_data( '_transaction_id', $transaction['number'] );
 						$order->save_meta_data();
-						$order->update_status( 'on-hold', __( 'Transaction pending.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+						$order->update_status( 'on-hold', __( 'Transaction pending.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 						break;
 					}
 
@@ -688,7 +674,7 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 					$order->save_meta_data();
 
 					$order->payment_complete( $transaction['number'] );
-					$order->add_order_note( __( 'Transaction captured.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+					$order->add_order_note( __( 'Transaction captured.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 					break;
 				case 'Cancellation':
 					// Check is action was performed
@@ -706,9 +692,9 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 					$order->save_meta_data();
 
 					if ( ! $order->has_status( 'cancelled' ) ) {
-						$order->update_status( 'cancelled', __( 'Transaction cancelled.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+						$order->update_status( 'cancelled', __( 'Transaction cancelled.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 					} else {
-						$order->add_order_note( __( 'Transaction cancelled.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+						$order->add_order_note( __( 'Transaction cancelled.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 					}
 					break;
 				case 'Reversal':
@@ -724,13 +710,13 @@ abstract class WC_Payment_Gateway_Swedbank extends WC_Payment_Gateway
 			}
 
 			// Enable status change hook
-			add_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10, 4 );
+			add_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10, 4 );
 
 			throw $e;
 		}
 
 		// Enable status change hook
-		add_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10, 4 );
+		add_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10, 4 );
 	}
 
 	/**

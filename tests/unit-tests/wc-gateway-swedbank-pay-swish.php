@@ -1,8 +1,8 @@
 <?php
 
-class WC_Unit_Gateway_Swedbank_Invoice extends WC_Unit_Test_Case {
+class WC_Unit_Gateway_Swedbank_Pay_Swish extends WC_Unit_Test_Case {
 	/**
-	 * @var WC_Gateway_Swedbank_Invoice
+	 * @var WC_Gateway_Swedbank_Pay_Swish
 	 */
 	private $gateway;
 
@@ -20,7 +20,7 @@ class WC_Unit_Gateway_Swedbank_Invoice extends WC_Unit_Test_Case {
 		$this->wc = WC();
 
 		// Init PayEx Payments plugin
-		$this->gateway              = new WC_Gateway_Swedbank_Invoice();
+		$this->gateway              = new WC_Gateway_Swedbank_Pay_Swish();
 		$this->gateway->enabled     = 'yes';
 		$this->gateway->testmode    = 'yes';
 		$this->gateway->description = 'Test';
@@ -68,8 +68,7 @@ class WC_Unit_Gateway_Swedbank_Invoice extends WC_Unit_Test_Case {
 		$order->set_currency( 'SEK' );
 		$order->save();
 
-		$_POST['social-security-number'] = '971020-2392';
-		$result                          = $this->gateway->process_payment( $order->get_id() );
+		$result = $this->gateway->process_payment( $order->get_id() );
 
 		$this->assertFalse( $result );
 	}

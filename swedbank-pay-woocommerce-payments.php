@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Swedbank_Psp {
+class WC_Swedbank_Pay {
 
 	/** Payment IDs */
 	const PAYMENT_METHODS = [
@@ -32,7 +32,7 @@ class WC_Swedbank_Psp {
 	const TEXT_DOMAIN = 'swedbank-pay-woocommerce-payments';
 
 	/**
-	 * @var WC_Background_Swedbank_Queue
+	 * @var WC_Background_Swedbank_Pay_Queue
 	 */
 	public static $background_process;
 
@@ -68,12 +68,12 @@ class WC_Swedbank_Psp {
 		add_action( 'admin_enqueue_scripts', __CLASS__ . '::admin_enqueue_scripts' );
 
 		// Add Admin Backend Actions
-		add_action( 'wp_ajax_swedbank_capture', [ $this, 'ajax_swedbank_capture' ] );
+		add_action( 'wp_ajax_swedbank_pay_capture', [ $this, 'ajax_swedbank_pay_capture' ] );
 
-		add_action( 'wp_ajax_swedbank_cancel', [ $this, 'ajax_swedbank_cancel' ] );
+		add_action( 'wp_ajax_swedbank_pay_cancel', [ $this, 'ajax_swedbank_pay_cancel' ] );
 
 		// UUID Filter
-		add_filter( 'swedbank_generate_uuid', [ $this, 'generate_uuid' ], 10, 1 );
+		add_filter( 'swedbank_pay_generate_uuid', [ $this, 'generate_uuid' ], 10, 1 );
 
 		// Process swedbank queue
 		if ( ! is_multisite() ) {
@@ -105,10 +105,10 @@ class WC_Swedbank_Psp {
 			require_once $vendorsDir . '/php-name-parser/vendor/autoload.php';
 		}
 
-		require_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-reference.php' );
-		require_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-transactions.php' );
-		require_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-queue.php' );
-		require_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-icon.php' );
+		require_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-pay-reference.php' );
+		require_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-pay-transactions.php' );
+		require_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-pay-queue.php' );
+		require_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-pay-icon.php' );
 	}
 
 	/**
@@ -116,7 +116,7 @@ class WC_Swedbank_Psp {
 	 */
 	public function install() {
 		// Install Schema
-		WC_Swedbank_Transactions::instance()->install_schema();
+		WC_Swedbank_Pay_Transactions::instance()->install_schema();
 
 		// Set Version
 		if ( ! get_option( 'woocommerce_payex_psp_version' ) ) {
@@ -133,7 +133,7 @@ class WC_Swedbank_Psp {
 	 */
 	public function plugin_action_links( $links ) {
 		$plugin_links = [
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_cc' ) . '">' . __( 'Settings', WC_Swedbank_Psp::TEXT_DOMAIN ) . '</a>'
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_cc' ) . '">' . __( 'Settings', WC_Swedbank_Pay::TEXT_DOMAIN ) . '</a>'
 		];
 
 		return array_merge( $plugin_links, $links );
@@ -144,18 +144,18 @@ class WC_Swedbank_Psp {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( WC_Swedbank_Psp::TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( WC_Swedbank_Pay::TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 
 		// Functions
-		include_once( dirname( __FILE__ ) . '/includes/functions-swedbank-checkout.php' );
+		include_once( dirname( __FILE__ ) . '/includes/functions-swedbank-pay.php' );
 	}
 
 	/**
 	 * WooCommerce Init
 	 */
 	public function woocommerce_init() {
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-background-swedbank-queue.php' );
-		self::$background_process = new WC_Background_Swedbank_Queue();
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-background-swedbank-pay-queue.php' );
+		self::$background_process = new WC_Background_Swedbank_Pay_Queue();
 	}
 
 	/**
@@ -163,13 +163,13 @@ class WC_Swedbank_Psp {
 	 */
 	public function woocommerce_loaded() {
 		// Includes
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-token-swedbank.php' );
-		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-swedbank-interface.php' );
-		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-payment-gateway-swedbank.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-cc.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-invoice.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-vipps.php' );
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-swish.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-payment-token-swedbank-pay.php' );
+		include_once( dirname( __FILE__ ) . '/includes/interfaces/class-wc-payment-gateway-swedbank-pay-interface.php' );
+		include_once( dirname( __FILE__ ) . '/includes/abstracts/abstract-wc-payment-gateway-swedbank-pay.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-cc.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-invoice.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-vipps.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-swish.php' );
 	}
 
 	/**
@@ -208,7 +208,7 @@ class WC_Swedbank_Psp {
 	 * @return array
 	 */
 	public function add_valid_order_statuses( $statuses, $order ) {
-		$payment_method = swedbank_obj_prop( $order, 'payment_method' );
+		$payment_method = swedbank_pay_obj_prop( $order, 'payment_method' );
 		if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
 			$statuses = array_merge( $statuses, [
 				'processing',
@@ -237,26 +237,26 @@ class WC_Swedbank_Psp {
 			$order = wc_get_order( $order_id );
 		}
 
-		$payment_method = swedbank_obj_prop( $order, 'payment_method' );
+		$payment_method = swedbank_pay_obj_prop( $order, 'payment_method' );
 		if ( ! in_array( $payment_method, self::PAYMENT_METHODS ) ) {
 			return;
 		}
 
-		/** @var WC_Payment_Gateway_Swedbank $gateway */
-		$gateway = swedbank_payment_method_instance( $order );
+		/** @var WC_Payment_Gateway_Swedbank_Pay $gateway */
+		$gateway = swedbank_pay_payment_method_instance( $order );
 
 		switch ( $to ) {
 			case 'cancelled':
 				// Cancel payment
 				if ( $gateway->can_cancel( $order ) ) {
 					try {
-						swedbank_cancel_payment( $order_id );
+						swedbank_pay_cancel_payment( $order_id );
 					} catch ( Exception $e ) {
 						$message = $e->getMessage();
 						WC_Admin_Meta_Boxes::add_error( $message );
 
 						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', WC_Swedbank_Psp::TEXT_DOMAIN ), $message ) );
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', WC_Swedbank_Pay::TEXT_DOMAIN ), $message ) );
 					}
 				}
 				break;
@@ -265,13 +265,13 @@ class WC_Swedbank_Psp {
 				// Capture payment
 				if ( $gateway->can_capture( $order ) ) {
 					try {
-						swedbank_capture_payment( $order_id );
+						swedbank_pay_capture_payment( $order_id );
 					} catch ( Exception $e ) {
 						$message = $e->getMessage();
 						WC_Admin_Meta_Boxes::add_error( $message );
 
 						// Rollback
-						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', WC_Swedbank_Psp::TEXT_DOMAIN ), $message ) );
+						$order->update_status( $from, sprintf( __( 'Order status rollback. %s', WC_Swedbank_Pay::TEXT_DOMAIN ), $message ) );
 					}
 				}
 				break;
@@ -287,13 +287,13 @@ class WC_Swedbank_Psp {
 	public static function add_meta_boxes() {
 		global $post_id;
 		if ( $order = wc_get_order( $post_id ) ) {
-			$payment_method = swedbank_obj_prop( $order, 'payment_method' );
+			$payment_method = swedbank_pay_obj_prop( $order, 'payment_method' );
 			if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
 				$payment_id = get_post_meta( $post_id, '_payex_payment_id', true );
 				if ( ! empty( $payment_id ) ) {
 					add_meta_box(
 						'swedbank_payment_actions',
-						__( 'Swedbank Pay Payments Actions', WC_Swedbank_Psp::TEXT_DOMAIN ),
+						__( 'Swedbank Pay Payments Actions', WC_Swedbank_Pay::TEXT_DOMAIN ),
 						__CLASS__ . '::order_meta_box_payment_actions',
 						'shop_order',
 						'side',
@@ -316,8 +316,8 @@ class WC_Swedbank_Psp {
 			return;
 		}
 
-		/** @var WC_Payment_Gateway_Swedbank $gateway */
-		$gateway = swedbank_payment_method_instance( $order );
+		/** @var WC_Payment_Gateway_Swedbank_Pay $gateway */
+		$gateway = swedbank_pay_payment_method_instance( $order );
 
 		if ( ! $gateway ) {
 			return;
@@ -355,7 +355,7 @@ class WC_Swedbank_Psp {
 			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
 
 			if ( isset( $gateways[ $payment_method ] ) ) {
-				/** @var WC_Gateway_Swedbank_Cc $gateway */
+				/** @var WC_Gateway_Swedbank_Pay_Cc $gateway */
 				$gateway = $gateways[ $payment_method ];
 
 				wc_get_template(
@@ -382,33 +382,33 @@ class WC_Swedbank_Psp {
 		if ( $hook === 'post.php' ) {
 			// Scripts
 			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-			wp_register_script( 'swedbank-admin-js', plugin_dir_url( __FILE__ ) . 'assets/js/admin' . $suffix . '.js' );
+			wp_register_script( 'swedbank-pay-admin-js', plugin_dir_url( __FILE__ ) . 'assets/js/admin' . $suffix . '.js' );
 
 			// Localize the script
 			$translation_array = [
 				'ajax_url'  => admin_url( 'admin-ajax.php' ),
-				'text_wait' => __( 'Please wait...', WC_Swedbank_Psp::TEXT_DOMAIN ),
+				'text_wait' => __( 'Please wait...', WC_Swedbank_Pay::TEXT_DOMAIN ),
 			];
-			wp_localize_script( 'swedbank-admin-js', 'Swedbank_Admin', $translation_array );
+			wp_localize_script( 'swedbank-pay-admin-js', 'SwedbankPay_Admin', $translation_array );
 
 			// Enqueued script with localized data
-			wp_enqueue_script( 'swedbank-admin-js' );
+			wp_enqueue_script( 'swedbank-pay-admin-js' );
 		}
 	}
 
 	/**
 	 * Action for Capture
 	 */
-	public function ajax_swedbank_capture() {
-		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'swedbank' ) ) {
+	public function ajax_swedbank_pay_capture() {
+		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'swedbank_pay' ) ) {
 			exit( 'No naughty business' );
 		}
 
 		$order_id = (int) $_REQUEST['order_id'];
 
 		try {
-			swedbank_capture_payment( $order_id );
-			wp_send_json_success( __( 'Capture success.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+			swedbank_pay_capture_payment( $order_id );
+			wp_send_json_success( __( 'Capture success.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -418,16 +418,16 @@ class WC_Swedbank_Psp {
 	/**
 	 * Action for Cancel
 	 */
-	public function ajax_swedbank_cancel() {
-		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'swedbank' ) ) {
+	public function ajax_swedbank_pay_cancel() {
+		if ( ! wp_verify_nonce( $_REQUEST['nonce'], 'swedbank_pay' ) ) {
 			exit( 'No naughty business' );
 		}
 
 		$order_id = (int) $_REQUEST['order_id'];
 
 		try {
-			swedbank_cancel_payment( $order_id );
-			wp_send_json_success( __( 'Cancel success.', WC_Swedbank_Psp::TEXT_DOMAIN ) );
+			swedbank_pay_cancel_payment( $order_id );
+			wp_send_json_success( __( 'Cancel success.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 		} catch ( Exception $e ) {
 			$message = $e->getMessage();
 			wp_send_json_error( $message );
@@ -477,10 +477,10 @@ class WC_Swedbank_Psp {
 		}
 
 		// Run Database Update
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-psp-update.php' );
-		WC_Swedbank_Psp_Update::update();
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-pay-update.php' );
+		WC_Swedbank_Pay_Update::update();
 
-		echo esc_html__( 'Upgrade finished.', WC_Swedbank_Psp::TEXT_DOMAIN );
+		echo esc_html__( 'Upgrade finished.', WC_Swedbank_Pay::TEXT_DOMAIN );
 	}
 
 	/**
@@ -492,8 +492,8 @@ class WC_Swedbank_Psp {
 			<div id="message" class="error">
 				<p>
 					<?php
-					echo esc_html__( 'Warning! Swedbank Pay WooCommerce payments plugin requires to update the database structure.', WC_Swedbank_Psp::TEXT_DOMAIN );
-					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', WC_Swedbank_Psp::TEXT_DOMAIN ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">', '</a>' );
+					echo esc_html__( 'Warning! Swedbank Pay WooCommerce payments plugin requires to update the database structure.', WC_Swedbank_Pay::TEXT_DOMAIN );
+					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.', WC_Swedbank_Pay::TEXT_DOMAIN ), '<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">', '</a>' );
 					?>
 				</p>
 			</div>
@@ -502,4 +502,4 @@ class WC_Swedbank_Psp {
 	}
 }
 
-new WC_Swedbank_Psp();
+new WC_Swedbank_Pay();
