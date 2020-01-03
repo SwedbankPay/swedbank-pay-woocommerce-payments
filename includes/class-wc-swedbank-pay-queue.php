@@ -5,14 +5,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 } // Exit if accessed directly
 
 /**
- * Class WC_Payex_Queue
+ * Class WC_Swedbank_Queue
  * @deprecated
  */
-class WC_Payex_Queue {
+class WC_Swedbank_Pay_Queue {
 	/**
 	 * The single instance of the class.
 	 *
-	 * @var WC_Payex_Queue
+	 * @var WC_Swedbank_Pay_Queue
 	 */
 	protected static $_instance = null;
 
@@ -20,7 +20,7 @@ class WC_Payex_Queue {
 	 * Instance.
 	 *
 	 * @static
-	 * @return WC_Payex_Queue
+	 * @return WC_Swedbank_Pay_Queue
 	 */
 	public static function instance() {
 		if ( is_null( self::$_instance ) ) {
@@ -91,9 +91,9 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 		$data = @json_decode( $raw_body, true );
 
 		// Get Order by Payment Id
-		$order_id = px_get_post_id_by_meta( '_payex_payment_id', $data['payment']['id'] );
+		$order_id = swedbank_pay_get_post_id_by_meta( '_payex_payment_id', $data['payment']['id'] );
 
-		$result = $wpdb->insert( $wpdb->prefix . 'payex_queue', array(
+		$result = $wpdb->insert( $wpdb->prefix . 'payex_queue', [
 			'payment_id'         => $data['payment']['id'],
 			'payment_number'     => $data['payment']['number'],
 			'transaction_id'     => $data['transaction']['id'],
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 			'processed'          => 0,
 			'payment_method_id'  => $payment_method_id,
 			'order_id'           => $order_id ?: $order_id
-		) );
+		] );
 
 		if ( $result > 0 ) {
 			return $wpdb->insert_id;
@@ -124,13 +124,13 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 
 		return $wpdb->update(
 			$wpdb->prefix . 'payex_queue',
-			array(
+			[
 				'processed'    => 1,
 				'processed_at' => gmdate( 'Y-m-d H:i:s', time() ),
-			),
-			array(
+			],
+			[
 				'queue_id' => (int) $queue_id
-			)
+			]
 		);
 	}
 

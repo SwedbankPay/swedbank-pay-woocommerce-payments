@@ -4,12 +4,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use PayEx\Api\Client\Client as PayExClient;
+use PayEx\Api\Client\Client as SwedbankPayClient;
+use PayEx\Api\Client as SwedbankPayApiClient;
 
-abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
-	implements WC_Payment_Gateway_Payex_Interface {
+abstract class WC_Payment_Gateway_Swedbank_Pay extends WC_Payment_Gateway
+	implements WC_Payment_Gateway_Swedbank_Pay_Interface {
 
-	/** @var PayExClient */
+	/** @var SwedbankPayClient */
 	public $client;
 
 	/**
@@ -19,7 +20,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	public $response_body;
 
 	/**
-	 * @var \WC_Payex_Transactions
+	 * @var \WC_Swedbank_Pay_Transactions
 	 */
 	public $transactions;
 
@@ -66,14 +67,14 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	public $reject_corporate_cards = 'no';
 
 	/**
-	 * Get PayEx Client
-	 * @return PayExClient
+	 * Get Swedbank Pay Client
+	 * @return SwedbankPayClient
 	 */
 	public function getClient() {
 		if ( ! $this->client ) {
-			$this->client = (new PayExClient())
+			$this->client = (new SwedbankPayClient())
 				->setMerchantToken( $this->merchant_token )
-				->setMode( $this->testmode === 'yes' ? PayExClient::MODE_TEST : PayExClient::MODE_PRODUCTION );
+				->setMode( $this->testmode === 'yes' ? SwedbankPayClient::MODE_TEST : SwedbankPayClient::MODE_PRODUCTION );
 		}
 
 		return $this->client;
@@ -104,10 +105,10 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		}
 
 		if ( $this->is_wc3() ) {
-			$log->log( $level, $message, array(
+			$log->log( $level, $message, [
 				'source'  => $this->id,
 				'_legacy' => true
-			) );
+			] );
 		} else {
 			$log->add( $this->id, sprintf( '[%s] %s', $level, $message ) );
 		}
@@ -123,10 +124,10 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @return array|mixed|object
 	 * @throws \Exception
 	 */
-	public function request( $method, $url, $params = array() ) {
-		$client = new \PayEx\Api\Client();
+	public function request( $method, $url, $params = [] ) {
+		$client = new SwedbankPayApiClient();
 		$client->setMerchantToken( $this->merchant_token );
-		$client->setMode( $this->testmode === 'yes' ? \PayEx\Api\Client::MODE_TEST : \PayEx\Api\Client::MODE_PRODUCTION );
+		$client->setMode( $this->testmode === 'yes' ? SwedbankPayApiClient::MODE_TEST : SwedbankPayApiClient::MODE_PRODUCTION );
 
 		$start = microtime( true );
 		if ( $this->debug === 'yes' ) {
@@ -156,8 +157,8 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			// https://tools.ietf.org/html/rfc7807
 			$data = @json_decode( $this->response_body, true );
 			if ( json_last_error() === JSON_ERROR_NONE &&
-			     isset( $data['title'] ) &&
-			     isset( $data['detail'] )
+				 isset( $data['title'] ) &&
+				 isset( $data['detail'] )
 			) {
 				// Format error message
 				$message = sprintf( '%s. %s', $data['title'], $data['detail'] );
@@ -199,20 +200,6 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	}
 
 	/**
-	 * Get Post Id by Meta
-	 *
-	 * @param $key
-	 * @param $value
-	 *
-	 * @return null|string
-	 * @deprecated
-	 */
-	protected function get_post_id_by_meta( $key, $value ) {
-		return px_get_post_id_by_meta( $key, $value );
-	}
-
-
-	/**
 	 * Check is WooCommerce >= 3.0
 	 * @return bool
 	 */
@@ -228,7 +215,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 * @return array
 	 */
 	protected function get_order_items( $order ) {
-		$item = array();
+		$item = [];
 
 		// WooCommerce 3
 		if ( $this->is_wc3() ) {
@@ -239,7 +226,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				$tax          = $priceWithTax - $price;
 				$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 
-				$item[] = array(
+				$item[] = [
 					'type'              => 'product',
 					'name'              => $order_item->get_name(),
 					'qty'               => $order_item->get_quantity(),
@@ -247,7 +234,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 					'price_without_tax' => sprintf( "%.2f", $price ),
 					'tax_price'         => sprintf( "%.2f", $tax ),
 					'tax_percent'       => sprintf( "%.2f", $taxPercent )
-				);
+				];
 			};
 
 			// Add Shipping Line
@@ -257,7 +244,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				$shippingWithTax = $shipping + $tax;
 				$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
 
-				$item[] = array(
+				$item[] = [
 					'type'              => 'shipping',
 					'name'              => $order->get_shipping_method(),
 					'qty'               => 1,
@@ -265,7 +252,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 					'price_without_tax' => sprintf( "%.2f", $shipping ),
 					'tax_price'         => sprintf( "%.2f", $tax ),
 					'tax_percent'       => sprintf( "%.2f", $taxPercent )
-				);
+				];
 			}
 
 			// Add fee lines
@@ -276,7 +263,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				$feeWithTax = $fee + $tax;
 				$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
 
-				$item[] = array(
+				$item[] = [
 					'type'              => 'fee',
 					'name'              => $order_fee->get_name(),
 					'qty'               => 1,
@@ -284,7 +271,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 					'price_without_tax' => sprintf( "%.2f", $fee ),
 					'tax_price'         => sprintf( "%.2f", $tax ),
 					'tax_percent'       => sprintf( "%.2f", $taxPercent )
-				);
+				];
 			}
 
 			// Add discount line
@@ -294,15 +281,15 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				$tax             = $discountWithTax - $discount;
 				$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
-				$item[] = array(
+				$item[] = [
 					'type'              => 'discount',
-					'name'              => __( 'Discount', WC_Payex_Psp::TEXT_DOMAIN ),
+					'name'              => __( 'Discount', WC_Swedbank_Pay::TEXT_DOMAIN ),
 					'qty'               => 1,
 					'price_with_tax'    => sprintf( "%.2f", - 1 * $discountWithTax ),
 					'price_without_tax' => sprintf( "%.2f", - 1 * $discount ),
 					'tax_price'         => sprintf( "%.2f", - 1 * $tax ),
 					'tax_percent'       => sprintf( "%.2f", $taxPercent )
-				);
+				];
 			}
 
 			return $item;
@@ -315,7 +302,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			$tax          = $priceWithTax - $price;
 			$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 
-			$item[] = array(
+			$item[] = [
 				'type'              => 'product',
 				'name'              => $order_item['name'],
 				'qty'               => $order_item['qty'],
@@ -323,14 +310,14 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				'price_without_tax' => sprintf( "%.2f", $price ),
 				'tax_price'         => sprintf( "%.2f", $tax ),
 				'tax_percent'       => sprintf( "%.2f", $taxPercent )
-			);
-		};
+			];
+		}
 
 		// Add Shipping Line
 		if ( (float) $order->order_shipping > 0 ) {
 			$taxPercent = ( $order->order_shipping_tax > 0 ) ? round( 100 / ( $order->order_shipping / $order->order_shipping_tax ) ) : 0;
 
-			$item[] = array(
+			$item[] = [
 				'type'              => 'shipping',
 				'name'              => $order->get_shipping_method(),
 				'qty'               => 1,
@@ -338,14 +325,14 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				'price_without_tax' => sprintf( "%.2f", $order->order_shipping ),
 				'tax_price'         => sprintf( "%.2f", $order->order_shipping_tax ),
 				'tax_percent'       => sprintf( "%.2f", $taxPercent )
-			);
+			];
 		}
 
 		// Add fee lines
 		foreach ( $order->get_fees() as $order_fee ) {
 			$taxPercent = ( $order_fee['line_tax'] > 0 ) ? round( 100 / ( $order_fee['line_total'] / $order_fee['line_tax'] ) ) : 0;
 
-			$item[] = array(
+			$item[] = [
 				'type'              => 'fee',
 				'name'              => $order_fee['name'],
 				'qty'               => 1,
@@ -353,7 +340,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 				'price_without_tax' => sprintf( "%.2f", $order_fee['line_total'] ),
 				'tax_price'         => sprintf( "%.2f", $order_fee['line_tax'] ),
 				'tax_percent'       => sprintf( "%.2f", $taxPercent )
-			);
+			];
 		}
 
 		// Add discount line
@@ -363,15 +350,15 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			$tax             = $discountWithTax - $discount;
 			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
-			$item[] = array(
+			$item[] = [
 				'type'              => 'discount',
-				'name'              => __( 'Discount', WC_Payex_Psp::TEXT_DOMAIN ),
+				'name'              => __( 'Discount', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'qty'               => 1,
 				'price_with_tax'    => sprintf( "%.2f", - 1 * $discountWithTax ),
 				'price_without_tax' => sprintf( "%.2f", - 1 * $discount ),
 				'tax_price'         => sprintf( "%.2f", - 1 * $tax ),
 				'tax_percent'       => sprintf( "%.2f", $taxPercent )
-			);
+			];
 		}
 
 		return $item;
@@ -387,25 +374,25 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	protected function get_order_info( $order ) {
 		$amount       = 0;
 		$vatAmount    = 0;
-		$descriptions = array();
+		$descriptions = [];
 		$items        = $this->get_order_items( $order );
 		foreach ( $items as $item ) {
 			$amount         += $item['price_with_tax'];
 			$vatAmount      += $item['tax_price'];
-			$descriptions[] = array(
+			$descriptions[] = [
 				'amount'      => $item['price_with_tax'],
 				'vatAmount'   => $item['tax_price'], // @todo Validate
 				'itemAmount'  => sprintf( "%.2f", $item['price_with_tax'] / $item['qty'] ),
 				'quantity'    => $item['qty'],
 				'description' => $item['name']
-			);
+			];
 		}
 
-		return array(
+		return [
 			'amount'     => $amount,
 			'vat_amount' => $vatAmount,
 			'items'      => $descriptions
-		);
+		];
 	}
 
 	/**
@@ -503,7 +490,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 
 		// @todo Add features of WooThemes Order Delivery and Pre-Orders WooCommerce Extensions
 
-		return apply_filters( 'payex_payment_risk_indicator', $result, $order, $this );
+		return apply_filters( 'swedbank_pay_risk_indicator', $result, $order, $this );
 	}
 
 	/**
@@ -553,7 +540,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 		}
 
 		try {
-			px_refund_payment( $order, $amount, $reason );
+			swedbank_pay_refund_payment( $order, $amount, $reason );
 
 			return true;
 		} catch ( \Exception $e ) {
@@ -571,7 +558,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 	 */
 	public function process_transaction( $transaction, $order ) {
 		// Disable status change hook
-		remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
+		remove_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10 );
 
 		try {
 			// Apply action
@@ -591,14 +578,14 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 							$transaction['failedErrorCode'],
 							$transaction['failedErrorDescription']
 						] );
-						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', WC_Payex_Psp::TEXT_DOMAIN ), $reason ) );
+						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $reason ) );
 						break;
 					}
 
 					if ( $transaction['state'] === 'Pending' ) {
 						$order->update_meta_data( '_transaction_id', $transaction['number'] );
 						$order->save_meta_data();
-						$order->update_status( 'on-hold', __( 'Transaction pending.', WC_Payex_Psp::TEXT_DOMAIN ) );
+						$order->update_status( 'on-hold', __( 'Transaction pending.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 						break;
 					}
 
@@ -613,7 +600,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 						wc_reduce_stock_levels( $order->get_id() );
 					}
 
-					$order->update_status( 'on-hold', __( 'Payment authorized.', WC_Payex_Psp::TEXT_DOMAIN ) );
+					$order->update_status( 'on-hold', __( 'Payment authorized.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 
 					// Save Payment Token
 					if ( $order->get_meta( '_payex_generate_token' ) === '1' &&
@@ -635,7 +622,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 							$expiryDate      = explode( '/', $authorization['expiryDate'] );
 
 							// Create Payment Token
-							$token = new WC_Payment_Token_Payex();
+							$token = new WC_Payment_Token_Swedbank_Pay();
 							$token->set_gateway_id( $this->id );
 							$token->set_token( $paymentToken );
 							$token->set_recurrence_token( $recurrenceToken );
@@ -647,7 +634,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 							$token->set_masked_pan( $maskedPan );
 							$token->save();
 							if ( ! $token->get_id() ) {
-								throw new Exception( __( 'There was a problem adding the card.', WC_Payex_Psp::TEXT_DOMAIN ) );
+								throw new Exception( __( 'There was a problem adding the card.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 							}
 
 							// Add payment token
@@ -671,14 +658,14 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 							$transaction['failedErrorCode'],
 							$transaction['failedErrorDescription']
 						] );
-						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', WC_Payex_Psp::TEXT_DOMAIN ), $reason ) );
+						$order->update_status( 'failed', sprintf( __( 'Transaction failed. Reason: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $reason ) );
 						break;
 					}
 
 					if ( $transaction['state'] === 'Pending' ) {
 						$order->update_meta_data( '_transaction_id', $transaction['number'] );
 						$order->save_meta_data();
-						$order->update_status( 'on-hold', __( 'Transaction pending.', WC_Payex_Psp::TEXT_DOMAIN ) );
+						$order->update_status( 'on-hold', __( 'Transaction pending.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 						break;
 					}
 
@@ -687,7 +674,7 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 					$order->save_meta_data();
 
 					$order->payment_complete( $transaction['number'] );
-					$order->add_order_note( __( 'Transaction captured.', WC_Payex_Psp::TEXT_DOMAIN ) );
+					$order->add_order_note( __( 'Transaction captured.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 					break;
 				case 'Cancellation':
 					// Check is action was performed
@@ -705,9 +692,9 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 					$order->save_meta_data();
 
 					if ( ! $order->has_status( 'cancelled' ) ) {
-						$order->update_status( 'cancelled', __( 'Transaction cancelled.', WC_Payex_Psp::TEXT_DOMAIN ) );
+						$order->update_status( 'cancelled', __( 'Transaction cancelled.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 					} else {
-						$order->add_order_note( __( 'Transaction cancelled.', WC_Payex_Psp::TEXT_DOMAIN ) );
+						$order->add_order_note( __( 'Transaction cancelled.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
 					}
 					break;
 				case 'Reversal':
@@ -723,13 +710,13 @@ abstract class WC_Payment_Gateway_Payex extends WC_Payment_Gateway
 			}
 
 			// Enable status change hook
-			add_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10, 4 );
+			add_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10, 4 );
 
 			throw $e;
 		}
 
 		// Enable status change hook
-		add_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10, 4 );
+		add_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10, 4 );
 	}
 
 	/**

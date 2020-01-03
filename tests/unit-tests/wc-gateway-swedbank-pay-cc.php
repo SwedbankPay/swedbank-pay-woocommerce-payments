@@ -1,8 +1,8 @@
 <?php
 
-class WC_Unit_Gateway_Payex_Swish extends WC_Unit_Test_Case {
+class WC_Unit_Gateway_Swedbank_Pay_CC extends WC_Unit_Test_Case {
 	/**
-	 * @var WC_Gateway_Payex_Psp_Swish
+	 * @var WC_Gateway_Swedbank_Pay_Cc
 	 */
 	private $gateway;
 
@@ -20,13 +20,13 @@ class WC_Unit_Gateway_Payex_Swish extends WC_Unit_Test_Case {
 		$this->wc = WC();
 
 		// Init PayEx Payments plugin
-		$this->gateway              = new WC_Gateway_Payex_Psp_Swish();
+		$this->gateway              = new WC_Gateway_Swedbank_Pay_Cc();
 		$this->gateway->enabled     = 'yes';
 		$this->gateway->testmode    = 'yes';
 		$this->gateway->description = 'Test';
 
 		// Add PayEx to PM List
-		tests_add_filter( 'woocommerce_payment_gateways', array( $this, 'payment_gateways' ) );
+		tests_add_filter( 'woocommerce_payment_gateways', [ $this, 'payment_gateways' ] );
 	}
 
 	/**
@@ -50,7 +50,7 @@ class WC_Unit_Gateway_Payex_Swish extends WC_Unit_Test_Case {
 		$gateways = $gateways->payment_gateways();
 		//$this->assertIsArray( $gateways );
 		$this->assertTrue( is_array( $gateways ) );
-		$this->assertArrayHasKey( 'payex_psp_invoice', $gateways );
+		$this->assertArrayHasKey( 'payex_psp_cc', $gateways );
 	}
 
 	public function test_order() {
@@ -72,6 +72,28 @@ class WC_Unit_Gateway_Payex_Swish extends WC_Unit_Test_Case {
 
 		$this->assertFalse( $result );
 	}
+
+	public function test_add_payment_method() {
+		$_SERVER['HTTP_USER_AGENT'] = '';
+		$result                     = $this->gateway->add_payment_method();
+
+		$this->assertEquals( 'failure', $result['result'] );
+	}
+
+	public function test_payment_confirm() {
+		/** @var WC_Order $order */
+		$order = WC_Helper_Order::create_order();
+		$order->set_payment_method( $this->gateway );
+		$order->set_currency( 'SEK' );
+		$order->update_meta_data( '_payex_payment_id', '/invalid/payment/id' );
+		$order->save();
+
+		$_GET['key'] = $order->get_order_key();
+		$result      = $this->gateway->payment_confirm();
+
+		$this->assertNull( $result );
+	}
+
 
 	public function test_can_capture() {
 		/** @var WC_Order $order */
