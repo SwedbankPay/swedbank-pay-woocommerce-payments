@@ -305,7 +305,12 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc
 						'vatAmount' => '0'
 					]
 				],
-				'description'    => sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $order->get_order_number() ),
+				'description' => apply_filters(
+					'swedbank_pay_payment_description',
+					sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ),
+					$order->get_order_number() ),
+					$order
+				),
 				'payerReference' => $customer_uuid,
 				'userAgent'      => $_SERVER['HTTP_USER_AGENT'],
 				'language'       => $this->culture,
