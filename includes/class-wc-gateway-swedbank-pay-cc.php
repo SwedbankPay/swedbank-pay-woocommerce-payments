@@ -528,7 +528,11 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway_Swedbank_Pay
 					'payment' => [
 						'operation'               => 'Verify',
 						'currency'                => $currency,
-						'description'             => sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $order->get_order_number() ),
+						'description'             => apply_filters(
+							'swedbank_pay_payment_description',
+							sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $order->get_order_number() ),
+							$order
+						),
 						'payerReference'          => $customer_uuid,
 						'generatePaymentToken'    => true,
 						'generateRecurrenceToken' => true,
@@ -613,7 +617,11 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway_Swedbank_Pay
 						'vatAmount' => round( $info['vat_amount'] * 100 ),
 					]
 				],
-				'description'             => sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $order->get_order_number() ),
+				'description'             => apply_filters(
+					'swedbank_pay_payment_description',
+					sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $order->get_order_number() ),
+					$order
+				),
 				'payerReference'          => $customer_uuid,
 				'generatePaymentToken'    => $generate_token,
 				'generateRecurrenceToken' => $generate_token,
@@ -1361,7 +1369,11 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway_Swedbank_Pay
 						'currency'        => $renewal_order->get_currency(),
 						'amount'          => round( $amount_to_charge * 100 ),
 						'vatAmount'       => round( $info['vat_amount'] * 100 ),
-						'description'     => sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $renewal_order->get_order_number() ),
+						'description'     => apply_filters(
+							'swedbank_pay_payment_description',
+							sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $renewal_order->get_order_number() ),
+							$renewal_order
+						),
 						'payerReference'  => $customer_uuid,
 						'userAgent'       => $renewal_order->get_customer_user_agent(),
 						'language'        => $this->culture,

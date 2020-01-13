@@ -292,7 +292,11 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc
 						'vatAmount' => round( $info['vat_amount'] * 100 )
 					]
 				],
-				'description'    => sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $order->get_order_number() ),
+				'description' => apply_filters(
+					'swedbank_pay_payment_description',
+					sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $order->get_order_number() ),
+					$order
+				),
 				'payerReference' => $customer_uuid,
 				'userAgent'      => $order->get_customer_user_agent(),
 				'language'       => $this->culture,

@@ -72,8 +72,9 @@ class WC_Swedbank_Pay {
 
 		add_action( 'wp_ajax_swedbank_pay_cancel', [ $this, 'ajax_swedbank_pay_cancel' ] );
 
-		// UUID Filter
+		// Filters
 		add_filter( 'swedbank_pay_generate_uuid', [ $this, 'generate_uuid' ], 10, 1 );
+        add_filter( 'swedbank_pay_payment_description', [ $this, 'payment_description' ], 10, 2 );
 
 		// Process swedbank queue
 		if ( ! is_multisite() ) {
@@ -444,6 +445,22 @@ class WC_Swedbank_Pay {
 	public function generate_uuid( $node ) {
 		return \Ramsey\Uuid\Uuid::uuid5( \Ramsey\Uuid\Uuid::NAMESPACE_OID, $node )->toString();
 	}
+
+	/**
+     * Get Payment Description
+     *
+	 * @param string $description
+	 * @param WC_Order $order
+	 *
+	 * @return string
+	 */
+	public function payment_description( $description, $order ) {
+		if ( ! $order instanceof WC_Order ) {
+			$order = wc_get_order( $order );
+		}
+
+	    return sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $order->get_order_number() );
+    }
 
 	/**
 	 * Dispatch Background Process
