@@ -1,5 +1,0 @@
-{
-    "require": {
-        "payex/payex-sdk-php": "^3.0"
-    }
-}

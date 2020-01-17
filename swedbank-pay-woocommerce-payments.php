@@ -94,8 +94,8 @@ class WC_Swedbank_Pay {
 	public function includes() {
 		$vendorsDir = dirname( __FILE__ ) . '/vendors';
 
-		if ( ! class_exists( '\\PayEx\\Api\\Client\\Client', false ) ) {
-			require_once $vendorsDir . '/payex-sdk-php/vendor/autoload.php';
+		if ( ! class_exists( '\\SwedbankPay\\Api\\Client\\Client', false ) ) {
+			require_once $vendorsDir.'/swedbank-pay-sdk-php/vendor/autoload.php';
 		}
 
 		if ( ! class_exists( '\\Ramsey\\Uuid\\Uuid', false ) ) {

@@ -4,8 +4,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use PayEx\Api\Client\Client as SwedbankPayClient;
-use PayEx\Api\Client as SwedbankPayApiClient;
+use SwedbankPay\Api\Client\Client as SwedbankPayClient;
+use SwedbankPay\Api\Client as SwedbankPayApiClient;
 
 abstract class WC_Payment_Gateway_Swedbank_Pay extends WC_Payment_Gateway
 	implements WC_Payment_Gateway_Swedbank_Pay_Interface {
@@ -135,7 +135,7 @@ abstract class WC_Payment_Gateway_Swedbank_Pay extends WC_Payment_Gateway
 		}
 
 		try {
-			/** @var \PayEx\Api\Response $response */
+			/** @var \SwedbankPay\Api\Response $response */
 			$response = $client->request( $method, $url, $params );
 			$result   = $response->toArray();
 			$this->response_body = $client->getLastResponse();
@@ -146,7 +146,7 @@ abstract class WC_Payment_Gateway_Swedbank_Pay extends WC_Payment_Gateway
 			}
 
 			return $result;
-		} catch ( \PayEx\Api\Exception $e ) {
+		} catch ( \SwedbankPay\Api\Exception $e ) {
 			if ( $this->debug === 'yes' ) {
 				$time = microtime( true ) - $start;
 				$this->log( sprintf( '[%.4F] Exception: %s', $time, $e->getMessage() ) );
