@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Woocommerce Gateway PayEx Checkout\n"
+"Project-Id-Version: Woocommerce Gateway SwedbankPay Checkout\n"
 "POT-Creation-Date: 2019-12-29 13:17+0600\n"
 "PO-Revision-Date: 2019-12-29 13:18+0600\n"
 "Last-Translator: aait <info@aait.se>\n"
@@ -555,7 +555,7 @@ msgstr ""
 #~ msgid "Factoring Fee"
 #~ msgstr "Fakturaavgift"
 
-#~ msgid "PayEx Add-Ons"
+#~ msgid "SwedbankPay Add-Ons"
 #~ msgstr "Personnummer"
 
 #~ msgid "Private"
@@ -582,8 +582,8 @@ msgstr ""
 #~ msgid "Shipping"
 #~ msgstr "Leverans"
 
-#~ msgid "You will be redirected to <a target=\"_blank\" href=\"%s\">PayEx</a> website when you place an order."
-#~ msgstr "Du kommer att skickas till <a target=\"_blank\" href=\"%s\">PayEx</a> hemsida när du har placerat din order"
+#~ msgid "You will be redirected to <a target=\"_blank\" href=\"%s\">SwedbankPay</a> website when you place an order."
+#~ msgstr "Du kommer att skickas till <a target=\"_blank\" href=\"%s\">SwedbankPay</a> hemsida när du har placerat din order"
 
 #~ msgid "Financing Invoice"
 #~ msgstr "Faktura"
