@@ -3,7 +3,7 @@ Contributors: payex
 Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, swedbank, payex, payment gateway
 Requires at least: 4.7
 Tested up to: 5.2
-Stable tag: 1.3.1
+Stable tag: 1.4.0
 License: Apache License 2.0
 License URI: http://www.apache.org/licenses/LICENSE-2.0
 
@@ -35,7 +35,7 @@ Swedbank Pay Payments Gateway for WooCommerce. Payment gateway allows to accept 
 
 = Minimum Requirements =
 
-* PHP 5.6 or greater is recommended
+* PHP 7.0 or greater is recommended
 * WooCommerce 3 or greater is recommended
 
 Visit the [Installation guide](https://github.com/SwedbankPay/swedbank-pay-woocommerce-payments/blob/master/installation-guide.md) for a detailed information.
