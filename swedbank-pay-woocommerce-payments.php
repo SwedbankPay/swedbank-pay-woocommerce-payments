@@ -7,7 +7,7 @@
  * Author URI: https://www.swedbankpay.com/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
- * Version: 1.4.0
+ * Version: 2.0.0
  * Text Domain: swedbank-pay-woocommerce-payments
  * Domain Path: /languages
  * WC requires at least: 3.0.0
