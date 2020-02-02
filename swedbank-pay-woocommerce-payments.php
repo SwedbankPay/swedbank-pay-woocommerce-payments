@@ -1,17 +1,17 @@
 <?php
 /*
- * Plugin Name: Swedbank Pay WooCommerce Payments
+ * Plugin Name: Swedbank Pay Payments
  * Plugin URI: https://www.swedbankpay.com/
- * Description: Provides a Credit Card Payment Gateway through Swedbank Pay for WooCommerce.
+ * Description: (Preview). Provides a Credit Card Payment Gateway through Swedbank Pay for WooCommerce.
  * Author: Swedbank Pay
- * Author URI: https://www.swedbankpay.com/
+ * Author URI: https://profiles.wordpress.org/swedbankpay/
  * License: Apache License 2.0
  * License URI: http://www.apache.org/licenses/LICENSE-2.0
  * Version: 2.0.0-beta.1
  * Text Domain: swedbank-pay-woocommerce-payments
  * Domain Path: /languages
  * WC requires at least: 3.0.0
- * WC tested up to: 3.8.1
+ * WC tested up to: 3.9.1
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -134,7 +134,7 @@ class WC_Swedbank_Pay {
 	 */
 	public function plugin_action_links( $links ) {
 		$plugin_links = [
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=wc_gateway_payex_cc' ) . '">' . __( 'Settings', WC_Swedbank_Pay::TEXT_DOMAIN ) . '</a>'
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_psp_cc' ) . '">' . __( 'Settings', WC_Swedbank_Pay::TEXT_DOMAIN ) . '</a>'
 		];
 
 		return array_merge( $plugin_links, $links );
