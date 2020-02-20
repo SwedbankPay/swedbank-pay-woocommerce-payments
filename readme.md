@@ -1,5 +1,14 @@
 # Swedbank Pay WooCommerce Payments
 
+![Swedbank Pay WooCommerce Payments][opengraph-image]
+
+## About
+
+**IMPORTANT**: This plugin is at an early stage and not yet used in production.
+We do not offer support for this version, but will release supported versions
+in the future. Feel free to play around, but for full functionality and support,
+please wait for the supported, stable release.
+
 This plugin provides the Swedbank Pay Payment Gateway for WooCommerce.
 
 * Contributors: payex
@@ -12,7 +21,7 @@ This plugin provides the Swedbank Pay Payment Gateway for WooCommerce.
 
 ## Description
 
-Swedbank Pay Payments Gateway for WooCommerce. Payment gateway allows to accept payments through:
+Swedbank Pay Payments Gateway for WooCommerce. The payment gateway accepts payments through:
 
 * Credit and debit cards (Visa, Mastercard, Visa Electron, Maestro etc).
 * Invoice
@@ -28,3 +37,5 @@ Swedbank Pay Payments Gateway for WooCommerce. Payment gateway allows to accept 
 * WooCommerce 3 or greater is recommended
 
 Visit the [Installation guide](https://github.com/SwedbankPay/swedbank-pay-woocommerce-payments/blob/master/installation-guide.md) for a detailed information.
+
+[opengraph-image]: https://repository-images.githubusercontent.com/211837870/4a78b280-53ed-11ea-88bb-6bd0c3f27407
