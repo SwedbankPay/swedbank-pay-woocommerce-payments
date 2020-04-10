@@ -1494,6 +1494,3 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway_Swedbank_Pay
 		return $payment_method_to_display;
 	}
 }
-
-// Register Gateway
-WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Cc' );
