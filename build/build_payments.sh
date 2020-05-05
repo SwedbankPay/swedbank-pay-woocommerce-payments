@@ -27,9 +27,6 @@ rm -rf "$SOURCE_DIR/.git" > /dev/null
 rm -rf "$SOURCE_DIR/.travis" > /dev/null
 rm -rf "$SOURCE_DIR/build" > /dev/null
 
-# Remove checkout files
-rm -rf "$SOURCE_DIR/swedbank-pay-woocommerce-checkout.php" > /dev/null
-
 # Make package
 cd $TMPDIR
 zip -r "$PlUGIN_NAME.zip" "./$PlUGIN_NAME/"

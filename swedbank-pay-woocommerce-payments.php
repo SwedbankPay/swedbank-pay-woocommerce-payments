@@ -14,11 +14,13 @@
  * WC tested up to: 3.9.1
  */
 
+use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-if ( ! class_exists( 'WC_Swedbank_Plugin', false ) ) {
+if ( ! class_exists( '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin', false ) ) {
 	include_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-plugin.php' );
 }
 
@@ -74,6 +76,7 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 	 * WooCommerce Loaded: load classes
 	 */
 	public function woocommerce_loaded() {
+        include_once( dirname( __FILE__ ) . '/includes/class-wc-adapter.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-cc.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-invoice.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-vipps.php' );

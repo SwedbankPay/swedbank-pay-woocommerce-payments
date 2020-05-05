@@ -4,8 +4,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc
-	implements WC_Payment_Gateway_Swedbank_Pay_Interface {
+use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
+use SwedbankPay\Payments\WooCommerce\Adapter;
+use SwedbankPay\Core\Core;
+
+class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 
 	/**
 	 * Merchant Token
@@ -108,6 +111,9 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc
 			$this,
 			'cancel_pending'
 		], 10, 2 );
+
+        $this->adapter = new Adapter( $this );
+        $this->core = new Core( $this->adapter );
 	}
 
 	/**
@@ -267,148 +273,43 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc
 	 */
 	public function process_payment( $order_id ) {
 		$order = wc_get_order( $order_id );
-
-		$amount   = $order->get_total();
-		$currency = swedbank_pay_obj_prop( $order, 'order_currency' );
-		$email    = swedbank_pay_obj_prop( $order, 'billing_email' );
-		$phone    = swedbank_pay_obj_prop( $order, 'billing_phone' );
-		$country  = swedbank_pay_obj_prop( $order, 'billing_country' );
-		$postcode = swedbank_pay_obj_prop( $order, 'billing_postcode' );
-
+		$postcode = $order->get_billing_postcode();
 		$ssn = wc_clean( $_POST['social-security-number'] );
 
-		$user_id = $order->get_customer_id();
-
-		// Get Customer UUID
-		if ( $user_id > 0 ) {
-			$customer_uuid = get_user_meta( $user_id, '_payex_customer_uuid', true );
-			if ( empty( $customer_uuid ) ) {
-				$customer_uuid = swedbank_pay_uuid( $user_id );
-				update_user_meta( $user_id, '_payex_customer_uuid', $customer_uuid );
-			}
-		} else {
-			$customer_uuid = swedbank_pay_uuid( uniqid( $email ) );
-		}
-
-		// Get Order UUID
-		$order_uuid = swedbank_pay_uuid( $order_id );
-
-		$params = [
-			'payment' => [
-				'operation'      => 'FinancingConsumer',
-				'intent'         => 'Authorization',
-				'currency'       => $currency,
-				'prices'         => [
-					[
-						'type'      => 'Invoice',
-						'amount'    => round( $amount * 100 ),
-						'vatAmount' => '0'
-					]
-				],
-				'description' => apply_filters(
-					'swedbank_pay_payment_description',
-					sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ),
-					$order->get_order_number() ),
-					$order
-				),
-				'payerReference' => $customer_uuid,
-				'userAgent'      => $_SERVER['HTTP_USER_AGENT'],
-				'language'       => $this->culture,
-				'urls'           => [
-					'completeUrl'       => html_entity_decode( $this->get_return_url( $order ) ),
-					'cancelUrl'         => $order->get_cancel_order_url_raw(),
-					'callbackUrl'       => WC()->api_request_url( __CLASS__ ),
-					'termsOfServiceUrl' => $this->terms_url
-				],
-				'payeeInfo'      => [
-					'payeeId'         => $this->payee_id,
-					'payeeReference'  => str_replace( '-', '', $order_uuid ),
-					'payeeName'       => get_bloginfo( 'name' ),
-					'orderReference'  => $order->get_order_number(),
-				],
-				'riskIndicator'  => $this->get_risk_indicator( $order ),
-				'metadata'       => [
-					'order_id' => $order_id
-				],
-			],
-			'invoice' => [
-				'invoiceType' => 'PayExFinancing' . ucfirst( strtolower( $country ) )
-			]
-		];
-
-		// Add subsite
-		if ( ! empty( $this->subsite ) ) {
-			$params['payment']['payeeInfo']['subsite'] = $this->subsite;
-		}
-
-		$this->log( json_encode( $params ) );
-
+        // Process payment
 		try {
-			$result = $this->request( 'POST', '/psp/invoice/payments', $params );
+            $result = $this->core->initiateInvoicePayment($order_id);
+
+            // Save payment ID
+            update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
+
+            // Authorization
+            $create_authorize_href = $result->getOperationByRel('create-authorization' );
+
+            // Approved Legal Address
+            $legal_address_href = $result->getOperationByRel('create-approved-legal-address');
+
+            // Get Approved Legal Address
+            $address = $this->core->getApprovedLegalAddress($legal_address_href, $ssn, $postcode);
+
+            // Save legal address
+            $legal_address = $address['approvedLegalAddress'];
+            update_post_meta( $order_id, '_payex_legal_address', $legal_address );
+
+            // Transaction Activity: FinancingConsumer
+		    $result = $this->core->transactionFinancingConsumer(
+		        $create_authorize_href,
+                $order_id,
+                $ssn,
+                $legal_address['addressee'],
+                $legal_address['coAddress'],
+                $legal_address['streetAddress'],
+                $legal_address['zipCode'],
+                $legal_address['city'],
+                $legal_address['countryCode']
+            );
 		} catch ( \Exception $e ) {
-			$this->log( sprintf( '[ERROR] Process payment: %s', $e->getMessage() ) );
-			wc_add_notice( $e->getMessage(), 'error' );
-
-			return false;
-		}
-
-		// Save payment ID
-		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
-
-		// Authorization
-		$create_authorize_href = self::get_operation( $result['operations'], 'create-authorization' );
-
-		// Approved Legal Address
-		$legal_address_href = self::get_operation( $result['operations'], 'create-approved-legal-address' );
-
-		// Get Approved Legal Address
-		try {
-			$params = [
-				'addressee' => [
-					'socialSecurityNumber' => $ssn,
-					'zipCode'              => str_replace( ' ', '', $postcode )
-				]
-			];
-
-			$result = $this->request( 'POST', $legal_address_href, $params );
-		} catch ( \Exception $e ) {
-			$this->log( sprintf( '[ERROR] Create Approved Legal Address: %s', $e->getMessage() ) );
-			wc_add_notice( $e->getMessage(), 'error' );
-
-			return false;
-		}
-
-		// Save legal address
-		$legal_address = $result['approvedLegalAddress'];
-		update_post_meta( $order_id, '_payex_legal_address', $legal_address );
-
-		// Transaction Activity: FinancingConsumer
-		try {
-			$params = [
-				'transaction'  => [
-					'activity' => 'FinancingConsumer'
-				],
-				'consumer'     => [
-					'socialSecurityNumber' => $ssn,
-					'customerNumber'       => $user_id,
-					'email'                => $email,
-					'msisdn'               => '+' . ltrim( $phone, '+' ),
-					'ip'                   => swedbank_pay_get_remote_address()
-				],
-				'legalAddress' => [
-					'addressee'     => $legal_address['addressee'],
-					'coAddress'     => $legal_address['coAddress'],
-					'streetAddress' => $legal_address['streetAddress'],
-					'zipCode'       => $legal_address['zipCode'],
-					'city'          => $legal_address['city'],
-					'countryCode'   => $legal_address['countryCode']
-				]
-			];
-
-			$result = $this->request( 'POST', $create_authorize_href, $params );
-		} catch ( \Exception $e ) {
-			$this->log( sprintf( '[ERROR] Create Authorize: %s', $e->getMessage() ) );
-			wc_add_notice( $e->getMessage(), 'error' );
+            wc_add_notice( $e->getMessage(), 'error' );
 
 			return false;
 		}
@@ -419,115 +320,71 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc
 		];
 	}
 
-	/**
-	 * Get Order Info
-	 *
-	 * @param WC_Order $order
-	 *
-	 * @return array
-	 */
-	protected function get_order_info( $order ) {
-		$amount       = 0;
-		$vatAmount    = 0;
-		$descriptions = [];
-		$items        = $this->get_order_items( $order );
-		foreach ( $items as $item ) {
-			$amount         += $item['price_with_tax'];
-			$vatAmount      += $item['tax_price'];
-			$unit_price     = sprintf( "%.2f", $item['price_without_tax'] / $item['qty'] );
-			$descriptions[] = [
-				'product'    => $item['name'],
-				'quantity'   => $item['qty'],
-				'unitPrice'  => (int) round( $unit_price * 100 ),
-				'amount'     => (int) round( $item['price_with_tax'] * 100 ),
-				'vatAmount'  => (int) round( $item['tax_price'] * 100 ),
-				'vatPercent' => sprintf( "%.2f", $item['tax_percent'] ),
-			];
-		}
+    /**
+     * Process Refund
+     *
+     * If the gateway declares 'refunds' support, this will allow it to refund
+     * a passed in amount.
+     *
+     * @param int $order_id
+     * @param float $amount
+     * @param string $reason
+     *
+     * @return  bool|wp_error True or false based on success, or a WP_Error object
+     */
+    public function process_refund( $order_id, $amount = null, $reason = '' ) {
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) {
+            return false;
+        }
 
-		return [
-			'amount'     => $amount,
-			'vat_amount' => $vatAmount,
-			'items'      => $descriptions
-		];
-	}
+        // Full Refund
+        if ( is_null( $amount ) ) {
+            $amount = $order->get_total();
+        }
 
-	/**
-	 * Capture
-	 *
-	 * @param WC_Order|int $order
-	 * @param bool $amount
-	 *
-	 * @return void
-	 * @throws \Exception
-	 */
-	public function capture_payment( $order, $amount = false ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
+        try {
+            // Disable status change hook
+            remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
 
-		// @todo Improve feature
-		if ( ! $amount ) {
-			$amount = $order->get_total();
-		}
+            $this->core->refundInvoice($order->get_id(), $amount);
 
-		$order_id   = swedbank_pay_obj_prop( $order, 'id' );
-		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
-		if ( empty( $payment_id ) ) {
-			throw new \Exception( 'Unable to get payment ID' );
-		}
+            return true;
+        } catch ( \Exception $e ) {
+            return new WP_Error( 'refund', $e->getMessage() );
+        }
+    }
 
-		try {
-			$result = $this->request( 'GET', $payment_id );
-		} catch ( \Exception $e ) {
-			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
-		}
+    /**
+     * Capture
+     *
+     * @param WC_Order|int $order
+     * @param mixed $amount
+     * @param mixed $vatAmount
+     *
+     * @return void
+     * @throws \Exception
+     */
+	public function capture_payment( $order, $amount = false, $vatAmount = 0 ) {
+        if ( is_int( $order ) ) {
+            $order = wc_get_order( $order );
+        }
 
-		$capture_href = self::get_operation( $result['operations'], 'create-capture' );
-		if ( empty( $capture_href ) ) {
-			throw new \Exception( __( 'Capture unavailable', WC_Swedbank_Pay::TEXT_DOMAIN ) );
-		}
+        if ( is_int( $order ) ) {
+            $order = wc_get_order( $order );
+        }
 
-		// Order Info
-		$info = $this->get_order_info( $order );
+        // Order Info
+        $info = $this->get_order_info( $order );
 
-		// Get Order UUID
-		$payeeReference = swedbank_pay_uuid( uniqid( $order_id ) );
+        try {
+            // Disable status change hook
+            remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
 
-		$params = [
-			'transaction'      => [
-				'activity'       => 'FinancingConsumer',
-				'amount'         => (int) round( $amount * 100 ),
-				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
-				'description'    => sprintf( 'Capture for Order #%s', $order->get_order_number() ),
-				'payeeReference' => str_replace( '-', '', $payeeReference )
-			],
-			'itemDescriptions' => $info['items']
-		];
-		$result = $this->request( 'POST', $capture_href, $params );
-
-		// Save transaction
-		$transaction = $result['capture']['transaction'];
-		$this->transactions->import( $transaction, $order_id );
-
-		switch ( $transaction['state'] ) {
-			case 'Completed':
-				update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
-				update_post_meta( $order_id, '_payex_transaction_capture', $transaction['id'] );
-
-				$order->add_order_note( __( 'Transaction captured.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
-				$order->payment_complete( $transaction['number'] );
-
-				break;
-			case 'Initialized':
-				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $transaction['state'] ) );
-				break;
-			case 'Failed':
-			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', WC_Swedbank_Pay::TEXT_DOMAIN );
-				throw new \Exception( $message );
-				break;
-		}
+            $this->core->captureInvoice($order->get_id(), $amount, $vatAmount, $info['items']);
+        } catch (\SwedbankPay\Core\Exception $e) {
+            throw new Exception( $e->getMessage() );
+        }
 	}
 
 	/**
@@ -543,129 +400,133 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc
 			$order = wc_get_order( $order );
 		}
 
-		$order_id   = swedbank_pay_obj_prop( $order, 'id' );
-		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
-		if ( empty( $payment_id ) ) {
-			throw new \Exception( 'Unable to get payment ID' );
-		}
+        try {
+            // Disable status change hook
+            remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
 
-		try {
-			$result = $this->request( 'GET', $payment_id );
-		} catch ( \Exception $e ) {
-			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
-		}
-
-		$cancel_href = self::get_operation( $result['operations'], 'create-cancellation' );
-		if ( empty( $cancel_href ) ) {
-			throw new \Exception( __( 'Cancellation unavailable', WC_Swedbank_Pay::TEXT_DOMAIN ) );
-		}
-
-		// Get Order UUID
-		$payeeReference = swedbank_pay_uuid( uniqid( $order_id ) );
-
-		$params = [
-			'transaction' => [
-				'activity'       => 'FinancingConsumer',
-				'description'    => sprintf( 'Cancellation for Order #%s', $order->get_order_number() ),
-				'payeeReference' => str_replace( '-', '', $payeeReference )
-			],
-		];
-		$result = $this->request( 'POST', $cancel_href, $params );
-
-		// Save transaction
-		$transaction = $result['cancellation']['transaction'];
-		$this->transactions->import( $transaction, $order_id );
-
-		switch ( $transaction['state'] ) {
-			case 'Completed':
-				update_post_meta( $order_id, '_transaction_id', $transaction['number'] );
-				update_post_meta( $order_id, '_payex_payment_state', 'Cancelled' );
-				update_post_meta( $order_id, '_payex_transaction_cancel', $transaction['id'] );
-
-				if ( ! $order->has_status( 'cancelled' ) ) {
-					$order->update_status( 'cancelled', __( 'Transaction cancelled.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
-				} else {
-					$order->add_order_note( __( 'Transaction cancelled.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
-				}
-
-				break;
-			case 'Initialized':
-			case 'AwaitingActivity':
-				$order->add_order_note( sprintf( __( 'Transaction cancellation status: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $transaction['state'] ) );
-				break;
-			case 'Failed':
-			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Cancel failed.', WC_Swedbank_Pay::TEXT_DOMAIN );
-				throw new \Exception( $message );
-				break;
-		}
+            $this->core->cancelInvoice($order->get_id());
+        } catch (\SwedbankPay\Core\Exception $e) {
+            throw new Exception( $e->getMessage() );
+        }
 	}
 
-	/**
-	 * Refund
-	 *
-	 * @param WC_Order|int $order
-	 * @param bool $amount
-	 * @param string $reason
-	 *
-	 * @return void
-	 * @throws \Exception
-	 */
-	public function refund_payment( $order, $amount = false, $reason = '' ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
+    /**
+     * Get Order Lines
+     *
+     * @param \WC_Order $order
+     *
+     * @return array
+     */
+    private function get_order_items($order)
+    {
+        $item = [];
 
-		$order_id   = swedbank_pay_obj_prop( $order, 'id' );
-		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
-		if ( empty( $payment_id ) ) {
-			throw new \Exception( 'Unable to get payment ID' );
-		}
+        foreach ($order->get_items() as $order_item) {
+            /** @var \WC_Order_Item_Product $order_item */
+            $price        = $order->get_line_subtotal($order_item, false, false);
+            $priceWithTax = $order->get_line_subtotal($order_item, true, false);
+            $tax          = $priceWithTax - $price;
+            $taxPercent   = ($tax > 0) ? round(100 / ($price / $tax)) : 0;
 
-		try {
-			$result = $this->request( 'GET', $payment_id );
-		} catch ( \Exception $e ) {
-			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
-		}
+            $item[] = [
+                'type'              => 'product',
+                'name'              => $order_item->get_name(),
+                'qty'               => $order_item->get_quantity(),
+                'price_with_tax'    => sprintf("%.2f", $priceWithTax),
+                'price_without_tax' => sprintf("%.2f", $price),
+                'tax_price'         => sprintf("%.2f", $tax),
+                'tax_percent'       => sprintf("%.2f", $taxPercent)
+            ];
+        };
 
-		$reversal_href = self::get_operation( $result['operations'], 'create-reversal' );
-		if ( empty( $reversal_href ) ) {
-			throw new \Exception( __( 'Refund unavailable', WC_Swedbank_Pay::TEXT_DOMAIN ) );
-		}
+        // Add Shipping Line
+        if ((float)$order->get_shipping_total() > 0) {
+            $shipping        = $order->get_shipping_total();
+            $tax             = $order->get_shipping_tax();
+            $shippingWithTax = $shipping + $tax;
+            $taxPercent      = ($tax > 0) ? round(100 / ($shipping / $tax)) : 0;
 
-		// Get Order UUID
-		$payeeReference = uniqid( $order_id );
+            $item[] = [
+                'type'              => 'shipping',
+                'name'              => $order->get_shipping_method(),
+                'qty'               => 1,
+                'price_with_tax'    => sprintf("%.2f", $shippingWithTax),
+                'price_without_tax' => sprintf("%.2f", $shipping),
+                'tax_price'         => sprintf("%.2f", $tax),
+                'tax_percent'       => sprintf("%.2f", $taxPercent)
+            ];
+        }
 
-		$params = [
-			'transaction' => [
-				'activity'       => 'FinancingConsumer',
-				'amount'         => (int) round( $amount * 100 ),
-				'vatAmount'      => 0,
-				'description'    => sprintf( 'Refund for Order #%s. Reason: %s', $order->get_order_number(), $reason ),
-				'payeeReference' => str_replace( '-', '', $payeeReference )
-			]
-		];
-		$result = $this->request( 'POST', $reversal_href, $params );
+        // Add fee lines
+        foreach ($order->get_fees() as $order_fee) {
+            /** @var \WC_Order_Item_Fee $order_fee */
+            $fee        = $order_fee->get_total();
+            $tax        = $order_fee->get_total_tax();
+            $feeWithTax = $fee + $tax;
+            $taxPercent = ($tax > 0) ? round(100 / ($fee / $tax)) : 0;
 
-		// Save transaction
-		$transaction = $result['reversal']['transaction'];
-		$this->transactions->import( $transaction, $order_id );
+            $item[] = [
+                'type'              => 'fee',
+                'name'              => $order_fee->get_name(),
+                'qty'               => 1,
+                'price_with_tax'    => sprintf("%.2f", $feeWithTax),
+                'price_without_tax' => sprintf("%.2f", $fee),
+                'tax_price'         => sprintf("%.2f", $tax),
+                'tax_percent'       => sprintf("%.2f", $taxPercent)
+            ];
+        }
 
-		switch ( $transaction['state'] ) {
-			case 'Completed':
-				//update_post_meta( $order_id, '_payex_payment_state', 'Refunded' );
-				update_post_meta( $order_id, '_payex_transaction_refund', $transaction['id'] );
-				$order->add_order_note( sprintf( __( 'Refunded: %s. Reason: %s', 'woocommerce-gateway-payex-payment' ), wc_price( $amount ), $reason ) );
-				break;
-			case 'Initialized':
-			case 'AwaitingActivity':
-				$order->add_order_note( sprintf( __( 'Transaction reversal status: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $transaction['state'] ) );
-				break;
-			case 'Failed':
-			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Refund failed.', WC_Swedbank_Pay::TEXT_DOMAIN );
-				throw new \Exception( $message );
-				break;
-		}
-	}
+        // Add discount line
+        if ($order->get_total_discount(false) > 0) {
+            $discount        = $order->get_total_discount(true);
+            $discountWithTax = $order->get_total_discount(false);
+            $tax             = $discountWithTax - $discount;
+            $taxPercent      = ($tax > 0) ? round(100 / ($discount / $tax)) : 0;
+
+            $item[] = [
+                'type'              => 'discount',
+                'name'              => __('Discount', \WC_Swedbank_Pay::TEXT_DOMAIN),
+                'qty'               => 1,
+                'price_with_tax'    => sprintf("%.2f", -1 * $discountWithTax),
+                'price_without_tax' => sprintf("%.2f", -1 * $discount),
+                'tax_price'         => sprintf("%.2f", -1 * $tax),
+                'tax_percent'       => sprintf("%.2f", $taxPercent)
+            ];
+        }
+
+        return $item;
+    }
+
+    /**
+     * Get Order Info
+     *
+     * @param WC_Order $order
+     *
+     * @return array
+     */
+    private function get_order_info( $order ) {
+        $amount       = 0;
+        $vatAmount    = 0;
+        $descriptions = [];
+        $items        = $this->get_order_items( $order );
+        foreach ( $items as $item ) {
+            $amount         += $item['price_with_tax'];
+            $vatAmount      += $item['tax_price'];
+            $unit_price     = sprintf( "%.2f", $item['price_without_tax'] / $item['qty'] );
+            $descriptions[] = [
+                'product'    => $item['name'],
+                'quantity'   => $item['qty'],
+                'unitPrice'  => (int) round( $unit_price * 100 ),
+                'amount'     => (int) round( $item['price_with_tax'] * 100 ),
+                'vatAmount'  => (int) round( $item['tax_price'] * 100 ),
+                'vatPercent' => sprintf( "%.2f", $item['tax_percent'] ),
+            ];
+        }
+
+        return [
+            'amount'     => $amount,
+            'vat_amount' => $vatAmount,
+            'items'      => $descriptions
+        ];
+    }
 }

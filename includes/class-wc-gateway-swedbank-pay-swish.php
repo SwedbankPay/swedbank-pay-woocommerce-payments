@@ -4,8 +4,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly
 
-class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc
-	implements WC_Payment_Gateway_Swedbank_Pay_Interface {
+use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
+use SwedbankPay\Payments\WooCommerce\Adapter;
+use SwedbankPay\Core\Core;
+
+class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 
 	/**
 	 * Merchant Token
@@ -111,6 +114,9 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc
 		add_action( 'woocommerce_order_status_pending_to_cancelled', [ $this, 'cancel_pending' ], 10, 2 );
 
 		add_filter( 'swedbank_pay_swish_phone_format', [ $this, 'swish_phone_format' ], 10, 2 );
+
+        $this->adapter = new Adapter( $this );
+        $this->core = new Core( $this->adapter );
 	}
 
 	/**
@@ -256,89 +262,18 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc
 	public function process_payment( $order_id ) {
 		$order = wc_get_order( $order_id );
 
-		$amount   = $order->get_total();
-		$currency = swedbank_pay_obj_prop( $order, 'order_currency' );
-		$email    = swedbank_pay_obj_prop( $order, 'billing_email' );
-		$phone    = swedbank_pay_obj_prop( $order, 'billing_phone' );
+        // Process payment
+        try {
+            $result = $this->core->initiateSwishPayment(
+                $order_id,
+                apply_filters( 'swedbank_pay_swish_phone_format', $order->get_billing_phone(), $order ),
+                $this->ecom_only === 'yes'
+            );
+        } catch ( Exception $e ) {
+            wc_add_notice( $e->getMessage(), 'error' );
 
-		$user_id = $order->get_customer_id();
-
-		// Get Customer UUID
-		if ( $user_id > 0 ) {
-			$customer_uuid = get_user_meta( $user_id, '_payex_customer_uuid', true );
-			if ( empty( $customer_uuid ) ) {
-				$customer_uuid = swedbank_pay_uuid( $user_id );
-				update_user_meta( $user_id, '_payex_customer_uuid', $customer_uuid );
-			}
-		} else {
-			$customer_uuid = swedbank_pay_uuid( uniqid( $email ) );
-		}
-
-		// Get Order UUID
-		$order_uuid = mb_strimwidth( swedbank_pay_uuid( $order_id ), 0, 30, '', 'UTF-8' );
-
-		// Order Info
-		$info = $this->get_order_info( $order );
-
-		$params = [
-			'payment' => [
-				'operation'      => 'Purchase',
-				'intent'         => 'Sale',
-				'currency'       => $currency,
-				'prices'         => [
-					[
-						'type'      => 'Swish',
-						'amount'    => round( $amount * 100 ),
-						'vatAmount' => round( $info['vat_amount'] * 100 )
-					]
-				],
-				'description' => apply_filters(
-					'swedbank_pay_payment_description',
-					sprintf( __( 'Order #%s', WC_Swedbank_Pay::TEXT_DOMAIN ), $order->get_order_number() ),
-					$order
-				),
-				'payerReference' => $customer_uuid,
-				'userAgent'      => $order->get_customer_user_agent(),
-				'language'       => $this->culture,
-				'urls'           => [
-					'completeUrl'       => html_entity_decode( $this->get_return_url( $order ) ),
-					'cancelUrl'         => $order->get_cancel_order_url_raw(),
-					'callbackUrl'       => WC()->api_request_url( __CLASS__ ),
-					// 50px height and 400px width. Require https.
-					//'logoUrl'     => "https://example.com/logo.png",// @todo
-					'termsOfServiceUrl' => $this->terms_url
-				],
-				'payeeInfo'      => [
-					'payeeId'        => $this->payee_id,
-					'payeeReference' => str_replace( '-', '', $order_uuid ),
-					'orderReference' => $order->get_order_number()
-				],
-				'riskIndicator'  => $this->get_risk_indicator( $order ),
-				'prefillInfo'    => [
-					'msisdn' => apply_filters( 'swedbank_pay_vipps_phone_format', $phone, $order )
-				],
-				'swish'          => [
-					'ecomOnlyEnabled' => $this->ecom_only === 'yes'
-				],
-				'metadata'   => [
-					'order_id' => $order_id
-				],
-			]
-		];
-
-		// Add subsite
-		if ( ! empty( $this->subsite ) ) {
-			$params['payment']['payeeInfo']['subsite'] = $this->subsite;
-		}
-
-		try {
-			$result = $this->request( 'POST', '/psp/swish/payments', $params );
-		} catch ( \Exception $e ) {
-			$this->log( sprintf( '[ERROR] Process payment: %s', $e->getMessage() ) );
-			wc_add_notice( $e->getMessage(), 'error' );
-
-			return false;
-		}
+            return false;
+        }
 
 		// Save payment ID
 		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
@@ -346,27 +281,20 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc
 		switch ( $this->method ) {
 			case 'redirect':
 				// Get Redirect
-				$redirect = self::get_operation( $result['operations'], 'redirect-sale' );
 
 				return [
 					'result'   => 'success',
-					'redirect' => $redirect
+					'redirect' => $result->getOperationByRel( 'redirect-sale' )
 				];
 				break;
 			case 'direct':
 				// Sale payment
-				$sale = self::get_operation( $result['operations'], 'create-sale' );
-
 				try {
-					$params = [
-						'transaction' => [
-							'msisdn' => apply_filters( 'swedbank_pay_swish_phone_format', $phone, $order )
-						]
-					];
-
-					$result = $this->request( 'POST', $sale, $params );
+					$result = $this->core->initiateSwishPaymentDirect(
+					    $result->getOperationByRel( 'create-sale' ),
+                        apply_filters( 'swedbank_pay_swish_phone_format', $order->get_billing_phone(), $order )
+                    );
 				} catch ( \Exception $e ) {
-					$this->log( sprintf( '[ERROR] Create Sale: %s', $e->getMessage() ) );
 					wc_add_notice( $e->getMessage(), 'error' );
 
 					return false;
@@ -384,84 +312,94 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc
 
 				return false;
 		}
-
 	}
 
-	/**
-	 * Capture
-	 *
-	 * @param WC_Order|int $order
-	 * @param bool $amount
-	 *
-	 * @return void
-	 * @throws \Exception
-	 */
-	public function capture_payment( $order, $amount = false ) {
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
+    /**
+     * Process Refund
+     *
+     * If the gateway declares 'refunds' support, this will allow it to refund
+     * a passed in amount.
+     *
+     * @param int $order_id
+     * @param float $amount
+     * @param string $reason
+     *
+     * @return  bool|wp_error True or false based on success, or a WP_Error object
+     */
+    public function process_refund( $order_id, $amount = null, $reason = '' ) {
+        $order = wc_get_order( $order_id );
+        if ( ! $order ) {
+            return false;
+        }
 
-		// @todo Improve feature
-		if ( ! $amount ) {
-			$amount = $order->get_total();
-		}
+        // Full Refund
+        if ( is_null( $amount ) ) {
+            $amount = $order->get_total();
+        }
 
-		$order_id   = swedbank_pay_obj_prop( $order, 'id' );
-		$payment_id = get_post_meta( $order_id, '_payex_payment_id', true );
-		if ( empty( $payment_id ) ) {
-			throw new \Exception( 'Unable to get payment ID' );
-		}
+        try {
+            // Disable status change hook
+            remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
 
-		try {
-			$result = $this->request( 'GET', $payment_id );
-		} catch ( \Exception $e ) {
-			throw new \Exception( sprintf( 'API Error: %s', $e->getMessage() ) );
-		}
+            $this->core->refund($order->get_id(), $amount, $reason);
 
-		$capture_href = self::get_operation( $result['operations'], 'create-capture' );
-		if ( empty( $capture_href ) ) {
-			throw new \Exception( __( 'Capture unavailable', WC_Swedbank_Pay::TEXT_DOMAIN ) );
-		}
+            return true;
+        } catch ( \Exception $e ) {
+            return new WP_Error( 'refund', $e->getMessage() );
+        }
+    }
 
-		// Order Info
-		$info = $this->get_order_info( $order );
+    /**
+     * Capture
+     *
+     * @param WC_Order|int $order
+     * @param mixed $amount
+     * @param mixed $vatAmount
+     *
+     * @return void
+     * @throws \Exception
+     */
+    public function capture_payment( $order, $amount = false, $vatAmount = 0 ) {
+        if ( is_int( $order ) ) {
+            $order = wc_get_order( $order );
+        }
 
-		// Get Order UUID
-		$payeeReference = mb_strimwidth( swedbank_pay_uuid( uniqid( $order_id ) ), 0, 30, '', 'UTF-8' );
+        if ( is_int( $order ) ) {
+            $order = wc_get_order( $order );
+        }
 
-		$params = [
-			'transaction' => [
-				'amount'         => (int) round( $amount * 100 ),
-				'vatAmount'      => (int) round( $info['vat_amount'] * 100 ),
-				'description'    => sprintf( 'Capture for Order #%s', $order->get_order_number() ),
-				'payeeReference' => str_replace( '-', '', $payeeReference )
-			]
-		];
-		$result = $this->request( 'POST', $capture_href, $params );
+        try {
+            // Disable status change hook
+            remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
 
-		// Save transaction
-		$transaction = $result['capture']['transaction'];
-		$this->transactions->import( $transaction, $order_id );
+            $this->core->capture($order->get_id(), $amount, $vatAmount);
+        } catch (\SwedbankPay\Core\Exception $e) {
+            throw new Exception( $e->getMessage() );
+        }
+    }
 
-		switch ( $transaction['state'] ) {
-			case 'Completed':
-				update_post_meta( $order_id, '_payex_payment_state', 'Captured' );
-				update_post_meta( $order_id, '_payex_transaction_capture', $transaction['id'] );
+    /**
+     * Cancel
+     *
+     * @param WC_Order|int $order
+     *
+     * @return void
+     * @throws \Exception
+     */
+    public function cancel_payment( $order ) {
+        if ( is_int( $order ) ) {
+            $order = wc_get_order( $order );
+        }
 
-				$order->add_order_note( __( 'Transaction captured.', WC_Swedbank_Pay::TEXT_DOMAIN ) );
-				$order->payment_complete( $transaction['number'] );
+        try {
+            // Disable status change hook
+            remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
 
-				break;
-			case 'Initialized':
-				$order->add_order_note( sprintf( __( 'Transaction capture status: %s.', WC_Swedbank_Pay::TEXT_DOMAIN ), $transaction['state'] ) );
-				break;
-			case 'Failed':
-			default:
-				$message = isset( $transaction['failedReason'] ) ? $transaction['failedReason'] : __( 'Capture failed.', WC_Swedbank_Pay::TEXT_DOMAIN );
-				throw new \Exception( $message );
-				break;
-		}
-	}
+            $this->core->cancel( $order->get_id() );
+        } catch (\SwedbankPay\Core\Exception $e) {
+            throw new Exception( $e->getMessage() );
+        }
+    }
 
 	/**
 	 * Format phone

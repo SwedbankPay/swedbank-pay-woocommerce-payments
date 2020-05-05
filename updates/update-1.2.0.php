@@ -1,5 +1,7 @@
 <?php
 
+use SwedbankPay\Payments\WooCommerce\WC_Background_Swedbank_Pay_Queue;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }

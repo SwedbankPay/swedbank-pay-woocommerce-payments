@@ -1,5 +1,7 @@
 <?php
 
+namespace SwedbankPay\Payments\WooCommerce;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 } // Exit if accessed directly

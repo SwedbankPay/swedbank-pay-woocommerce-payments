@@ -120,7 +120,8 @@ class WC_Payment_Token_Swedbank_Pay extends WC_Payment_Token_CC {
 	 */
 	public function is_default() {
 		// Mark Method as Checked on "Payment Change" page
-		if ( WC_Gateway_Swedbank_Pay_Cc::wcs_is_payment_change() &&
+		if ( class_exists( 'WC_Subscriptions_Change_Payment_Gateway', false ) &&
+             WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment &&
 		     isset( $_GET['change_payment_method'] ) &&
 			 abs( $_GET['change_payment_method'] ) > 0 )
 		{

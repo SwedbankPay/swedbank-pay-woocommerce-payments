@@ -1,5 +1,10 @@
 <?php
 
+namespace SwedbankPay\Payments\WooCommerce;
+
+use WC_Background_Process;
+use WC_Logger;
+
 defined( 'ABSPATH' ) || exit;
 
 if ( ! class_exists( 'WC_Background_Process', false ) ) {
@@ -43,7 +48,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 	/**
 	 * Get batch.
 	 *
-	 * @return stdClass Return the first batch from the queue.
+	 * @return \stdClass Return the first batch from the queue.
 	 */
 	protected function get_batch() {
 		global $wpdb;
@@ -67,7 +72,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		foreach ( $data as $id => $result ) {
 			$task = array_filter( (array) maybe_unserialize( $result->$value_column ) );
 
-			$batch       = new stdClass();
+			$batch       = new \stdClass();
 			$batch->key  = $result->$column;
 			$batch->data = $task;
 
@@ -113,37 +118,38 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		try {
 			$data = @json_decode( $item['webhook_data'], true );
 			if ( ! $data ) {
-
-				throw new Exception( 'Invalid webhook data' );
+				throw new \Exception( 'Invalid webhook data' );
 			}
 
-			/** @var WC_Gateway_Swedbank_Pay_Cc $gateway */
-			$gateway = swedbank_pay_payment_method( $item['payment_method_id'] );
+            $gateways = WC()->payment_gateways()->get_available_payment_gateways();
+
+			/** @var \WC_Gateway_Swedbank_Pay_Cc $gateway */
+			$gateway = isset( $gateways[ $item['payment_method_id'] ] ) ? $gateways[ $item['payment_method_id'] ] : false;
 			if ( ! $gateway ) {
-				throw new Exception( sprintf( 'Can\'t retrieve payment gateway instance: %s', $item['payment_method_id'] ) );
+				throw new \Exception( sprintf( 'Can\'t retrieve payment gateway instance: %s', $item['payment_method_id'] ) );
 			}
 
 			if ( ! isset( $data['payment'] ) || ! isset( $data['payment']['id'] ) ) {
-				throw new Exception( 'Error: Invalid payment value' );
+				throw new \Exception( 'Error: Invalid payment value' );
 			}
 
 			if ( ! isset( $data['transaction'] ) || ! isset( $data['transaction']['number'] ) ) {
-				throw new Exception( 'Error: Invalid transaction number' );
+				throw new \Exception( 'Error: Invalid transaction number' );
 			}
 
 			// Get Order by Payment Id
 			$payment_id = $data['payment']['id'];
-			$order_id   = swedbank_pay_get_post_id_by_meta( '_payex_payment_id', $payment_id );
+			$order_id   = $this->get_post_id_by_meta( '_payex_payment_id', $payment_id );
 			if ( ! $order_id ) {
-				throw new Exception( sprintf( 'Error: Failed to get order Id by Payment Id %s', $payment_id ) );
+				throw new \Exception( sprintf( 'Error: Failed to get order Id by Payment Id %s', $payment_id ) );
 			}
 
 			// Get Order
 			$order = wc_get_order( $order_id );
 			if ( ! $order ) {
-				throw new Exception( sprintf( 'Error: Failed to get order by Id %s', $order_id ) );
+				throw new \Exception( sprintf( 'Error: Failed to get order by Id %s', $order_id ) );
 			}
-		} catch ( Exception $e ) {
+		} catch ( \Exception $e ) {
 			$this->log( sprintf( '[ERROR]: Validation error: %s', $e->getMessage() ) );
 
 			return false;
@@ -151,36 +157,32 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 
 		try {
 			// Fetch transactions list
-			$result       = $gateway->request( 'GET', $payment_id . '/transactions' );
-			$transactions = $result['transactions']['transactionList'];
-			$gateway->transactions->import_transactions( $transactions, $order_id );
+            $transactions = $gateway->core->fetchTransactionsList( $payment_id );
+            $gateway->core->saveTransactions( $order_id, $transactions );
 
-			// Extract transaction from list
-			$transaction_id    = $data['transaction']['number'];
-			$transaction_state = $data['transaction']['state'];
-			$transaction       = swedbank_pay_filter( $transactions, [ 'number' => $transaction_id ] );
+            // Extract transaction from list
+            $transaction_id = $data['transaction']['number'];
+            $transaction = $gateway->core->findTransaction('number', $transaction_id);
 			$this->log( sprintf( 'Transaction: %s', var_export( $transaction, true ) ) );
-			if ( ! is_array( $transaction ) || count( $transaction ) === 0 ) {
-				throw new Exception( sprintf( 'Failed to fetch transaction number #%s', $transaction_id ) );
+			if ( ! $transaction ) {
+				throw new \Exception( sprintf( 'Failed to fetch transaction number #%s', $transaction_id ) );
 			}
-
-			// Prevent
-			//wp_cache_delete( 'payex_transaction_' . $transaction_id . $transaction_state, 'site_transient' );
-			//if ( get_site_transient( 'payex_transaction_' . $transaction_id . $transaction_state ) !== FALSE ) {
-			//	throw new Exception( sprintf( 'WEBHOOK: Error: Transaction #%s rejected (duplicate request)', $transaction_id ) );
-			//}
-
-			//set_site_transient( 'payex_transaction_' . $transaction_id . $transaction_state, TRUE, MINUTE_IN_SECONDS * 5 );
 
 			// Process transaction
 			try {
-				$gateway->process_transaction( $transaction, $order );
-			} catch ( Exception $e ) {
+                // Disable status change hook
+                remove_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10 );
+
+			    $gateway->core->processTransaction( $order->get_id(), $transaction );
+			} catch ( \Exception $e ) {
 				$this->log( sprintf( '[WARNING]: Transaction processing: %s', $e->getMessage() ) );
 			}
 
+            // Enable status change hook
+            add_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10, 4 );
+
 			return false;
-		} catch ( Exception $e ) {
+		} catch ( \Exception $e ) {
 			$this->log( sprintf( '[ERROR]: %s', $e->getMessage() ) );
 		}
 
@@ -206,4 +208,18 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 			$this->save()->dispatch();
 		}
 	}
+
+    /**
+     * Get Post Id by Meta
+     *
+     * @param $key
+     * @param $value
+     *
+     * @return null|string
+     */
+    private function get_post_id_by_meta( $key, $value ) {
+        global $wpdb;
+
+        return $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;", $key, $value ) );
+    }
 }

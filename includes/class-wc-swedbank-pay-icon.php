@@ -57,10 +57,16 @@ class WC_Swedbank_Pay_Icon {
 	 */
 	public function gateway_icon( $icon, $payment_id ) {
 		if ( strpos( $payment_id, 'payex_' ) !== false ) {
-			$gateway = swedbank_pay_payment_method( $payment_id );
-			if ( $gateway && ! empty( $gateway->settings['gateway_icon'] ) ) {
-				$icon = self::modify_img( $icon, $gateway->settings['gateway_icon'] );
-			}
+            // Get Payment Gateway
+            $gateways = WC()->payment_gateways()->get_available_payment_gateways();
+
+            if ( isset( $gateways[ $payment_id ] ) ) {
+                $gateway = $gateways[ $payment_id ];
+
+                if ( ! empty($gateway->settings['gateway_icon'])) {
+                    $icon = self::modify_img( $icon, $gateway->settings['gateway_icon'] );
+                }
+            }
 
 			return $icon;
 		}

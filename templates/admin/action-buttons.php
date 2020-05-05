@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 ?>
 
-<?php if ( $gateway->can_capture( $order ) ): ?>
+<?php if ( $gateway->core->canCapture( $order->get_id() ) ): ?>
 	<button id="swedbank_pay_capture"
 			type="button" class="button button-primary"
 			data-nonce="<?php echo wp_create_nonce( 'swedbank_pay' ); ?>"
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	</button>
 <?php endif; ?>
 
-<?php if ( $gateway->can_cancel( $order ) ): ?>
+<?php if ( $gateway->core->canCancel( $order->get_id() ) ): ?>
 	<button id="swedbank_pay_cancel"
 			type="button" class="button button-primary"
 			data-nonce="<?php echo wp_create_nonce( 'swedbank_pay' ); ?>"
