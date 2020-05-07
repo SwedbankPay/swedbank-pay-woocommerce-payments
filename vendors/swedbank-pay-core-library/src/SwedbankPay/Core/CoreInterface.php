@@ -6,7 +6,6 @@ use SwedbankPay\Core\Api\Authorization;
 use SwedbankPay\Core\Api\Response;
 use SwedbankPay\Core\Api\Transaction;
 use SwedbankPay\Core\Api\Verification;
-use SwedbankPay\Core\Library\Api;
 
 interface CoreInterface
 {

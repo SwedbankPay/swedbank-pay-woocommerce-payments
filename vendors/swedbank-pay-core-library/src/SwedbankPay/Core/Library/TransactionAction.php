@@ -14,7 +14,7 @@ trait TransactionAction
      */
     public function saveTransaction($orderId, $transactionData = [])
     {
-        if ($transactionData instanceof Transaction) {
+        if (is_object($transactionData) && method_exists($transactionData, 'toArray')) {
             $transactionData = $transactionData->toArray();
         }
 
@@ -30,6 +30,10 @@ trait TransactionAction
     public function saveTransactions($orderId, array $transactions)
     {
         foreach ($transactions as $transactionData) {
+            if (is_object($transactionData) && method_exists($transactionData, 'toArray')) {
+                $transactionData = $transactionData->toArray();
+            }
+
             $this->adapter->saveTransaction($orderId, $transactionData);
         }
     }
