@@ -67,7 +67,8 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 		$this->id           = 'payex_psp_swish';
 		$this->has_fields   = true;
 		$this->method_title = __( 'Swish', WC_Swedbank_Pay::TEXT_DOMAIN );
-		$this->icon         = apply_filters( 'wc_swedbank_pay_swish_icon', plugins_url( '/assets/images/swish.png', dirname( __FILE__ ) ) );
+		$this->icon         = apply_filters( 'wc_swedbank_pay_swish_icon',
+			plugins_url( '/assets/images/swish.png', dirname( __FILE__ ) ) );
 		$this->supports     = [
 			'products',
 			'refunds',
@@ -115,8 +116,8 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 
 		add_filter( 'swedbank_pay_swish_phone_format', [ $this, 'swish_phone_format' ], 10, 2 );
 
-        $this->adapter = new Adapter( $this );
-        $this->core = new Core( $this->adapter );
+		$this->adapter = new Adapter( $this );
+		$this->core    = new Core( $this->adapter );
 	}
 
 	/**
@@ -134,13 +135,15 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 			'title'          => [
 				'title'       => __( 'Title', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'description' => __( 'This controls the title which the user sees during checkout.',
+					WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => __( 'Swish payment', WC_Swedbank_Pay::TEXT_DOMAIN )
 			],
 			'description'    => [
 				'title'       => __( 'Description', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'description' => __( 'This controls the description which the user sees during checkout.',
+					WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => __( 'Swish payment', WC_Swedbank_Pay::TEXT_DOMAIN ),
 			],
 			'merchant_token' => [
@@ -155,7 +158,7 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 				'description' => __( 'Payee Id', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => $this->payee_id
 			],
-			'subsite'         => [
+			'subsite'        => [
 				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
 				'type'        => 'text',
 				'description' => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
@@ -181,7 +184,8 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 					'sv-SE' => 'Swedish',
 					'nb-NO' => 'Norway',
 				],
-				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.',
+					WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => $this->culture
 			],
 			'method'         => [
@@ -195,11 +199,11 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 				'default'     => $this->method
 			],
 			'ecom_only'      => [
-				'title'   => __( 'Ecom Only', WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'type'    => 'checkbox',
-				'label'   => __( 'Enable logging', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'title'       => __( 'Ecom Only', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'type'        => 'checkbox',
+				'label'       => __( 'Enable logging', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'description' => __( 'If enabled then trigger the redirect payment scenario by default' ),
-				'default' => $this->ecom_only,
+				'default'     => $this->ecom_only,
 			],
 			'terms_url'      => [
 				'title'       => __( 'Terms & Conditions Url', WC_Swedbank_Pay::TEXT_DOMAIN ),
@@ -262,18 +266,18 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 	public function process_payment( $order_id ) {
 		$order = wc_get_order( $order_id );
 
-        // Process payment
-        try {
-            $result = $this->core->initiateSwishPayment(
-                $order_id,
-                apply_filters( 'swedbank_pay_swish_phone_format', $order->get_billing_phone(), $order ),
-                $this->ecom_only === 'yes'
-            );
-        } catch ( Exception $e ) {
-            wc_add_notice( $e->getMessage(), 'error' );
+		// Process payment
+		try {
+			$result = $this->core->initiateSwishPayment(
+				$order_id,
+				apply_filters( 'swedbank_pay_swish_phone_format', $order->get_billing_phone(), $order ),
+				$this->ecom_only === 'yes'
+			);
+		} catch ( Exception $e ) {
+			wc_add_notice( $e->getMessage(), 'error' );
 
-            return false;
-        }
+			return false;
+		}
 
 		// Save payment ID
 		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
@@ -291,9 +295,9 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 				// Sale payment
 				try {
 					$result = $this->core->initiateSwishPaymentDirect(
-					    $result->getOperationByRel( 'create-sale' ),
-                        apply_filters( 'swedbank_pay_swish_phone_format', $order->get_billing_phone(), $order )
-                    );
+						$result->getOperationByRel( 'create-sale' ),
+						apply_filters( 'swedbank_pay_swish_phone_format', $order->get_billing_phone(), $order )
+					);
 				} catch ( \Exception $e ) {
 					wc_add_notice( $e->getMessage(), 'error' );
 
@@ -314,101 +318,101 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 	}
 
-    /**
-     * Process Refund
-     *
-     * If the gateway declares 'refunds' support, this will allow it to refund
-     * a passed in amount.
-     *
-     * @param int $order_id
-     * @param float $amount
-     * @param string $reason
-     *
-     * @return  bool|wp_error True or false based on success, or a WP_Error object
-     */
-    public function process_refund( $order_id, $amount = null, $reason = '' ) {
-        $order = wc_get_order( $order_id );
-        if ( ! $order ) {
-            return false;
-        }
+	/**
+	 * Process Refund
+	 *
+	 * If the gateway declares 'refunds' support, this will allow it to refund
+	 * a passed in amount.
+	 *
+	 * @param int $order_id
+	 * @param float $amount
+	 * @param string $reason
+	 *
+	 * @return  bool|wp_error True or false based on success, or a WP_Error object
+	 */
+	public function process_refund( $order_id, $amount = null, $reason = '' ) {
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return false;
+		}
 
-        // Full Refund
-        if ( is_null( $amount ) ) {
-            $amount = $order->get_total();
-        }
+		// Full Refund
+		if ( is_null( $amount ) ) {
+			$amount = $order->get_total();
+		}
 
-        try {
-            // Disable status change hook
-            remove_action( 'woocommerce_order_status_changed',
-                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-                10
-            );
+		try {
+			// Disable status change hook
+			remove_action( 'woocommerce_order_status_changed',
+				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
 
-            $this->core->refund($order->get_id(), $amount, $reason);
+			$this->core->refund( $order->get_id(), $amount, $reason );
 
-            return true;
-        } catch ( \Exception $e ) {
-            return new WP_Error( 'refund', $e->getMessage() );
-        }
-    }
+			return true;
+		} catch ( \Exception $e ) {
+			return new WP_Error( 'refund', $e->getMessage() );
+		}
+	}
 
-    /**
-     * Capture
-     *
-     * @param WC_Order|int $order
-     * @param mixed $amount
-     * @param mixed $vatAmount
-     *
-     * @return void
-     * @throws \Exception
-     */
-    public function capture_payment( $order, $amount = false, $vatAmount = 0 ) {
-        if ( is_int( $order ) ) {
-            $order = wc_get_order( $order );
-        }
+	/**
+	 * Capture
+	 *
+	 * @param WC_Order|int $order
+	 * @param mixed $amount
+	 * @param mixed $vatAmount
+	 *
+	 * @return void
+	 * @throws \Exception
+	 */
+	public function capture_payment( $order, $amount = false, $vatAmount = 0 ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
 
-        if ( is_int( $order ) ) {
-            $order = wc_get_order( $order );
-        }
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
 
-        try {
-            // Disable status change hook
-            remove_action( 'woocommerce_order_status_changed',
-                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-                10
-            );
+		try {
+			// Disable status change hook
+			remove_action( 'woocommerce_order_status_changed',
+				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
 
-            $this->core->capture($order->get_id(), $amount, $vatAmount);
-        } catch (\SwedbankPay\Core\Exception $e) {
-            throw new Exception( $e->getMessage() );
-        }
-    }
+			$this->core->capture( $order->get_id(), $amount, $vatAmount );
+		} catch ( \SwedbankPay\Core\Exception $e ) {
+			throw new Exception( $e->getMessage() );
+		}
+	}
 
-    /**
-     * Cancel
-     *
-     * @param WC_Order|int $order
-     *
-     * @return void
-     * @throws \Exception
-     */
-    public function cancel_payment( $order ) {
-        if ( is_int( $order ) ) {
-            $order = wc_get_order( $order );
-        }
+	/**
+	 * Cancel
+	 *
+	 * @param WC_Order|int $order
+	 *
+	 * @return void
+	 * @throws \Exception
+	 */
+	public function cancel_payment( $order ) {
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
 
-        try {
-            // Disable status change hook
-            remove_action( 'woocommerce_order_status_changed',
-                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-                10
-            );
+		try {
+			// Disable status change hook
+			remove_action( 'woocommerce_order_status_changed',
+				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
 
-            $this->core->cancel( $order->get_id() );
-        } catch (\SwedbankPay\Core\Exception $e) {
-            throw new Exception( $e->getMessage() );
-        }
-    }
+			$this->core->cancel( $order->get_id() );
+		} catch ( \SwedbankPay\Core\Exception $e ) {
+			throw new Exception( $e->getMessage() );
+		}
+	}
 
 	/**
 	 * Format phone

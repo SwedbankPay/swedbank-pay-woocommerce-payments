@@ -41,7 +41,8 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 	 */
 	protected function schedule_event() {
 		if ( ! wp_next_scheduled( $this->cron_hook_identifier ) ) {
-			wp_schedule_event( time() + MINUTE_IN_SECONDS, $this->cron_interval_identifier, $this->cron_hook_identifier );
+			wp_schedule_event( time() + MINUTE_IN_SECONDS, $this->cron_interval_identifier,
+				$this->cron_hook_identifier );
 		}
 	}
 
@@ -68,7 +69,8 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
 		$results = [];
-		$data    = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$column} LIKE %s ORDER BY {$key_column} ASC", $key ) ); // @codingStandardsIgnoreLine.
+		$data    = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$column} LIKE %s ORDER BY {$key_column} ASC",
+			$key ) ); // @codingStandardsIgnoreLine.
 		foreach ( $data as $id => $result ) {
 			$task = array_filter( (array) maybe_unserialize( $result->$value_column ) );
 
@@ -121,12 +123,13 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 				throw new \Exception( 'Invalid webhook data' );
 			}
 
-            $gateways = WC()->payment_gateways()->get_available_payment_gateways();
+			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
 
 			/** @var \WC_Gateway_Swedbank_Pay_Cc $gateway */
 			$gateway = isset( $gateways[ $item['payment_method_id'] ] ) ? $gateways[ $item['payment_method_id'] ] : false;
 			if ( ! $gateway ) {
-				throw new \Exception( sprintf( 'Can\'t retrieve payment gateway instance: %s', $item['payment_method_id'] ) );
+				throw new \Exception( sprintf( 'Can\'t retrieve payment gateway instance: %s',
+					$item['payment_method_id'] ) );
 			}
 
 			if ( ! isset( $data['payment'] ) || ! isset( $data['payment']['id'] ) ) {
@@ -157,12 +160,12 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 
 		try {
 			// Fetch transactions list
-            $transactions = $gateway->core->fetchTransactionsList( $payment_id );
-            $gateway->core->saveTransactions( $order_id, $transactions );
+			$transactions = $gateway->core->fetchTransactionsList( $payment_id );
+			$gateway->core->saveTransactions( $order_id, $transactions );
 
-            // Extract transaction from list
-            $transaction_id = $data['transaction']['number'];
-            $transaction = $gateway->core->findTransaction('number', $transaction_id);
+			// Extract transaction from list
+			$transaction_id = $data['transaction']['number'];
+			$transaction    = $gateway->core->findTransaction( 'number', $transaction_id );
 			$this->log( sprintf( 'Transaction: %s', var_export( $transaction, true ) ) );
 			if ( ! $transaction ) {
 				throw new \Exception( sprintf( 'Failed to fetch transaction number #%s', $transaction_id ) );
@@ -170,16 +173,16 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 
 			// Process transaction
 			try {
-                // Disable status change hook
-                remove_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10 );
+				// Disable status change hook
+				remove_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10 );
 
-			    $gateway->core->processTransaction( $order->get_id(), $transaction );
+				$gateway->core->processTransaction( $order->get_id(), $transaction );
 			} catch ( \Exception $e ) {
 				$this->log( sprintf( '[WARNING]: Transaction processing: %s', $e->getMessage() ) );
 			}
 
-            // Enable status change hook
-            add_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10, 4 );
+			// Enable status change hook
+			add_action( 'woocommerce_order_status_changed', 'WC_Swedbank_Pay::order_status_changed', 10, 4 );
 
 			return false;
 		} catch ( \Exception $e ) {
@@ -209,17 +212,18 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		}
 	}
 
-    /**
-     * Get Post Id by Meta
-     *
-     * @param $key
-     * @param $value
-     *
-     * @return null|string
-     */
-    private function get_post_id_by_meta( $key, $value ) {
-        global $wpdb;
+	/**
+	 * Get Post Id by Meta
+	 *
+	 * @param $key
+	 * @param $value
+	 *
+	 * @return null|string
+	 */
+	private function get_post_id_by_meta( $key, $value ) {
+		global $wpdb;
 
-        return $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;", $key, $value ) );
-    }
+		return $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;",
+			$key, $value ) );
+	}
 }

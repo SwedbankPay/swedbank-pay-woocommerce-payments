@@ -141,23 +141,25 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_queue` (
 	public function getQueue() {
 		global $wpdb;
 
-		$query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}payex_queue WHERE processed = %d ORDER BY transaction_number ASC;", 0 );
+		$query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}payex_queue WHERE processed = %d ORDER BY transaction_number ASC;",
+			0 );
 
 		return $wpdb->get_results( $query, ARRAY_A );
 	}
 
-    /**
-     * Get Post Id by Meta
-     *
-     * @param $key
-     * @param $value
-     *
-     * @return null|string
-     */
-    private function get_post_id_by_meta( $key, $value ) {
-        global $wpdb;
+	/**
+	 * Get Post Id by Meta
+	 *
+	 * @param $key
+	 * @param $value
+	 *
+	 * @return null|string
+	 */
+	private function get_post_id_by_meta( $key, $value ) {
+		global $wpdb;
 
-        return $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;", $key, $value ) );
-    }
+		return $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;",
+			$key, $value ) );
+	}
 
 }

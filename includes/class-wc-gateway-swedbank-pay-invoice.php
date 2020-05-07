@@ -56,7 +56,7 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 		$this->has_fields   = true;
 		$this->method_title = __( 'Invoice', WC_Swedbank_Pay::TEXT_DOMAIN );
 		//$this->icon         = apply_filters( 'wc_swedbank_pay_invoice_icon', plugins_url( '/assets/images/invoice.png', dirname( __FILE__ ) ) );
-		$this->supports     = [
+		$this->supports = [
 			'products',
 			'refunds',
 		];
@@ -104,7 +104,7 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 		] );
 
 		// Payment confirmation
-		add_action( 'the_post', [ $this, 'payment_confirm'] );
+		add_action( 'the_post', [ $this, 'payment_confirm' ] );
 
 		// Pending Cancel
 		add_action( 'woocommerce_order_status_pending_to_cancelled', [
@@ -112,8 +112,8 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 			'cancel_pending'
 		], 10, 2 );
 
-        $this->adapter = new Adapter( $this );
-        $this->core = new Core( $this->adapter );
+		$this->adapter = new Adapter( $this );
+		$this->core    = new Core( $this->adapter );
 	}
 
 	/**
@@ -131,13 +131,15 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 			'title'          => [
 				'title'       => __( 'Title', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'description' => __( 'This controls the title which the user sees during checkout.',
+					WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => __( 'Invoice', WC_Swedbank_Pay::TEXT_DOMAIN )
 			],
 			'description'    => [
 				'title'       => __( 'Description', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'description' => __( 'This controls the description which the user sees during checkout.',
+					WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => __( 'Invoice', WC_Swedbank_Pay::TEXT_DOMAIN ),
 			],
 			'merchant_token' => [
@@ -152,7 +154,7 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 				'description' => __( 'Payee Id', WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => $this->payee_id
 			],
-			'subsite'         => [
+			'subsite'        => [
 				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
 				'type'        => 'text',
 				'description' => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
@@ -178,7 +180,8 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 					'sv-SE' => 'Swedish',
 					'nb-NO' => 'Norway',
 				],
-				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.',
+					WC_Swedbank_Pay::TEXT_DOMAIN ),
 				'default'     => $this->culture
 			],
 			'terms_url'      => [
@@ -196,14 +199,14 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 	public function payment_fields() {
 		parent::payment_fields();
 		?>
-		<p class="form-row form-row-wide">
-			<label for="social-security-number">
+        <p class="form-row form-row-wide">
+            <label for="social-security-number">
 				<?php echo __( 'Social Security Number', WC_Swedbank_Pay::TEXT_DOMAIN ); ?>
-				<abbr class="required">*</abbr>
-			</label>
-			<input type="text" class="input-text required-entry" name="social-security-number"
-				   id="social-security-number" value="" autocomplete="off">
-		</p>
+                <abbr class="required">*</abbr>
+            </label>
+            <input type="text" class="input-text required-entry" name="social-security-number"
+                   id="social-security-number" value="" autocomplete="off">
+        </p>
 		<?php
 	}
 
@@ -228,7 +231,8 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		if ( ! in_array( mb_strtoupper( $_POST['billing_country'], 'UTF-8' ), [ 'SE', 'NO', 'FI' ] ) ) {
-			wc_add_notice( __( 'This country is not supported by the payment system.', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
+			wc_add_notice( __( 'This country is not supported by the payment system.', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'error' );
 
 			return false;
 		}
@@ -237,14 +241,16 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 		if ( in_array( $_POST['billing_country'], [ 'SE', 'NO' ] ) ) {
 			$phone_code = mb_substr( ltrim( $_POST['billing_phone'], '+' ), 0, 2, 'UTF-8' );
 			if ( ! in_array( $phone_code, [ '46', '47' ] ) ) {
-				wc_add_notice( __( 'Invalid phone number. Phone code must include country phone code.', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
+				wc_add_notice( __( 'Invalid phone number. Phone code must include country phone code.',
+					WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
 
 				return false;
 			}
 		}
 
 		if ( empty( $_POST['social-security-number'] ) ) {
-			wc_add_notice( __( 'Please enter your Social Security Number and confirm your order.', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
+			wc_add_notice( __( 'Please enter your Social Security Number and confirm your order.',
+				WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
 
 			return false;
 		}
@@ -272,44 +278,44 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @return array|false
 	 */
 	public function process_payment( $order_id ) {
-		$order = wc_get_order( $order_id );
+		$order    = wc_get_order( $order_id );
 		$postcode = $order->get_billing_postcode();
-		$ssn = wc_clean( $_POST['social-security-number'] );
+		$ssn      = wc_clean( $_POST['social-security-number'] );
 
-        // Process payment
+		// Process payment
 		try {
-            $result = $this->core->initiateInvoicePayment($order_id);
+			$result = $this->core->initiateInvoicePayment( $order_id );
 
-            // Save payment ID
-            update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
+			// Save payment ID
+			update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
 
-            // Authorization
-            $create_authorize_href = $result->getOperationByRel('create-authorization' );
+			// Authorization
+			$create_authorize_href = $result->getOperationByRel( 'create-authorization' );
 
-            // Approved Legal Address
-            $legal_address_href = $result->getOperationByRel('create-approved-legal-address');
+			// Approved Legal Address
+			$legal_address_href = $result->getOperationByRel( 'create-approved-legal-address' );
 
-            // Get Approved Legal Address
-            $address = $this->core->getApprovedLegalAddress($legal_address_href, $ssn, $postcode);
+			// Get Approved Legal Address
+			$address = $this->core->getApprovedLegalAddress( $legal_address_href, $ssn, $postcode );
 
-            // Save legal address
-            $legal_address = $address['approvedLegalAddress'];
-            update_post_meta( $order_id, '_payex_legal_address', $legal_address );
+			// Save legal address
+			$legal_address = $address['approvedLegalAddress'];
+			update_post_meta( $order_id, '_payex_legal_address', $legal_address );
 
-            // Transaction Activity: FinancingConsumer
-		    $result = $this->core->transactionFinancingConsumer(
-		        $create_authorize_href,
-                $order_id,
-                $ssn,
-                $legal_address['addressee'],
-                $legal_address['coAddress'],
-                $legal_address['streetAddress'],
-                $legal_address['zipCode'],
-                $legal_address['city'],
-                $legal_address['countryCode']
-            );
+			// Transaction Activity: FinancingConsumer
+			$result = $this->core->transactionFinancingConsumer(
+				$create_authorize_href,
+				$order_id,
+				$ssn,
+				$legal_address['addressee'],
+				$legal_address['coAddress'],
+				$legal_address['streetAddress'],
+				$legal_address['zipCode'],
+				$legal_address['city'],
+				$legal_address['countryCode']
+			);
 		} catch ( \Exception $e ) {
-            wc_add_notice( $e->getMessage(), 'error' );
+			wc_add_notice( $e->getMessage(), 'error' );
 
 			return false;
 		}
@@ -320,77 +326,77 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 		];
 	}
 
-    /**
-     * Process Refund
-     *
-     * If the gateway declares 'refunds' support, this will allow it to refund
-     * a passed in amount.
-     *
-     * @param int $order_id
-     * @param float $amount
-     * @param string $reason
-     *
-     * @return  bool|wp_error True or false based on success, or a WP_Error object
-     */
-    public function process_refund( $order_id, $amount = null, $reason = '' ) {
-        $order = wc_get_order( $order_id );
-        if ( ! $order ) {
-            return false;
-        }
+	/**
+	 * Process Refund
+	 *
+	 * If the gateway declares 'refunds' support, this will allow it to refund
+	 * a passed in amount.
+	 *
+	 * @param int $order_id
+	 * @param float $amount
+	 * @param string $reason
+	 *
+	 * @return  bool|wp_error True or false based on success, or a WP_Error object
+	 */
+	public function process_refund( $order_id, $amount = null, $reason = '' ) {
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return false;
+		}
 
-        // Full Refund
-        if ( is_null( $amount ) ) {
-            $amount = $order->get_total();
-        }
+		// Full Refund
+		if ( is_null( $amount ) ) {
+			$amount = $order->get_total();
+		}
 
-        try {
-            // Disable status change hook
-            remove_action( 'woocommerce_order_status_changed',
-                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-                10
-            );
+		try {
+			// Disable status change hook
+			remove_action( 'woocommerce_order_status_changed',
+				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
 
-            $this->core->refundInvoice($order->get_id(), $amount);
+			$this->core->refundInvoice( $order->get_id(), $amount );
 
-            return true;
-        } catch ( \Exception $e ) {
-            return new WP_Error( 'refund', $e->getMessage() );
-        }
-    }
+			return true;
+		} catch ( \Exception $e ) {
+			return new WP_Error( 'refund', $e->getMessage() );
+		}
+	}
 
-    /**
-     * Capture
-     *
-     * @param WC_Order|int $order
-     * @param mixed $amount
-     * @param mixed $vatAmount
-     *
-     * @return void
-     * @throws \Exception
-     */
+	/**
+	 * Capture
+	 *
+	 * @param WC_Order|int $order
+	 * @param mixed $amount
+	 * @param mixed $vatAmount
+	 *
+	 * @return void
+	 * @throws \Exception
+	 */
 	public function capture_payment( $order, $amount = false, $vatAmount = 0 ) {
-        if ( is_int( $order ) ) {
-            $order = wc_get_order( $order );
-        }
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
 
-        if ( is_int( $order ) ) {
-            $order = wc_get_order( $order );
-        }
+		if ( is_int( $order ) ) {
+			$order = wc_get_order( $order );
+		}
 
-        // Order Info
-        $info = $this->get_order_info( $order );
+		// Order Info
+		$info = $this->get_order_info( $order );
 
-        try {
-            // Disable status change hook
-            remove_action( 'woocommerce_order_status_changed',
-                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-                10
-            );
+		try {
+			// Disable status change hook
+			remove_action( 'woocommerce_order_status_changed',
+				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
 
-            $this->core->captureInvoice($order->get_id(), $amount, $vatAmount, $info['items']);
-        } catch (\SwedbankPay\Core\Exception $e) {
-            throw new Exception( $e->getMessage() );
-        }
+			$this->core->captureInvoice( $order->get_id(), $amount, $vatAmount, $info['items'] );
+		} catch ( \SwedbankPay\Core\Exception $e ) {
+			throw new Exception( $e->getMessage() );
+		}
 	}
 
 	/**
@@ -406,136 +412,135 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 			$order = wc_get_order( $order );
 		}
 
-        try {
-            // Disable status change hook
-            remove_action( 'woocommerce_order_status_changed',
-                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-                10
-            );
+		try {
+			// Disable status change hook
+			remove_action( 'woocommerce_order_status_changed',
+				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
 
-            $this->core->cancelInvoice($order->get_id());
-        } catch (\SwedbankPay\Core\Exception $e) {
-            throw new Exception( $e->getMessage() );
-        }
+			$this->core->cancelInvoice( $order->get_id() );
+		} catch ( \SwedbankPay\Core\Exception $e ) {
+			throw new Exception( $e->getMessage() );
+		}
 	}
 
-    /**
-     * Get Order Lines
-     *
-     * @param \WC_Order $order
-     *
-     * @return array
-     */
-    private function get_order_items($order)
-    {
-        $item = [];
+	/**
+	 * Get Order Lines
+	 *
+	 * @param \WC_Order $order
+	 *
+	 * @return array
+	 */
+	private function get_order_items( $order ) {
+		$item = [];
 
-        foreach ($order->get_items() as $order_item) {
-            /** @var \WC_Order_Item_Product $order_item */
-            $price        = $order->get_line_subtotal($order_item, false, false);
-            $priceWithTax = $order->get_line_subtotal($order_item, true, false);
-            $tax          = $priceWithTax - $price;
-            $taxPercent   = ($tax > 0) ? round(100 / ($price / $tax)) : 0;
+		foreach ( $order->get_items() as $order_item ) {
+			/** @var \WC_Order_Item_Product $order_item */
+			$price        = $order->get_line_subtotal( $order_item, false, false );
+			$priceWithTax = $order->get_line_subtotal( $order_item, true, false );
+			$tax          = $priceWithTax - $price;
+			$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 
-            $item[] = [
-                'type'              => 'product',
-                'name'              => $order_item->get_name(),
-                'qty'               => $order_item->get_quantity(),
-                'price_with_tax'    => sprintf("%.2f", $priceWithTax),
-                'price_without_tax' => sprintf("%.2f", $price),
-                'tax_price'         => sprintf("%.2f", $tax),
-                'tax_percent'       => sprintf("%.2f", $taxPercent)
-            ];
-        };
+			$item[] = [
+				'type'              => 'product',
+				'name'              => $order_item->get_name(),
+				'qty'               => $order_item->get_quantity(),
+				'price_with_tax'    => sprintf( "%.2f", $priceWithTax ),
+				'price_without_tax' => sprintf( "%.2f", $price ),
+				'tax_price'         => sprintf( "%.2f", $tax ),
+				'tax_percent'       => sprintf( "%.2f", $taxPercent )
+			];
+		};
 
-        // Add Shipping Line
-        if ((float)$order->get_shipping_total() > 0) {
-            $shipping        = $order->get_shipping_total();
-            $tax             = $order->get_shipping_tax();
-            $shippingWithTax = $shipping + $tax;
-            $taxPercent      = ($tax > 0) ? round(100 / ($shipping / $tax)) : 0;
+		// Add Shipping Line
+		if ( (float) $order->get_shipping_total() > 0 ) {
+			$shipping        = $order->get_shipping_total();
+			$tax             = $order->get_shipping_tax();
+			$shippingWithTax = $shipping + $tax;
+			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
 
-            $item[] = [
-                'type'              => 'shipping',
-                'name'              => $order->get_shipping_method(),
-                'qty'               => 1,
-                'price_with_tax'    => sprintf("%.2f", $shippingWithTax),
-                'price_without_tax' => sprintf("%.2f", $shipping),
-                'tax_price'         => sprintf("%.2f", $tax),
-                'tax_percent'       => sprintf("%.2f", $taxPercent)
-            ];
-        }
+			$item[] = [
+				'type'              => 'shipping',
+				'name'              => $order->get_shipping_method(),
+				'qty'               => 1,
+				'price_with_tax'    => sprintf( "%.2f", $shippingWithTax ),
+				'price_without_tax' => sprintf( "%.2f", $shipping ),
+				'tax_price'         => sprintf( "%.2f", $tax ),
+				'tax_percent'       => sprintf( "%.2f", $taxPercent )
+			];
+		}
 
-        // Add fee lines
-        foreach ($order->get_fees() as $order_fee) {
-            /** @var \WC_Order_Item_Fee $order_fee */
-            $fee        = $order_fee->get_total();
-            $tax        = $order_fee->get_total_tax();
-            $feeWithTax = $fee + $tax;
-            $taxPercent = ($tax > 0) ? round(100 / ($fee / $tax)) : 0;
+		// Add fee lines
+		foreach ( $order->get_fees() as $order_fee ) {
+			/** @var \WC_Order_Item_Fee $order_fee */
+			$fee        = $order_fee->get_total();
+			$tax        = $order_fee->get_total_tax();
+			$feeWithTax = $fee + $tax;
+			$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
 
-            $item[] = [
-                'type'              => 'fee',
-                'name'              => $order_fee->get_name(),
-                'qty'               => 1,
-                'price_with_tax'    => sprintf("%.2f", $feeWithTax),
-                'price_without_tax' => sprintf("%.2f", $fee),
-                'tax_price'         => sprintf("%.2f", $tax),
-                'tax_percent'       => sprintf("%.2f", $taxPercent)
-            ];
-        }
+			$item[] = [
+				'type'              => 'fee',
+				'name'              => $order_fee->get_name(),
+				'qty'               => 1,
+				'price_with_tax'    => sprintf( "%.2f", $feeWithTax ),
+				'price_without_tax' => sprintf( "%.2f", $fee ),
+				'tax_price'         => sprintf( "%.2f", $tax ),
+				'tax_percent'       => sprintf( "%.2f", $taxPercent )
+			];
+		}
 
-        // Add discount line
-        if ($order->get_total_discount(false) > 0) {
-            $discount        = $order->get_total_discount(true);
-            $discountWithTax = $order->get_total_discount(false);
-            $tax             = $discountWithTax - $discount;
-            $taxPercent      = ($tax > 0) ? round(100 / ($discount / $tax)) : 0;
+		// Add discount line
+		if ( $order->get_total_discount( false ) > 0 ) {
+			$discount        = $order->get_total_discount( true );
+			$discountWithTax = $order->get_total_discount( false );
+			$tax             = $discountWithTax - $discount;
+			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
-            $item[] = [
-                'type'              => 'discount',
-                'name'              => __('Discount', \WC_Swedbank_Pay::TEXT_DOMAIN),
-                'qty'               => 1,
-                'price_with_tax'    => sprintf("%.2f", -1 * $discountWithTax),
-                'price_without_tax' => sprintf("%.2f", -1 * $discount),
-                'tax_price'         => sprintf("%.2f", -1 * $tax),
-                'tax_percent'       => sprintf("%.2f", $taxPercent)
-            ];
-        }
+			$item[] = [
+				'type'              => 'discount',
+				'name'              => __( 'Discount', \WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'qty'               => 1,
+				'price_with_tax'    => sprintf( "%.2f", - 1 * $discountWithTax ),
+				'price_without_tax' => sprintf( "%.2f", - 1 * $discount ),
+				'tax_price'         => sprintf( "%.2f", - 1 * $tax ),
+				'tax_percent'       => sprintf( "%.2f", $taxPercent )
+			];
+		}
 
-        return $item;
-    }
+		return $item;
+	}
 
-    /**
-     * Get Order Info
-     *
-     * @param WC_Order $order
-     *
-     * @return array
-     */
-    private function get_order_info( $order ) {
-        $amount       = 0;
-        $vatAmount    = 0;
-        $descriptions = [];
-        $items        = $this->get_order_items( $order );
-        foreach ( $items as $item ) {
-            $amount         += $item['price_with_tax'];
-            $vatAmount      += $item['tax_price'];
-            $unit_price     = sprintf( "%.2f", $item['price_without_tax'] / $item['qty'] );
-            $descriptions[] = [
-                'product'    => $item['name'],
-                'quantity'   => $item['qty'],
-                'unitPrice'  => (int) round( $unit_price * 100 ),
-                'amount'     => (int) round( $item['price_with_tax'] * 100 ),
-                'vatAmount'  => (int) round( $item['tax_price'] * 100 ),
-                'vatPercent' => sprintf( "%.2f", $item['tax_percent'] ),
-            ];
-        }
+	/**
+	 * Get Order Info
+	 *
+	 * @param WC_Order $order
+	 *
+	 * @return array
+	 */
+	private function get_order_info( $order ) {
+		$amount       = 0;
+		$vatAmount    = 0;
+		$descriptions = [];
+		$items        = $this->get_order_items( $order );
+		foreach ( $items as $item ) {
+			$amount         += $item['price_with_tax'];
+			$vatAmount      += $item['tax_price'];
+			$unit_price     = sprintf( "%.2f", $item['price_without_tax'] / $item['qty'] );
+			$descriptions[] = [
+				'product'    => $item['name'],
+				'quantity'   => $item['qty'],
+				'unitPrice'  => (int) round( $unit_price * 100 ),
+				'amount'     => (int) round( $item['price_with_tax'] * 100 ),
+				'vatAmount'  => (int) round( $item['tax_price'] * 100 ),
+				'vatPercent' => sprintf( "%.2f", $item['tax_percent'] ),
+			];
+		}
 
-        return [
-            'amount'     => $amount,
-            'vat_amount' => $vatAmount,
-            'items'      => $descriptions
-        ];
-    }
+		return [
+			'amount'     => $amount,
+			'vat_amount' => $vatAmount,
+			'items'      => $descriptions
+		];
+	}
 }

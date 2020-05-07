@@ -58,7 +58,8 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 	 */
 	public function plugin_action_links( $links ) {
 		$plugin_links = [
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_psp_cc' ) . '">' . __( 'Settings', WC_Swedbank_Pay::TEXT_DOMAIN ) . '</a>'
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_psp_cc' ) . '">' . __( 'Settings',
+				WC_Swedbank_Pay::TEXT_DOMAIN ) . '</a>'
 		];
 
 		return array_merge( $plugin_links, $links );
@@ -69,14 +70,15 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( WC_Swedbank_Pay::TEXT_DOMAIN, false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain( WC_Swedbank_Pay::TEXT_DOMAIN, false,
+			dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 	}
 
 	/**
 	 * WooCommerce Loaded: load classes
 	 */
 	public function woocommerce_loaded() {
-        include_once( dirname( __FILE__ ) . '/includes/class-wc-adapter.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-adapter.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-cc.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-invoice.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-vipps.php' );
