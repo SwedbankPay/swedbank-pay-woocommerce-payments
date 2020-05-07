@@ -345,7 +345,10 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 
         try {
             // Disable status change hook
-            remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
+            remove_action( 'woocommerce_order_status_changed',
+                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+                10
+            );
 
             $this->core->refundInvoice($order->get_id(), $amount);
 
@@ -379,7 +382,10 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 
         try {
             // Disable status change hook
-            remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
+            remove_action( 'woocommerce_order_status_changed',
+                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+                10
+            );
 
             $this->core->captureInvoice($order->get_id(), $amount, $vatAmount, $info['items']);
         } catch (\SwedbankPay\Core\Exception $e) {
@@ -402,7 +408,10 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 
         try {
             // Disable status change hook
-            remove_action( 'woocommerce_order_status_changed', 'WC_Payex_Psp::order_status_changed', 10 );
+            remove_action( 'woocommerce_order_status_changed',
+                '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+                10
+            );
 
             $this->core->cancelInvoice($order->get_id());
         } catch (\SwedbankPay\Core\Exception $e) {

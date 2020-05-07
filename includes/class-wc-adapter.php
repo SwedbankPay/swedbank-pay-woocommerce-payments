@@ -2,6 +2,7 @@
 
 namespace SwedbankPay\Payments\WooCommerce;
 
+use SwedbankPay\Core\Log\LogLevel;
 use WC_Payment_Gateway;
 use SwedbankPay\Core\PaymentAdapter;
 use SwedbankPay\Core\PaymentAdapterInterface;
@@ -399,10 +400,10 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface
     {
         $order = wc_get_order($orderId);
 
-        // @todo Check if the action was performed before
-        //if ( $order->get_meta( '_payex_payment_state' ) === $status ) {
-        //throw new \Exception( sprintf( 'Action of Transaction #%s already performed', $transactionId ) );
-        //}
+        if ( $order->get_meta( '_payex_payment_state' ) === $status ) {
+            $this->log(LogLevel::WARNING, sprintf( 'Action of Transaction #%s already performed', $transactionId ) );
+            return;
+        }
 
         if ($transactionId) {
             $order->update_meta_data('_transaction_id', $transactionId);
@@ -447,12 +448,20 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface
             case OrderInterface::STATUS_REFUNDED:
                 // @todo Implement Refunds creation
                 // @see wc_create_refund()
-                throw new \Exception('Error: Reversal transaction don\'t implemented yet.');
+
+                $order->update_meta_data('_payex_payment_state', $status);
+                $order->save_meta_data();
+
+                if ( ! $order->has_status('refunded')) {
+                    $order->update_status('refunded', $message);
+                } else {
+                    $order->add_order_note($message);
+                }
+
                 break;
             case OrderInterface::STATUS_FAILED:
                 $order->update_status('failed', $message);
                 break;
-
         }
     }
 
