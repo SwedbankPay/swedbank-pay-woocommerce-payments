@@ -26,6 +26,11 @@ jobs:
           ref: 4.1.0
           path: woocommerce
 
+      - name: Set up MySQL
+        uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql root password: 'root'
+
       - name: Build WooCommerce Test Enviroment
         run: |
           cd $GITHUB_WORKSPACE/woocommerce
@@ -45,6 +50,6 @@ jobs:
       - name: Run PHPCS inspection
         uses: rtCamp/action-phpcs-code-review@v2.0.2
         env:
-          SKIP_FOLDERS: "vendors,tests,docs,build,.github,assets/js/*.min.js"
+          SKIP_FOLDERS: "woocommerce,vendors,tests,docs,build,.github,assets/js/*.min.js"
         with:
           args: "WordPress-Core"
