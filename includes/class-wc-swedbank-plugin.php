@@ -2,9 +2,7 @@
 
 namespace SwedbankPay\Payments\WooCommerce;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+defined( 'ABSPATH' ) || exit;
 
 use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
 use SwedbankPay\Payments\WooCommerce\WC_Background_Swedbank_Pay_Queue;
@@ -15,13 +13,13 @@ use Exception;
 class WC_Swedbank_Plugin {
 
 	/** Payment IDs */
-	const PAYMENT_METHODS = [
+	const PAYMENT_METHODS = array(
 		'payex_checkout',
 		'payex_psp_cc',
 		'payex_psp_invoice',
 		'payex_psp_vipps',
-		'payex_psp_swish'
-	];
+		'payex_psp_swish',
+	);
 
 	/**
 	 * @var WC_Background_Swedbank_Pay_Queue
@@ -36,17 +34,21 @@ class WC_Swedbank_Plugin {
 		$this->includes();
 
 		// Activation
-		register_activation_hook( __FILE__, [ $this, 'install' ] );
+		register_activation_hook( __FILE__, array( $this, 'install' ) );
 
 		// Actions
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), [ $this, 'plugin_action_links' ] );
-		add_action( 'plugins_loaded', [ $this, 'init' ], 0 );
-		add_action( 'woocommerce_init', [ $this, 'woocommerce_init' ] );
-		add_action( 'woocommerce_loaded', [ $this, 'woocommerce_hook_loaded' ] );
+		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
+		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
+		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ) );
+		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_hook_loaded' ) );
 
 		// Add statuses for payment complete
-		add_filter( 'woocommerce_valid_order_statuses_for_payment_complete', [ $this, 'add_valid_order_statuses' ], 10,
-			2 );
+		add_filter(
+			'woocommerce_valid_order_statuses_for_payment_complete',
+			array( $this, 'add_valid_order_statuses' ),
+			10,
+			2
+		);
 
 		// Status Change Actions
 		//add_action( 'woocommerce_order_status_changed', __CLASS__ . '::order_status_changed', 10, 4 );
@@ -61,22 +63,22 @@ class WC_Swedbank_Plugin {
 		add_action( 'admin_enqueue_scripts', __CLASS__ . '::admin_enqueue_scripts' );
 
 		// Add Admin Backend Actions
-		add_action( 'wp_ajax_swedbank_pay_capture', [ $this, 'ajax_swedbank_pay_capture' ] );
+		add_action( 'wp_ajax_swedbank_pay_capture', array( $this, 'ajax_swedbank_pay_capture' ) );
 
-		add_action( 'wp_ajax_swedbank_pay_cancel', [ $this, 'ajax_swedbank_pay_cancel' ] );
+		add_action( 'wp_ajax_swedbank_pay_cancel', array( $this, 'ajax_swedbank_pay_cancel' ) );
 
 		// Filters
-		add_filter( 'swedbank_pay_generate_uuid', [ $this, 'generate_uuid' ], 10, 1 );
-		add_filter( 'swedbank_pay_payment_description', [ $this, 'payment_description' ], 10, 2 );
+		add_filter( 'swedbank_pay_generate_uuid', array( $this, 'generate_uuid' ), 10, 1 );
+		add_filter( 'swedbank_pay_payment_description', array( $this, 'payment_description' ), 10, 2 );
 
 		// Process swedbank queue
 		if ( ! is_multisite() ) {
-			add_action( 'customize_save_after', [ $this, 'maybe_process_queue' ] );
-			add_action( 'after_switch_theme', [ $this, 'maybe_process_queue' ] );
+			add_action( 'customize_save_after', array( $this, 'maybe_process_queue' ) );
+			add_action( 'after_switch_theme', array( $this, 'maybe_process_queue' ) );
 		}
 
 		// Add admin menu
-		add_action( 'admin_menu', [ $this, 'admin_menu' ], 99 );
+		add_action( 'admin_menu', array( $this, 'admin_menu' ), 99 );
 
 		// Add Upgrade Notice
 		if ( version_compare( get_option( 'woocommerce_payex_psp_version', '1.2.0' ), '1.2.0', '<' ) ) {
@@ -85,46 +87,45 @@ class WC_Swedbank_Plugin {
 	}
 
 	public function includes() {
-		$vendorsDir = dirname( __FILE__ ) . '/../vendors';
+		$vendors_dir = dirname( __FILE__ ) . '/../vendors';
 
 		//if ( ! class_exists( '\\SwedbankPay\\Api\\Client\\Client', false ) ) {
-		//require_once $vendorsDir.'/swedbank-pay-sdk-php/vendor/autoload.php';
+		//require_once $vendors_dir.'/swedbank-pay-sdk-php/vendor/autoload.php';
 		//}
 
-		spl_autoload_register( function ( $className ) {
-			$autoLoadPath = dirname( __FILE__ ) . '/../vendors/swedbank-pay-sdk-php/src/';
-			$classFile    = $autoLoadPath . str_replace( '\\', DIRECTORY_SEPARATOR, $className ) . '.php';
-			if ( file_exists( $classFile ) ) {
-				require_once $classFile;
+		spl_autoload_register(
+			function ( $class_name ) {
+				$auto_load_path = dirname( __FILE__ ) . '/../vendors/swedbank-pay-sdk-php/src/';
+				$class_file     = $auto_load_path . str_replace( '\\', DIRECTORY_SEPARATOR, $class_name ) . '.php';
+				if ( file_exists( $class_file ) ) {
+					  require_once $class_file;
 
-				return true;
+					  return true;
+				}
+
+				return false;
 			}
+		);
 
-			return false;
-		} );
+		spl_autoload_register(
+			function ( $class_name ) {
+				$auto_load_path = dirname( __FILE__ ) . '/../vendors/swedbank-pay-core-library/src/';
+				$class_file     = $auto_load_path . str_replace( '\\', DIRECTORY_SEPARATOR, $class_name ) . '.php';
+				if ( file_exists( $class_file ) ) {
+					  require_once $class_file;
 
-		spl_autoload_register( function ( $className ) {
-			$autoLoadPath = dirname( __FILE__ ) . '/../vendors/swedbank-pay-core-library/src/';
-			$classFile    = $autoLoadPath . str_replace( '\\', DIRECTORY_SEPARATOR, $className ) . '.php';
-			if ( file_exists( $classFile ) ) {
-				require_once $classFile;
+					  return true;
+				}
 
-				return true;
+				return false;
 			}
-
-			return false;
-		} );
+		);
 
 		if ( ! class_exists( '\\Ramsey\\Uuid\\Uuid', false ) ) {
-			require_once $vendorsDir . '/ramsey-uuid/vendor/autoload.php';
-		}
-
-		if ( ! class_exists( 'FullNameParser', false ) ) {
-			require_once $vendorsDir . '/php-name-parser/vendor/autoload.php';
+			require_once $vendors_dir . '/ramsey-uuid/vendor/autoload.php';
 		}
 
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-transactions.php' );
-		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-queue.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-icon.php' );
 	}
 
@@ -173,20 +174,25 @@ class WC_Swedbank_Plugin {
 		global $px_gateways;
 
 		if ( ! $px_gateways ) {
-			$px_gateways = [];
+			$px_gateways = array();
 		}
 
 		if ( ! isset( $px_gateways[ $class_name ] ) ) {
 			// Initialize instance
-			if ( $gateway = new $class_name ) {
+			$gateway = new $class_name;
+
+			if ( $gateway ) {
 				$px_gateways[] = $class_name;
 
 				// Register gateway instance
-				add_filter( 'woocommerce_payment_gateways', function ( $methods ) use ( $gateway ) {
-					$methods[] = $gateway;
+				add_filter(
+					'woocommerce_payment_gateways',
+					function ( $methods ) use ( $gateway ) {
+						$methods[] = $gateway;
 
-					return $methods;
-				} );
+						return $methods;
+					}
+				);
 			}
 		}
 	}
@@ -201,11 +207,14 @@ class WC_Swedbank_Plugin {
 	 */
 	public function add_valid_order_statuses( $statuses, $order ) {
 		$payment_method = $order->get_payment_method();
-		if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
-			$statuses = array_merge( $statuses, [
-				'processing',
-				'completed'
-			] );
+		if ( in_array( $payment_method, self::PAYMENT_METHODS, true ) ) {
+			$statuses = array_merge(
+				$statuses,
+				array(
+					'processing',
+					'completed',
+				)
+			);
 		}
 
 		return $statuses;
@@ -221,18 +230,19 @@ class WC_Swedbank_Plugin {
 	 */
 	public static function order_status_changed( $order_id, $from, $to, $order ) {
 		// We are need "on-hold" only
-		if ( $from !== 'on-hold' ) {
+		if ( 'on-hold' !== $from ) {
 			return;
 		}
 
 		// Disable status change hook
-		remove_action( 'woocommerce_order_status_changed',
+		remove_action(
+			'woocommerce_order_status_changed',
 			'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 			10
 		);
 
 		$payment_method = $order->get_payment_method();
-		if ( ! in_array( $payment_method, self::PAYMENT_METHODS ) ) {
+		if ( ! in_array( $payment_method, self::PAYMENT_METHODS, true ) ) {
 			return;
 		}
 
@@ -252,8 +262,10 @@ class WC_Swedbank_Plugin {
 					WC_Admin_Meta_Boxes::add_error( $message );
 
 					// Rollback
-					$order->update_status( $from,
-						sprintf( __( 'Order status rollback. %s', 'swedbank-pay-woocommerce-payments' ), $message ) );
+					$order->update_status(
+						$from,
+						/* translators: 1: note */ sprintf( __( 'Order status rollback. %1$s', 'swedbank-pay-woocommerce-payments' ), $message )
+					);
 				}
 				break;
 			case 'processing':
@@ -267,8 +279,10 @@ class WC_Swedbank_Plugin {
 					WC_Admin_Meta_Boxes::add_error( $message );
 
 					// Rollback
-					$order->update_status( $from,
-						sprintf( __( 'Order status rollback. %s', 'swedbank-pay-woocommerce-payments' ), $message ) );
+					$order->update_status(
+						$from,
+						/* translators: 1: note */ sprintf( __( 'Order status rollback. %1$s', 'swedbank-pay-woocommerce-payments' ), $message )
+					);
 				}
 				break;
 			default:
@@ -276,7 +290,8 @@ class WC_Swedbank_Plugin {
 		}
 
 		// Enable status change hook
-		add_action( 'woocommerce_order_status_changed',
+		add_action(
+			'woocommerce_order_status_changed',
 			'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 			10
 		);
@@ -288,9 +303,12 @@ class WC_Swedbank_Plugin {
 	 */
 	public static function add_meta_boxes() {
 		global $post_id;
-		if ( $order = wc_get_order( $post_id ) ) {
+
+		$order = wc_get_order( $post_id );
+
+		if ( $order ) {
 			$payment_method = $order->get_payment_method();
-			if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
+			if ( in_array( $payment_method, self::PAYMENT_METHODS, true ) ) {
 				$payment_id = get_post_meta( $post_id, '_payex_payment_id', true );
 				if ( ! empty( $payment_id ) ) {
 					add_meta_box(
@@ -312,6 +330,7 @@ class WC_Swedbank_Plugin {
 	 */
 	public static function order_meta_box_payment_actions() {
 		global $post_id;
+
 		$order      = wc_get_order( $post_id );
 		$payment_id = get_post_meta( $post_id, '_payex_payment_id', true );
 		if ( empty( $payment_id ) ) {
@@ -337,13 +356,13 @@ class WC_Swedbank_Plugin {
 
 		wc_get_template(
 			'admin/payment-actions.php',
-			[
+			array(
 				'gateway'    => $gateway,
 				'order'      => $order,
 				'order_id'   => $post_id,
 				'payment_id' => $payment_id,
-				'info'       => $result
-			],
+				'info'       => $result,
+			),
 			'',
 			dirname( __FILE__ ) . '/../templates/'
 		);
@@ -357,7 +376,7 @@ class WC_Swedbank_Plugin {
 	public static function add_action_buttons( $order ) {
 		// Get Payment Gateway
 		$payment_method = $order->get_payment_method();
-		if ( in_array( $payment_method, self::PAYMENT_METHODS ) ) {
+		if ( in_array( $payment_method, self::PAYMENT_METHODS, true ) ) {
 			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
 
 			if ( isset( $gateways[ $payment_method ] ) ) {
@@ -366,10 +385,10 @@ class WC_Swedbank_Plugin {
 
 				wc_get_template(
 					'admin/action-buttons.php',
-					[
+					array(
 						'gateway' => $gateway,
-						'order'   => $order
-					],
+						'order'   => $order,
+					),
 					'',
 					dirname( __FILE__ ) . '/../templates/'
 				);
@@ -385,17 +404,19 @@ class WC_Swedbank_Plugin {
 	 * @return void
 	 */
 	public static function admin_enqueue_scripts( $hook ) {
-		if ( $hook === 'post.php' ) {
+		if ( 'post.php' === $hook ) {
 			// Scripts
 			$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-			wp_register_script( 'swedbank-pay-admin-js',
-				plugin_dir_url( __FILE__ ) . '../assets/js/admin' . $suffix . '.js' );
+			wp_register_script(
+				'swedbank-pay-admin-js',
+				plugin_dir_url( __FILE__ ) . '../assets/js/admin' . $suffix . '.js'
+			);
 
 			// Localize the script
-			$translation_array = [
+			$translation_array = array(
 				'ajax_url'  => admin_url( 'admin-ajax.php' ),
 				'text_wait' => __( 'Please wait...', 'swedbank-pay-woocommerce-payments' ),
-			];
+			);
 			wp_localize_script( 'swedbank-pay-admin-js', 'SwedbankPay_Admin', $translation_array );
 
 			// Enqueued script with localized data
@@ -509,18 +530,24 @@ class WC_Swedbank_Plugin {
 	public static function upgrade_notice() {
 		if ( current_user_can( 'update_plugins' ) ) {
 			?>
-            <div id="message" class="error">
-                <p>
+			<div id="message" class="error">
+				<p>
 					<?php
-					echo esc_html__( 'Warning! Swedbank Pay WooCommerce payments plugin requires to update the database structure.',
-						'swedbank-pay-woocommerce-payments' );
-					echo ' ' . sprintf( esc_html__( 'Please click %s here %s to start upgrade.',
-							'swedbank-pay-woocommerce-payments' ),
-							'<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">',
-							'</a>' );
+					echo esc_html__(
+						'Warning! Swedbank Pay WooCommerce payments plugin requires to update the database structure.',
+						'swedbank-pay-woocommerce-payments'
+					);
+					echo ' ' . sprintf(
+						/* translators: 1: start tag 2: end tag */                        esc_html__(
+							'Please click %1$s here %2$s to start upgrade.',
+							'swedbank-pay-woocommerce-payments'
+						),
+						'<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">',
+						'</a>'
+					);
 					?>
-                </p>
-            </div>
+				</p>
+			</div>
 			<?php
 		}
 	}

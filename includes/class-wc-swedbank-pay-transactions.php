@@ -2,9 +2,7 @@
 
 namespace SwedbankPay\Payments\WooCommerce;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+defined( 'ABSPATH' ) || exit;
 
 class WC_Swedbank_Pay_Transactions {
 	/**
@@ -18,7 +16,7 @@ class WC_Swedbank_Pay_Transactions {
 	 * Allowed Fields
 	 * @var array
 	 */
-	protected static $_allowed_fields = [
+	protected static $_allowed_fields = array(
 		'transaction_id',
 		'transaction_data',
 		'order_id',
@@ -31,8 +29,8 @@ class WC_Swedbank_Pay_Transactions {
 		'number',
 		'amount',
 		'vatAmount',
-		'description'
-	];
+		'description',
+	);
 
 	/**
 	 * Main WC_Swedbank_Transactions Instance.
@@ -57,13 +55,15 @@ class WC_Swedbank_Pay_Transactions {
 	/**
 	 * Cloning is forbidden.
 	 */
-	private function __clone() { /* ... @return Singleton */
+	private function __clone() {
+		/* ... @return Singleton */
 	}
 
 	/**
 	 * Wakeup is forbidden.
 	 */
-	private function __wakeup() { /* ... @return Singleton */
+	private function __wakeup() {
+		/* ... @return Singleton */
 	}
 
 	/**
@@ -71,7 +71,9 @@ class WC_Swedbank_Pay_Transactions {
 	 */
 	public function install_schema() {
 		global $wpdb;
-		$query = "
+
+		// phpcs:disable
+		$wpdb->query( "
 CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
   `transaction_id` int(11) NOT NULL AUTO_INCREMENT,
   `transaction_data` text,
@@ -91,8 +93,8 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
   KEY `id` (`id`),
   KEY `order_id` (`order_id`)
 ) ENGINE=INNODB DEFAULT CHARSET={$wpdb->charset};
-		";
-		$wpdb->query( $query );
+		" );
+		// phpcs:enable
 	}
 
 	/**
@@ -125,7 +127,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 
 		return $wpdb->delete(
 			$wpdb->prefix . 'payex_transactions',
-			[ 'id' => (int) $transaction_id ]
+			array( 'id' => (int) $transaction_id )
 		);
 	}
 
@@ -143,9 +145,9 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 		return $wpdb->update(
 			$wpdb->prefix . 'payex_transactions',
 			$fields,
-			[
-				'transaction_id' => (int) $transaction_id
-			]
+			array(
+				'transaction_id' => (int) $transaction_id,
+			)
 		);
 	}
 
@@ -158,11 +160,14 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 */
 	public function get( $transaction_id ) {
 		global $wpdb;
-		$query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}payex_transactions WHERE transaction_id = %d;",
+		$query = $wpdb->prepare(
+			"SELECT * FROM {$wpdb->prefix}payex_transactions WHERE transaction_id = %d;",
 			$transaction_id
 		);
 
+		// phpcs:disable
 		return $wpdb->get_row( $query, ARRAY_A );
+		// phpcs:enable
 	}
 
 	/**
@@ -176,15 +181,18 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 */
 	public function get_by( $field, $value, $single = true ) {
 		global $wpdb;
-		if ( ! in_array( $field, self::$_allowed_fields ) ) {
+		if ( ! in_array( $field, self::$_allowed_fields, true ) ) {
 			$field = 'transaction_id';
 		}
 
-		$query = $wpdb->prepare( "SELECT * FROM {$wpdb->prefix}payex_transactions WHERE {$field} = %s;",
+		// phpcs:disable
+		$query = $wpdb->prepare(
+			"SELECT * FROM {$wpdb->prefix}payex_transactions WHERE {$field} = %s;",
 			$value
 		);
 
 		return $single ? $wpdb->get_row( $query, ARRAY_A ) : $wpdb->get_results( $query, ARRAY_A );
+		// phpcs:enable
 	}
 
 	/**
@@ -196,9 +204,10 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 */
 	public function select( array $conditionals ) {
 		global $wpdb;
-		$lines = [];
+
+		$lines = array();
 		foreach ( $conditionals as $key => $value ) {
-			if ( ! in_array( $key, self::$_allowed_fields ) ) {
+			if ( ! in_array( $key, self::$_allowed_fields, true ) ) {
 				_doing_it_wrong( __METHOD__, __( 'Cheatin&#8217; huh?', 'woocommerce' ), '1.0.0' );
 				die();
 			}
@@ -209,14 +218,14 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 			} else {
 				$lines[] = "{$key} = {$value}";
 			}
-
-
 		}
 
 		$lines = join( ' AND ', $lines );
+		// phpcs:disable
 		$query = "SELECT * FROM {$wpdb->prefix}payex_transactions WHERE {$lines};";
 
 		return $wpdb->get_results( $query, ARRAY_A );
+		// phpcs:enable
 	}
 
 	/**
@@ -230,9 +239,13 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	public function prepare( $data, $order_id ) {
 		$allowed = self::$_allowed_fields;
 		unset( $allowed['transaction_id'], $allowed['transaction_data'], $allowed['order_id'] );
-		$data = array_filter( $data, function ( $value, $key ) use ( $allowed ) {
-			return in_array( $key, $allowed );
-		}, ARRAY_FILTER_USE_BOTH );
+		$data = array_filter(
+			$data,
+			function ( $value, $key ) use ( $allowed ) {
+				return in_array( $key, $allowed, true );
+			},
+			ARRAY_FILTER_USE_BOTH
+		);
 
 		$data['transaction_data'] = json_encode( $data, true );
 		$data['order_id']         = $order_id;
@@ -275,7 +288,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 * @return array
 	 */
 	public function import_transactions( $transactions, $order_id ) {
-		$result = [];
+		$result = array();
 		foreach ( $transactions as $transaction ) {
 			$result[] = $this->import( $transaction, $order_id );
 		}

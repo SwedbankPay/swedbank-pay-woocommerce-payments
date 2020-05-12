@@ -1,11 +1,9 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+defined( 'ABSPATH' ) || exit;
 
 use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
-use SwedbankPay\Payments\WooCommerce\Adapter;
+use SwedbankPay\Payments\WooCommerce\WC_Adapter;
 use SwedbankPay\Core\Core;
 
 class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
@@ -66,13 +64,15 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 
 		$this->id           = 'payex_psp_swish';
 		$this->has_fields   = true;
-		$this->method_title = __( 'Swish', WC_Swedbank_Pay::TEXT_DOMAIN );
-		$this->icon         = apply_filters( 'wc_swedbank_pay_swish_icon',
-			plugins_url( '/assets/images/swish.png', dirname( __FILE__ ) ) );
-		$this->supports     = [
+		$this->method_title = __( 'Swish', 'swedbank-pay-woocommerce-payments' );
+		$this->icon         = apply_filters(
+			'wc_swedbank_pay_swish_icon',
+			plugins_url( '/assets/images/swish.png', dirname( __FILE__ ) )
+		);
+		$this->supports     = array(
 			'products',
 			'refunds',
-		];
+		);
 
 		// Load the form fields.
 		$this->init_form_fields();
@@ -102,21 +102,21 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		// Actions
-		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, [ $this, 'process_admin_options' ] );
-		add_action( 'woocommerce_thankyou_' . $this->id, [ $this, 'thankyou_page' ] );
+		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+		add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'thankyou_page' ) );
 
 		// Payment listener/API hook
-		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), [ $this, 'return_handler' ] );
+		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
 
 		// Payment confirmation
-		add_action( 'the_post', [ $this, 'payment_confirm' ] );
+		add_action( 'the_post', array( $this, 'payment_confirm' ) );
 
 		// Pending Cancel
-		add_action( 'woocommerce_order_status_pending_to_cancelled', [ $this, 'cancel_pending' ], 10, 2 );
+		add_action( 'woocommerce_order_status_pending_to_cancelled', array( $this, 'cancel_pending' ), 10, 2 );
 
-		add_filter( 'swedbank_pay_swish_phone_format', [ $this, 'swish_phone_format' ], 10, 2 );
+		add_filter( 'swedbank_pay_swish_phone_format', array( $this, 'swish_phone_format' ), 10, 2 );
 
-		$this->adapter = new Adapter( $this );
+		$this->adapter = new WC_Adapter( $this );
 		$this->core    = new Core( $this->adapter );
 	}
 
@@ -125,93 +125,99 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @return string|void
 	 */
 	public function init_form_fields() {
-		$this->form_fields = [
-			'enabled'        => [
-				'title'   => __( 'Enable/Disable', WC_Swedbank_Pay::TEXT_DOMAIN ),
+		$this->form_fields = array(
+			'enabled'        => array(
+				'title'   => __( 'Enable/Disable', 'swedbank-pay-woocommerce-payments' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable plugin', WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'default' => 'no'
-			],
-			'title'          => [
-				'title'       => __( 'Title', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'label'   => __( 'Enable plugin', 'swedbank-pay-woocommerce-payments' ),
+				'default' => 'no',
+			),
+			'title'          => array(
+				'title'       => __( 'Title', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the title which the user sees during checkout.',
-					WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'default'     => __( 'Swish payment', WC_Swedbank_Pay::TEXT_DOMAIN )
-			],
-			'description'    => [
-				'title'       => __( 'Description', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'description' => __(
+					'This controls the title which the user sees during checkout.',
+					'swedbank-pay-woocommerce-payments'
+				),
+				'default'     => __( 'Swish payment', 'swedbank-pay-woocommerce-payments' ),
+			),
+			'description'    => array(
+				'title'       => __( 'Description', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'This controls the description which the user sees during checkout.',
-					WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'default'     => __( 'Swish payment', WC_Swedbank_Pay::TEXT_DOMAIN ),
-			],
-			'merchant_token' => [
-				'title'       => __( 'Merchant Token', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'description' => __(
+					'This controls the description which the user sees during checkout.',
+					'swedbank-pay-woocommerce-payments'
+				),
+				'default'     => __( 'Swish payment', 'swedbank-pay-woocommerce-payments' ),
+			),
+			'merchant_token' => array(
+				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'default'     => $this->merchant_token
-			],
-			'payee_id'       => [
-				'title'       => __( 'Payee Id', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->merchant_token,
+			),
+			'payee_id'       => array(
+				'title'       => __( 'Payee Id', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'Payee Id', WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'default'     => $this->payee_id
-			],
-			'subsite'        => [
+				'description' => __( 'Payee Id', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->payee_id,
+			),
+			'subsite'        => array(
 				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
 				'type'        => 'text',
 				'description' => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
-				'default'     => $this->subsite
-			],
-			'testmode'       => [
-				'title'   => __( 'Test Mode', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'default'     => $this->subsite,
+			),
+			'testmode'       => array(
+				'title'   => __( 'Test Mode', 'swedbank-pay-woocommerce-payments' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Swedbank Pay Test Mode', WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'default' => $this->testmode
-			],
-			'debug'          => [
-				'title'   => __( 'Debug', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'label'   => __( 'Enable Swedbank Pay Test Mode', 'swedbank-pay-woocommerce-payments' ),
+				'default' => $this->testmode,
+			),
+			'debug'          => array(
+				'title'   => __( 'Debug', 'swedbank-pay-woocommerce-payments' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable logging', WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'default' => $this->debug
-			],
-			'culture'        => [
-				'title'       => __( 'Language', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'label'   => __( 'Enable logging', 'swedbank-pay-woocommerce-payments' ),
+				'default' => $this->debug,
+			),
+			'culture'        => array(
+				'title'       => __( 'Language', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'select',
-				'options'     => [
+				'options'     => array(
 					'en-US' => 'English',
 					'sv-SE' => 'Swedish',
 					'nb-NO' => 'Norway',
-				],
-				'description' => __( 'Language of pages displayed by Swedbank Pay during payment.',
-					WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'default'     => $this->culture
-			],
-			'method'         => [
-				'title'       => __( 'Checkout Method', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				),
+				'description' => __(
+					'Language of pages displayed by Swedbank Pay during payment.',
+					'swedbank-pay-woocommerce-payments'
+				),
+				'default'     => $this->culture,
+			),
+			'method'         => array(
+				'title'       => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'select',
-				'options'     => [
-					'redirect' => __( 'Redirect', WC_Swedbank_Pay::TEXT_DOMAIN ),
-					'direct'   => __( 'Direct', WC_Swedbank_Pay::TEXT_DOMAIN ),
-				],
-				'description' => __( 'Checkout Method', WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'default'     => $this->method
-			],
-			'ecom_only'      => [
-				'title'       => __( 'Ecom Only', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'options'     => array(
+					'redirect' => __( 'Redirect', 'swedbank-pay-woocommerce-payments' ),
+					'direct'   => __( 'Direct', 'swedbank-pay-woocommerce-payments' ),
+				),
+				'description' => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->method,
+			),
+			'ecom_only'      => array(
+				'title'       => __( 'Ecom Only', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'checkbox',
-				'label'       => __( 'Enable logging', WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'label'       => __( 'Enable logging', 'swedbank-pay-woocommerce-payments' ),
 				'description' => __( 'If enabled then trigger the redirect payment scenario by default' ),
 				'default'     => $this->ecom_only,
-			],
-			'terms_url'      => [
-				'title'       => __( 'Terms & Conditions Url', WC_Swedbank_Pay::TEXT_DOMAIN ),
+			),
+			'terms_url'      => array(
+				'title'       => __( 'Terms & Conditions Url', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'Terms & Conditions Url', WC_Swedbank_Pay::TEXT_DOMAIN ),
-				'default'     => get_site_url()
-			],
-		];
+				'description' => __( 'Terms & Conditions Url', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => get_site_url(),
+			),
+		);
 	}
 
 	/**
@@ -231,13 +237,13 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 	public function validate_fields() {
 		$billing_phone = wc_clean( isset( $_POST['billing_phone'] ) ? $_POST['billing_phone'] : '' );
 		if ( empty( $billing_phone ) ) {
-			wc_add_notice( __( 'Phone number required.', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
+			wc_add_notice( __( 'Phone number required.', 'swedbank-pay-woocommerce-payments' ), 'error' );
 		}
 
-		$matches = [];
+		$matches = array();
 		preg_match( '/^\+46[0-9]{6,13}$/u', $billing_phone, $matches );
 		if ( ! isset( $matches[0] ) || $matches[0] !== $billing_phone ) {
-			wc_add_notice( __( 'Input your number like this +46xxxxxxxxx', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
+			wc_add_notice( __( 'Input your number like this +46xxxxxxxxx', 'swedbank-pay-woocommerce-payments' ), 'error' );
 
 			return false;
 		}
@@ -271,7 +277,7 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 			$result = $this->core->initiateSwishPayment(
 				$order_id,
 				apply_filters( 'swedbank_pay_swish_phone_format', $order->get_billing_phone(), $order ),
-				$this->ecom_only === 'yes'
+				'yes' === $this->ecom_only
 			);
 		} catch ( Exception $e ) {
 			wc_add_notice( $e->getMessage(), 'error' );
@@ -286,15 +292,15 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 			case 'redirect':
 				// Get Redirect
 
-				return [
+				return array(
 					'result'   => 'success',
-					'redirect' => $result->getOperationByRel( 'redirect-sale' )
-				];
+					'redirect' => $result->getOperationByRel( 'redirect-sale' ),
+				);
 				break;
 			case 'direct':
 				// Sale payment
 				try {
-					$result = $this->core->initiateSwishPaymentDirect(
+					$this->core->initiateSwishPaymentDirect(
 						$result->getOperationByRel( 'create-sale' ),
 						apply_filters( 'swedbank_pay_swish_phone_format', $order->get_billing_phone(), $order )
 					);
@@ -304,15 +310,15 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 					return false;
 				}
 
-				return [
+				return array(
 					'result'   => 'success',
-					'redirect' => $this->get_return_url( $order )
-				];
+					'redirect' => $this->get_return_url( $order ),
+				);
 
 				break;
 
 			default:
-				wc_add_notice( __( 'Wrong method', WC_Swedbank_Pay::TEXT_DOMAIN ), 'error' );
+				wc_add_notice( __( 'Wrong method', 'swedbank-pay-woocommerce-payments' ), 'error' );
 
 				return false;
 		}
@@ -343,7 +349,8 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 
 		try {
 			// Disable status change hook
-			remove_action( 'woocommerce_order_status_changed',
+			remove_action(
+				'woocommerce_order_status_changed',
 				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 				10
 			);
@@ -361,12 +368,12 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 	 *
 	 * @param WC_Order|int $order
 	 * @param mixed $amount
-	 * @param mixed $vatAmount
+	 * @param mixed $vat_amount
 	 *
 	 * @return void
 	 * @throws \Exception
 	 */
-	public function capture_payment( $order, $amount = false, $vatAmount = 0 ) {
+	public function capture_payment( $order, $amount = false, $vat_amount = 0 ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
@@ -377,12 +384,13 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 
 		try {
 			// Disable status change hook
-			remove_action( 'woocommerce_order_status_changed',
+			remove_action(
+				'woocommerce_order_status_changed',
 				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 				10
 			);
 
-			$this->core->capture( $order->get_id(), $amount, $vatAmount );
+			$this->core->capture( $order->get_id(), $amount, $vat_amount );
 		} catch ( \SwedbankPay\Core\Exception $e ) {
 			throw new Exception( $e->getMessage() );
 		}
@@ -403,7 +411,8 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 
 		try {
 			// Disable status change hook
-			remove_action( 'woocommerce_order_status_changed',
+			remove_action(
+				'woocommerce_order_status_changed',
 				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 				10
 			);

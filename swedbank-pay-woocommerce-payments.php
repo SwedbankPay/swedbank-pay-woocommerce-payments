@@ -1,4 +1,4 @@
-<?php
+<?php // phpcs:disable
 /*
  * Plugin Name: Swedbank Pay Payments
  * Plugin URI: https://www.swedbankpay.com/
@@ -16,17 +16,13 @@
 
 use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-} // Exit if accessed directly
+defined( 'ABSPATH' ) || exit;
 
-if ( ! class_exists( '\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin', false ) ) {
-	include_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-plugin.php' );
-}
+include_once( dirname( __FILE__ ) . '/includes/class-wc-swedbank-plugin.php' );
 
 class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 	const TEXT_DOMAIN = 'swedbank-pay-woocommerce-payments';
-
+	// phpcs:enable
 	/**
 	 * Constructor
 	 */
@@ -34,12 +30,12 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 		parent::__construct();
 
 		// Activation
-		register_activation_hook( __FILE__, [ $this, 'install' ] );
+		register_activation_hook( __FILE__, array( $this, 'install' ) );
 
 		// Actions
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), [ $this, 'plugin_action_links' ] );
-		add_action( 'plugins_loaded', [ $this, 'init' ], 0 );
-		add_action( 'woocommerce_loaded', [ $this, 'woocommerce_loaded' ], 20 );
+		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
+		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
+		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_loaded' ), 20 );
 	}
 
 	/**
@@ -57,10 +53,12 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 	 * @return array
 	 */
 	public function plugin_action_links( $links ) {
-		$plugin_links = [
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_psp_cc' ) . '">' . __( 'Settings',
-				WC_Swedbank_Pay::TEXT_DOMAIN ) . '</a>'
-		];
+		$plugin_links = array(
+			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_psp_cc' ) . '">' . __(
+				'Settings',
+				'swedbank-pay-woocommerce-payments'
+			) . '</a>',
+		);
 
 		return array_merge( $plugin_links, $links );
 	}
@@ -70,8 +68,11 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 	 */
 	public function init() {
 		// Localization
-		load_plugin_textdomain( WC_Swedbank_Pay::TEXT_DOMAIN, false,
-			dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+		load_plugin_textdomain(
+			'swedbank-pay-woocommerce-payments',
+			false,
+			dirname( plugin_basename( __FILE__ ) ) . '/languages'
+		);
 	}
 
 	/**

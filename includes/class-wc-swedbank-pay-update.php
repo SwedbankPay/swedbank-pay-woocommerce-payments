@@ -1,16 +1,14 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+defined( 'ABSPATH' ) || exit;
 
 class WC_Swedbank_Pay_Update {
 
 	/** @var array DB updates that need to be run */
-	private static $db_updates = [
+	private static $db_updates = array(
 		'1.1.0' => 'updates/update-1.1.0.php',
 		'1.2.0' => 'updates/update-1.2.0.php',
-	];
+	);
 
 	/**
 	 * Handle updates

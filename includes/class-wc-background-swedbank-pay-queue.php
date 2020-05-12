@@ -31,7 +31,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		$this->action = 'wc_swedbank_pay_queue';
 
 		// Dispatch queue after shutdown.
-		add_action( 'shutdown', [ $this, 'dispatch_queue' ], 100 );
+		add_action( 'shutdown', array( $this, 'dispatch_queue' ), 100 );
 
 		parent::__construct();
 	}
@@ -41,8 +41,11 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 	 */
 	protected function schedule_event() {
 		if ( ! wp_next_scheduled( $this->cron_hook_identifier ) ) {
-			wp_schedule_event( time() + MINUTE_IN_SECONDS, $this->cron_interval_identifier,
-				$this->cron_hook_identifier );
+			wp_schedule_event(
+				time() + MINUTE_IN_SECONDS,
+				$this->cron_interval_identifier,
+				$this->cron_hook_identifier
+			);
 		}
 	}
 
@@ -68,9 +71,15 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 
 		$key = $wpdb->esc_like( $this->identifier . '_batch_' ) . '%';
 
-		$results = [];
-		$data    = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$column} LIKE %s ORDER BY {$key_column} ASC",
+		$results = array();
+
+		// phpcs:disable
+		$data    = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE {$column} LIKE %s ORDER BY {$key_column} ASC",
 			$key ) ); // @codingStandardsIgnoreLine.
+		// phpcs:enable
+
 		foreach ( $data as $id => $result ) {
 			$task = array_filter( (array) maybe_unserialize( $result->$value_column ) );
 
@@ -82,9 +91,11 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 
 			// Create Sorting Flow by Transaction Number
 			$sorting_flow[ $id ] = 0;
-			$webhook             = @json_decode( $task[0]['webhook_data'], true );
-			if ( $webhook && isset( $webhook['transaction']['number'] ) ) {
-				$sorting_flow[ $id ] = $webhook['transaction']['number'];
+			$webhook             = json_decode( $task[0]['webhook_data'], true );
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
+				if ( $webhook && isset( $webhook['transaction']['number'] ) ) {
+					$sorting_flow[ $id ] = $webhook['transaction']['number'];
+				}
 			}
 		}
 
@@ -104,7 +115,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 	 * @param $message
 	 */
 	private function log( $message ) {
-		$this->logger->info( $message, [ 'source' => 'wc_swedbank_pay_queue' ] );
+		$this->logger->info( $message, array( 'source' => 'wc_swedbank_pay_queue' ) );
 	}
 
 	/**
@@ -118,8 +129,8 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		$this->log( sprintf( 'Start task: %s', var_export( $item, true ) ) );
 
 		try {
-			$data = @json_decode( $item['webhook_data'], true );
-			if ( ! $data ) {
+			$data = json_decode( $item['webhook_data'], true );
+			if ( JSON_ERROR_NONE !== json_last_error() ) {
 				throw new \Exception( 'Invalid webhook data' );
 			}
 
@@ -128,8 +139,12 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 			/** @var \WC_Gateway_Swedbank_Pay_Cc $gateway */
 			$gateway = isset( $gateways[ $item['payment_method_id'] ] ) ? $gateways[ $item['payment_method_id'] ] : false;
 			if ( ! $gateway ) {
-				throw new \Exception( sprintf( 'Can\'t retrieve payment gateway instance: %s',
-					$item['payment_method_id'] ) );
+				throw new \Exception(
+					sprintf(
+						'Can\'t retrieve payment gateway instance: %s',
+						$item['payment_method_id']
+					)
+				);
 			}
 
 			if ( ! isset( $data['payment'] ) || ! isset( $data['payment']['id'] ) ) {
@@ -223,7 +238,12 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 	private function get_post_id_by_meta( $key, $value ) {
 		global $wpdb;
 
-		return $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;",
-			$key, $value ) );
+		return $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;",
+				$key,
+				$value
+			)
+		);
 	}
 }

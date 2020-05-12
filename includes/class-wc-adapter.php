@@ -13,7 +13,9 @@ use SwedbankPay\Core\OrderItemInterface;
 use SwedbankPay\Core\Order\RiskIndicatorInterface;
 use SwedbankPay\Core\Order\PayeeInfoInterface;
 
-class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
+defined( 'ABSPATH' ) || exit;
+
+class WC_Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 	/**
 	 * @var WC_Payment_Gateway
 	 */
@@ -37,17 +39,21 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 	 *
 	 * @see WC_Log_Levels
 	 */
-	public function log( $level, $message, array $context = [] ) {
+	public function log( $level, $message, array $context = array() ) {
 		$logger = wc_get_logger();
 
 		if ( ! is_string( $message ) ) {
 			$message = var_export( $message, true );
 		}
 
-		$logger->log( \WC_Log_Levels::INFO, sprintf( '%s %s %s', $level, $message, var_export( $context, true ) ), [
-			'source'  => $this->gateway->id,
-			'_legacy' => true
-		] );
+		$logger->log(
+			\WC_Log_Levels::INFO,
+			sprintf( '%s %s %s', $level, $message, var_export( $context, true ) ),
+			array(
+				'source'  => $this->gateway->id,
+				'_legacy' => true,
+			)
+		);
 	}
 
 	/**
@@ -57,73 +63,79 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 	 */
 	public function getConfiguration() {
 		// @todo Fix it: Undefined property
-		return [
-			ConfigurationInterface::DEBUG                  => @$this->gateway->debug === 'yes',
-			ConfigurationInterface::MERCHANT_TOKEN         => @$this->gateway->merchant_token,
-			ConfigurationInterface::PAYEE_ID               => @$this->gateway->payee_id,
+		return array(
+			ConfigurationInterface::DEBUG                  => 'yes' === $this->gateway->debug,
+			ConfigurationInterface::MERCHANT_TOKEN         => $this->gateway->merchant_token,
+			ConfigurationInterface::PAYEE_ID               => $this->gateway->payee_id,
 			ConfigurationInterface::PAYEE_NAME             => get_bloginfo( 'name' ),
-			ConfigurationInterface::MODE                   => @$this->gateway->testmode === 'yes',
-			ConfigurationInterface::AUTO_CAPTURE           => @$this->gateway->auto_capture === 'yes',
-			ConfigurationInterface::SUBSITE                => @$this->gateway->subsite,
-			ConfigurationInterface::LANGUAGE               => @$this->gateway->culture,
-			ConfigurationInterface::SAVE_CC                => @$this->gateway->save_cc === 'yes',
-			ConfigurationInterface::TERMS_URL              => @$this->gateway->terms_url,
-			ConfigurationInterface::REJECT_CREDIT_CARDS    => @$this->gateway->reject_credit_cards === 'yes',
-			ConfigurationInterface::REJECT_DEBIT_CARDS     => @$this->gateway->reject_debit_cards === 'yes',
-			ConfigurationInterface::REJECT_CONSUMER_CARDS  => @$this->gateway->reject_consumer_cards === 'yes',
-			ConfigurationInterface::REJECT_CORPORATE_CARDS => @$this->gateway->reject_corporate_cards === 'yes',
-		];
+			ConfigurationInterface::MODE                   => 'yes' === $this->gateway->testmode,
+			ConfigurationInterface::AUTO_CAPTURE           => 'yes' === $this->gateway->auto_capture,
+			ConfigurationInterface::SUBSITE                => $this->gateway->subsite,
+			ConfigurationInterface::LANGUAGE               => $this->gateway->culture,
+			ConfigurationInterface::SAVE_CC                => 'yes' === $this->gateway->save_cc,
+			ConfigurationInterface::TERMS_URL              => $this->gateway->terms_url,
+			ConfigurationInterface::REJECT_CREDIT_CARDS    => 'yes' === $this->gateway->reject_credit_cards,
+			ConfigurationInterface::REJECT_DEBIT_CARDS     => 'yes' === $this->gateway->reject_debit_cards,
+			ConfigurationInterface::REJECT_CONSUMER_CARDS  => 'yes' === $this->gateway->reject_consumer_cards,
+			ConfigurationInterface::REJECT_CORPORATE_CARDS => 'yes' === $this->gateway->reject_corporate_cards,
+		);
 	}
 
 	/**
 	 * Get Platform Urls of Actions of Order (complete, cancel, callback urls).
 	 *
-	 * @param mixed $orderId
+	 * @param mixed $order_id
 	 *
 	 * @return array
 	 */
-	public function getPlatformUrls( $orderId ) {
-		$order = wc_get_order( $orderId );
+	public function getPlatformUrls( $order_id ) {
+		$order = wc_get_order( $order_id );
 
 		if ( $this->gateway->is_new_credit_card ) {
-			return [
-				PlatformUrlsInterface::COMPLETE_URL => add_query_arg( 'action', 'swedbank_card_store',
-					admin_url( 'admin-ajax.php' ) ),
+			return array(
+				PlatformUrlsInterface::COMPLETE_URL => add_query_arg(
+					'action',
+					'swedbank_card_store',
+					admin_url( 'admin-ajax.php' )
+				),
 				PlatformUrlsInterface::CANCEL_URL   => wc_get_account_endpoint_url( 'payment-methods' ),
 				PlatformUrlsInterface::CALLBACK_URL => WC()->api_request_url( get_class( $this->gateway ) ),
-				PlatformUrlsInterface::TERMS_URL    => ''
-			];
+				PlatformUrlsInterface::TERMS_URL    => '',
+			);
 		}
 
 		if ( $this->gateway->is_change_credit_card ) {
-			return [
-				PlatformUrlsInterface::COMPLETE_URL => add_query_arg( [
-					'verify' => 'true',
-					'key'    => $order->get_order_key()
-				], $this->gateway->get_return_url( $order ) ),
+			return array(
+				PlatformUrlsInterface::COMPLETE_URL => add_query_arg(
+					array(
+						'verify' => 'true',
+						'key'    => $order->get_order_key(),
+					),
+					$this->gateway->get_return_url( $order )
+				),
 				PlatformUrlsInterface::CANCEL_URL   => $order->get_cancel_order_url_raw(),
 				PlatformUrlsInterface::CALLBACK_URL => WC()->api_request_url( get_class( $this->gateway ) ),
-				PlatformUrlsInterface::TERMS_URL    => $this->getConfiguration()[ ConfigurationInterface::TERMS_URL ]
-			];
+				PlatformUrlsInterface::TERMS_URL    => $this->getConfiguration()[ ConfigurationInterface::TERMS_URL ],
+			);
 		}
 
-		return [
+		return array(
 			PlatformUrlsInterface::COMPLETE_URL => $this->gateway->get_return_url( $order ),
 			PlatformUrlsInterface::CANCEL_URL   => $order->get_cancel_order_url_raw(),
 			PlatformUrlsInterface::CALLBACK_URL => WC()->api_request_url( get_class( $this->gateway ) ),
-			PlatformUrlsInterface::TERMS_URL    => $this->getConfiguration()[ ConfigurationInterface::TERMS_URL ]
-		];
+			PlatformUrlsInterface::TERMS_URL    => $this->getConfiguration()[ ConfigurationInterface::TERMS_URL ],
+		);
 	}
 
 	/**
 	 * Get Order Data.
 	 *
-	 * @param mixed $orderId
+	 * @param mixed $order_id
 	 *
 	 * @return array
 	 */
-	public function getOrderData( $orderId ) {
-		$order = wc_get_order( $orderId );
+	public function getOrderData( $order_id ) {
+		$order = wc_get_order( $order_id );
 
 		$countries = WC()->countries->countries;
 		$states    = WC()->countries->states;
@@ -132,24 +144,25 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 		$info = $this->get_order_info( $order );
 
 		// Get order items
-		$items = [];
+		$items = array();
 
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var \WC_Order_Item_Product $order_item */
-			$price        = $order->get_line_subtotal( $order_item, false, false );
-			$priceWithTax = $order->get_line_subtotal( $order_item, true, false );
-			$tax          = $priceWithTax - $price;
-			$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
-			$qty          = $order_item->get_quantity();
+			$price          = $order->get_line_subtotal( $order_item, false, false );
+			$price_with_tax = $order->get_line_subtotal( $order_item, true, false );
+			$tax            = $price_with_tax - $price;
+			$tax_percent    = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
+			$qty            = $order_item->get_quantity();
+			$image          = wp_get_attachment_image_src( $order_item->get_product()->get_image_id(), 'full' );
 
-			if ( $image = wp_get_attachment_image_src( $order_item->get_product()->get_image_id(), 'full' ) ) {
+			if ( $image ) {
 				$image = array_shift( $image );
 			} else {
 				$image = wc_placeholder_img_src( 'full' );
 			}
 
 			if ( null === parse_url( $image, PHP_URL_SCHEME ) &&
-			     mb_substr( $image, 0, mb_strlen( WP_CONTENT_URL ), 'UTF-8' ) === WP_CONTENT_URL
+				 mb_substr( $image, 0, mb_strlen( WP_CONTENT_URL ), 'UTF-8' ) === WP_CONTENT_URL
 			) {
 				$image = wp_guess_url() . $image;
 			}
@@ -161,17 +174,17 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 			}
 
 			// Get Product Sku
-			$productReference = trim( str_replace( [ ' ', '.', ',' ], '-', $order_item->get_product()->get_sku() ) );
-			if ( empty( $productReference ) ) {
-				$productReference = wp_generate_password( 12, false );
+			$product_reference = trim( str_replace( array( ' ', '.', ',' ), '-', $order_item->get_product()->get_sku() ) );
+			if ( empty( $product_reference ) ) {
+				$product_reference = wp_generate_password( 12, false );
 			}
 
-			$productName = trim( $order_item->get_name() );
+			$product_name = trim( $order_item->get_name() );
 
-			$items[] = [
+			$items[] = array(
 				// The field Reference must match the regular expression '[\\w-]*'
-				OrderItemInterface::FIELD_REFERENCE   => $productReference,
-				OrderItemInterface::FIELD_NAME        => ! empty( $productName ) ? $productName : '-',
+				OrderItemInterface::FIELD_REFERENCE   => $product_reference,
+				OrderItemInterface::FIELD_NAME        => ! empty( $product_name ) ? $product_name : '-',
 				OrderItemInterface::FIELD_TYPE        => OrderItemInterface::TYPE_PRODUCT,
 				OrderItemInterface::FIELD_CLASS       => $product_class,
 				OrderItemInterface::FIELD_ITEM_URL    => $order_item->get_product()->get_permalink(),
@@ -179,114 +192,127 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 				OrderItemInterface::FIELD_DESCRIPTION => $order_item->get_name(),
 				OrderItemInterface::FIELD_QTY         => $qty,
 				OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
-				OrderItemInterface::FIELD_UNITPRICE   => round( $priceWithTax / $qty * 100 ),
-				OrderItemInterface::FIELD_VAT_PERCENT => round( $taxPercent * 100 ),
-				OrderItemInterface::FIELD_AMOUNT      => round( $priceWithTax * 100 ),
-				OrderItemInterface::FIELD_VAT_AMOUNT  => round( $tax * 100 )
-			];
+				OrderItemInterface::FIELD_UNITPRICE   => round( $price_with_tax / $qty * 100 ),
+				OrderItemInterface::FIELD_VAT_PERCENT => round( $tax_percent * 100 ),
+				OrderItemInterface::FIELD_AMOUNT      => round( $price_with_tax * 100 ),
+				OrderItemInterface::FIELD_VAT_AMOUNT  => round( $tax * 100 ),
+			);
 		}
 
 		// Add Shipping Line
 		if ( (float) $order->get_shipping_total() > 0 ) {
-			$shipping        = $order->get_shipping_total();
-			$tax             = $order->get_shipping_tax();
-			$shippingWithTax = $shipping + $tax;
-			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
-			$shippingMethod  = trim( $order->get_shipping_method() );
+			$shipping          = $order->get_shipping_total();
+			$tax               = $order->get_shipping_tax();
+			$shipping_with_tax = $shipping + $tax;
+			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
+			$shipping_method   = trim( $order->get_shipping_method() );
 
-			$items[] = [
+			$items[] = array(
 				OrderItemInterface::FIELD_REFERENCE   => 'shipping',
-				OrderItemInterface::FIELD_NAME        => ! empty( $shippingMethod ) ? $shippingMethod : __( 'Shipping',
-					'woocommerce' ),
+				OrderItemInterface::FIELD_NAME        => ! empty( $shipping_method ) ? $shipping_method : __(
+					'Shipping',
+					'woocommerce'
+				),
 				OrderItemInterface::FIELD_TYPE        => OrderItemInterface::TYPE_SHIPPING,
 				OrderItemInterface::FIELD_CLASS       => 'ProductGroup1',
 				OrderItemInterface::FIELD_QTY         => 1,
 				OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
-				OrderItemInterface::FIELD_UNITPRICE   => round( $shippingWithTax * 100 ),
-				OrderItemInterface::FIELD_VAT_PERCENT => round( $taxPercent * 100 ),
-				OrderItemInterface::FIELD_AMOUNT      => round( $shippingWithTax * 100 ),
-				OrderItemInterface::FIELD_VAT_AMOUNT  => round( $tax * 100 )
-			];
+				OrderItemInterface::FIELD_UNITPRICE   => round( $shipping_with_tax * 100 ),
+				OrderItemInterface::FIELD_VAT_PERCENT => round( $tax_percent * 100 ),
+				OrderItemInterface::FIELD_AMOUNT      => round( $shipping_with_tax * 100 ),
+				OrderItemInterface::FIELD_VAT_AMOUNT  => round( $tax * 100 ),
+			);
 		}
 
 		// Add fee lines
 		foreach ( $order->get_fees() as $order_fee ) {
 			/** @var \WC_Order_Item_Fee $order_fee */
-			$fee        = $order_fee->get_total();
-			$tax        = $order_fee->get_total_tax();
-			$feeWithTax = $fee + $tax;
-			$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
+			$fee          = $order_fee->get_total();
+			$tax          = $order_fee->get_total_tax();
+			$fee_with_tax = $fee + $tax;
+			$tax_percent  = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
 
-			$items[] = [
+			$items[] = array(
 				OrderItemInterface::FIELD_REFERENCE   => 'fee',
 				OrderItemInterface::FIELD_NAME        => $order_fee->get_name(),
 				OrderItemInterface::FIELD_TYPE        => OrderItemInterface::TYPE_OTHER,
 				OrderItemInterface::FIELD_CLASS       => 'ProductGroup1',
 				OrderItemInterface::FIELD_QTY         => 1,
 				OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
-				OrderItemInterface::FIELD_UNITPRICE   => round( $feeWithTax * 100 ),
-				OrderItemInterface::FIELD_VAT_PERCENT => round( $taxPercent * 100 ),
-				OrderItemInterface::FIELD_AMOUNT      => round( $feeWithTax * 100 ),
-				OrderItemInterface::FIELD_VAT_AMOUNT  => round( $tax * 100 )
-			];
+				OrderItemInterface::FIELD_UNITPRICE   => round( $fee_with_tax * 100 ),
+				OrderItemInterface::FIELD_VAT_PERCENT => round( $tax_percent * 100 ),
+				OrderItemInterface::FIELD_AMOUNT      => round( $fee_with_tax * 100 ),
+				OrderItemInterface::FIELD_VAT_AMOUNT  => round( $tax * 100 ),
+			);
 		}
 
 		// Add discount line
 		if ( $order->get_total_discount( false ) > 0 ) {
-			$discount        = abs( $order->get_total_discount( true ) );
-			$discountWithTax = abs( $order->get_total_discount( false ) );
-			$tax             = $discountWithTax - $discount;
-			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+			$discount          = abs( $order->get_total_discount( true ) );
+			$discount_with_tax = abs( $order->get_total_discount( false ) );
+			$tax               = $discount_with_tax - $discount;
+			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
-			$items[] = [
+			$items[] = array(
 				OrderItemInterface::FIELD_REFERENCE   => 'discount',
-				OrderItemInterface::FIELD_NAME        => __( 'Discount', \WC_Swedbank_Pay::TEXT_DOMAIN ),
+				OrderItemInterface::FIELD_NAME        => __( 'Discount', 'swedbank-pay-woocommerce-payments' ),
 				OrderItemInterface::FIELD_TYPE        => OrderItemInterface::TYPE_DISCOUNT,
 				OrderItemInterface::FIELD_CLASS       => 'ProductGroup1',
 				OrderItemInterface::FIELD_QTY         => 1,
 				OrderItemInterface::FIELD_QTY_UNIT    => 'pcs',
-				OrderItemInterface::FIELD_UNITPRICE   => round( - 100 * $discountWithTax ),
-				OrderItemInterface::FIELD_VAT_PERCENT => round( 100 * $taxPercent ),
-				OrderItemInterface::FIELD_AMOUNT      => round( - 100 * $discountWithTax ),
-				OrderItemInterface::FIELD_VAT_AMOUNT  => round( - 100 * $tax )
-			];
+				OrderItemInterface::FIELD_UNITPRICE   => round( - 100 * $discount_with_tax ),
+				OrderItemInterface::FIELD_VAT_PERCENT => round( 100 * $tax_percent ),
+				OrderItemInterface::FIELD_AMOUNT      => round( - 100 * $discount_with_tax ),
+				OrderItemInterface::FIELD_VAT_AMOUNT  => round( - 100 * $tax ),
+			);
 		}
 
 		// Payer reference
 		// Get Customer UUID
 		$user_id = $order->get_customer_id();
 		if ( $user_id > 0 ) {
-			$payerReference = get_user_meta( $user_id, '_payex_customer_uuid', true );
-			if ( empty( $payerReference ) ) {
-				$payerReference = $this->get_uuid( $user_id );
-				update_user_meta( $user_id, '_payex_customer_uuid', $payerReference );
+			$payer_reference = get_user_meta( $user_id, '_payex_customer_uuid', true );
+			if ( empty( $payer_reference ) ) {
+				$payer_reference = $this->get_uuid( $user_id );
+				update_user_meta( $user_id, '_payex_customer_uuid', $payer_reference );
 			}
 		} else {
-			$payerReference = $this->get_uuid( uniqid( $order->get_billing_email() ) );
+			$payer_reference = $this->get_uuid( uniqid( $order->get_billing_email() ) );
 		}
 
-		return [
+		$shipping_country = isset( $countries[ $order->get_shipping_country() ] ) ? $countries[ $order->get_shipping_country() ] : '';
+		$billing_country  = isset( $countries[ $order->get_billing_country() ] ) ? $countries[ $order->get_billing_country() ] : '';
+
+		return array(
 			OrderInterface::ORDER_ID              => $order->get_id(),
-			OrderInterface::AMOUNT                => apply_filters( 'swedbank_pay_order_amount', $order->get_total(),
-				$order ),
-			OrderInterface::VAT_AMOUNT            => apply_filters( 'swedbank_pay_order_vat', $info['vat_amount'],
-				$order ),
-			OrderInterface::VAT_RATE              => 0, // @todo
+			OrderInterface::AMOUNT                => apply_filters(
+				'swedbank_pay_order_amount',
+				$order->get_total(),
+				$order
+			),
+			OrderInterface::VAT_AMOUNT            => apply_filters(
+				'swedbank_pay_order_vat',
+				$info['vat_amount'],
+				$order
+			),
+			OrderInterface::VAT_RATE              => 0, // Can be different
 			OrderInterface::SHIPPING_AMOUNT       => 0, // @todo
 			OrderInterface::SHIPPING_VAT_AMOUNT   => 0, // @todo
-			OrderInterface::DESCRIPTION           => sprintf( __( 'Order #%s', \WC_Swedbank_Pay::TEXT_DOMAIN ),
-				$order->get_order_number() ),
+			OrderInterface::DESCRIPTION           => sprintf(
+			/* translators: 1: order id */                __( 'Order #%1$s', 'swedbank-pay-woocommerce-payments' ),
+				$order->get_order_number()
+			),
 			OrderInterface::CURRENCY              => $order->get_currency(),
 			OrderInterface::STATUS                => $order->get_status(),
-			OrderInterface::CREATED_AT            => date( 'Y-m-d H:i:s', $order->get_date_created()->getTimestamp() ),
+			OrderInterface::CREATED_AT            => gmdate( 'Y-m-d H:i:s', $order->get_date_created()->getTimestamp() ),
 			OrderInterface::PAYMENT_ID            => $order->get_meta( '_payex_payment_id' ),
 			OrderInterface::PAYMENT_ORDER_ID      => $order->get_meta( '_payex_paymentorder_id' ),
-			OrderInterface::NEEDS_SAVE_TOKEN_FLAG => $order->get_meta( '_payex_generate_token' ) === '1' &&
-			                                         count( $order->get_payment_tokens() ) === 0,
+			OrderInterface::NEEDS_SAVE_TOKEN_FLAG => '1' === $order->get_meta( '_payex_generate_token' ) &&
+													 0 === count( $order->get_payment_tokens() ),
 
 			OrderInterface::HTTP_ACCEPT           => isset( $_SERVER['HTTP_ACCEPT'] ) ? $_SERVER['HTTP_ACCEPT'] : null,
 			OrderInterface::HTTP_USER_AGENT       => $order->get_customer_user_agent(),
-			OrderInterface::BILLING_COUNTRY       => $countries[ $order->get_billing_country() ],
+			OrderInterface::BILLING_COUNTRY       => $billing_country,
 			OrderInterface::BILLING_COUNTRY_CODE  => $order->get_billing_country(),
 			OrderInterface::BILLING_ADDRESS1      => $order->get_billing_address_1(),
 			OrderInterface::BILLING_ADDRESS2      => $order->get_billing_address_2(),
@@ -298,7 +324,7 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 			OrderInterface::BILLING_EMAIL         => $order->get_billing_email(),
 			OrderInterface::BILLING_FIRST_NAME    => $order->get_billing_first_name(),
 			OrderInterface::BILLING_LAST_NAME     => $order->get_billing_last_name(),
-			OrderInterface::SHIPPING_COUNTRY      => $countries[ $order->get_shipping_country() ],
+			OrderInterface::SHIPPING_COUNTRY      => $shipping_country,
 			OrderInterface::SHIPPING_COUNTRY_CODE => $order->get_shipping_country(),
 			OrderInterface::SHIPPING_ADDRESS1     => $order->get_shipping_address_1(),
 			OrderInterface::SHIPPING_ADDRESS2     => $order->get_shipping_address_2(),
@@ -312,23 +338,23 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 			OrderInterface::SHIPPING_LAST_NAME    => $order->get_shipping_last_name(),
 			OrderInterface::CUSTOMER_ID           => (int) $order->get_customer_id(),
 			OrderInterface::CUSTOMER_IP           => $order->get_customer_ip_address(),
-			OrderInterface::PAYER_REFERENCE       => $payerReference,
+			OrderInterface::PAYER_REFERENCE       => $payer_reference,
 			OrderInterface::ITEMS                 => apply_filters( 'swedbank_pay_order_items', $items, $order ),
 			OrderInterface::LANGUAGE              => $this->getConfiguration()[ ConfigurationInterface::LANGUAGE ],
-		];
+		);
 	}
 
 	/**
 	 * Get Risk Indicator of Order.
 	 *
-	 * @param mixed $orderId
+	 * @param mixed $order_id
 	 *
 	 * @return array
 	 */
-	public function getRiskIndicator( $orderId ) {
-		$order = wc_get_order( $orderId );
+	public function getRiskIndicator( $order_id ) {
+		$order = wc_get_order( $order_id );
 
-		$result = [];
+		$result = array();
 
 		// Downloadable
 		if ( $order->has_downloadable_item() ) {
@@ -351,7 +377,7 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 			$billing  = $order->get_address( 'billing' );
 			$shipping = $order->get_address( 'shipping' );
 			$diff     = array_diff( $billing, $shipping );
-			if ( count( $diff ) === 0 ) {
+			if ( 0 === count( $diff ) ) {
 				// Ship to cardholder's billing address
 				$result[ RiskIndicatorInterface::SHIP_INDICATOR ] = '01';
 			} else {
@@ -368,37 +394,37 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 	/**
 	 * Get Payee Info of Order.
 	 *
-	 * @param mixed $orderId
+	 * @param mixed $order_id
 	 *
 	 * @return array
 	 */
-	public function getPayeeInfo( $orderId ) {
-		$order = wc_get_order( $orderId );
+	public function getPayeeInfo( $order_id ) {
+		$order = wc_get_order( $order_id );
 
-		return [
+		return array(
 			PayeeInfoInterface::ORDER_REFERENCE => $order->get_id(),
-		];
+		);
 	}
 
 	/**
 	 * Update Order Status.
 	 *
-	 * @param mixed $orderId
+	 * @param mixed $order_id
 	 * @param string $status
 	 * @param string|null $message
-	 * @param mixed|null $transactionId
+	 * @param mixed|null $transaction_id
 	 */
-	public function updateOrderStatus( $orderId, $status, $message = null, $transactionId = null ) {
-		$order = wc_get_order( $orderId );
+	public function updateOrderStatus( $order_id, $status, $message = null, $transaction_id = null ) {
+		$order = wc_get_order( $order_id );
 
 		if ( $order->get_meta( '_payex_payment_state' ) === $status ) {
-			$this->log( LogLevel::WARNING, sprintf( 'Action of Transaction #%s already performed', $transactionId ) );
+			$this->log( LogLevel::WARNING, sprintf( 'Action of Transaction #%s already performed', $transaction_id ) );
 
 			return;
 		}
 
-		if ( $transactionId ) {
-			$order->update_meta_data( '_transaction_id', $transactionId );
+		if ( $transaction_id ) {
+			$order->update_meta_data( '_transaction_id', $transaction_id );
 			$order->save_meta_data();
 		}
 
@@ -424,7 +450,7 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 				$order->update_meta_data( '_payex_payment_state', $status );
 				$order->save_meta_data();
 
-				$order->payment_complete( $transactionId );
+				$order->payment_complete( $transaction_id );
 				$order->add_order_note( $message );
 				break;
 			case OrderInterface::STATUS_CANCELLED:
@@ -460,11 +486,11 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 	/**
 	 * Save Transaction data.
 	 *
-	 * @param mixed $orderId
-	 * @param array $transactionData
+	 * @param mixed $order_id
+	 * @param array $transaction_data
 	 */
-	public function saveTransaction( $orderId, array $transactionData = [] ) {
-		$this->gateway->transactions->import( $transactionData, $orderId );
+	public function saveTransaction( $order_id, array $transaction_data = array() ) {
+		$this->gateway->transactions->import( $transaction_data, $order_id );
 	}
 
 	/**
@@ -482,44 +508,44 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 	/**
 	 * Save Payment Token.
 	 *
-	 * @param mixed $customerId
-	 * @param string $paymentToken
-	 * @param string $recurrenceToken
-	 * @param string $cardBrand
-	 * @param string $maskedPan
-	 * @param string $expiryDate
-	 * @param mixed|null $orderId
+	 * @param mixed $customer_id
+	 * @param string $payment_token
+	 * @param string $recurrence_token
+	 * @param string $card_brand
+	 * @param string $masked_pan
+	 * @param string $expiry_date
+	 * @param mixed|null $order_id
 	 */
 	public function savePaymentToken(
-		$customerId,
-		$paymentToken,
-		$recurrenceToken,
-		$cardBrand,
-		$maskedPan,
-		$expiryDate,
-		$orderId = null
+		$customer_id,
+		$payment_token,
+		$recurrence_token,
+		$card_brand,
+		$masked_pan,
+		$expiry_date,
+		$order_id = null
 	) {
-		$expiryDate = explode( '/', $expiryDate );
+		$expiry_date = explode( '/', $expiry_date );
 
 		// Create Payment Token
 		$token = new \WC_Payment_Token_Swedbank_Pay();
 		$token->set_gateway_id( $this->gateway->id );
-		$token->set_token( $paymentToken );
-		$token->set_recurrence_token( $recurrenceToken );
-		$token->set_last4( substr( $maskedPan, - 4 ) );
-		$token->set_expiry_year( $expiryDate[1] );
-		$token->set_expiry_month( $expiryDate[0] );
-		$token->set_card_type( strtolower( $cardBrand ) );
-		$token->set_user_id( $customerId );
-		$token->set_masked_pan( $maskedPan );
+		$token->set_token( $payment_token );
+		$token->set_recurrence_token( $recurrence_token );
+		$token->set_last4( substr( $masked_pan, - 4 ) );
+		$token->set_expiry_year( $expiry_date[1] );
+		$token->set_expiry_month( $expiry_date[0] );
+		$token->set_card_type( strtolower( $card_brand ) );
+		$token->set_user_id( $customer_id );
+		$token->set_masked_pan( $masked_pan );
 		$token->save();
 		if ( ! $token->get_id() ) {
-			throw new \Exception( __( 'There was a problem adding the card.', \WC_Swedbank_Pay::TEXT_DOMAIN ) );
+			throw new \Exception( __( 'There was a problem adding the card.', 'swedbank-pay-woocommerce-payments' ) );
 		}
 
 		// Add payment token
-		if ( $orderId ) {
-			$order = wc_get_order( $orderId );
+		if ( $order_id ) {
+			$order = wc_get_order( $order_id );
 			$order->add_payment_token( $token );
 		}
 	}
@@ -532,79 +558,79 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 	 * @return array
 	 */
 	private function get_order_items( $order ) {
-		$item = [];
+		$item = array();
 
 		foreach ( $order->get_items() as $order_item ) {
 			/** @var \WC_Order_Item_Product $order_item */
-			$price        = $order->get_line_subtotal( $order_item, false, false );
-			$priceWithTax = $order->get_line_subtotal( $order_item, true, false );
-			$tax          = $priceWithTax - $price;
-			$taxPercent   = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
+			$price          = $order->get_line_subtotal( $order_item, false, false );
+			$price_with_tax = $order->get_line_subtotal( $order_item, true, false );
+			$tax            = $price_with_tax - $price;
+			$tax_percent    = ( $tax > 0 ) ? round( 100 / ( $price / $tax ) ) : 0;
 
-			$item[] = [
+			$item[] = array(
 				'type'              => 'product',
 				'name'              => $order_item->get_name(),
 				'qty'               => $order_item->get_quantity(),
-				'price_with_tax'    => sprintf( "%.2f", $priceWithTax ),
-				'price_without_tax' => sprintf( "%.2f", $price ),
-				'tax_price'         => sprintf( "%.2f", $tax ),
-				'tax_percent'       => sprintf( "%.2f", $taxPercent )
-			];
+				'price_with_tax'    => sprintf( '%.2f', $price_with_tax ),
+				'price_without_tax' => sprintf( '%.2f', $price ),
+				'tax_price'         => sprintf( '%.2f', $tax ),
+				'tax_percent'       => sprintf( '%.2f', $tax_percent ),
+			);
 		};
 
 		// Add Shipping Line
 		if ( (float) $order->get_shipping_total() > 0 ) {
-			$shipping        = $order->get_shipping_total();
-			$tax             = $order->get_shipping_tax();
-			$shippingWithTax = $shipping + $tax;
-			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
+			$shipping          = $order->get_shipping_total();
+			$tax               = $order->get_shipping_tax();
+			$shipping_with_tax = $shipping + $tax;
+			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $shipping / $tax ) ) : 0;
 
-			$item[] = [
+			$item[] = array(
 				'type'              => 'shipping',
 				'name'              => $order->get_shipping_method(),
 				'qty'               => 1,
-				'price_with_tax'    => sprintf( "%.2f", $shippingWithTax ),
-				'price_without_tax' => sprintf( "%.2f", $shipping ),
-				'tax_price'         => sprintf( "%.2f", $tax ),
-				'tax_percent'       => sprintf( "%.2f", $taxPercent )
-			];
+				'price_with_tax'    => sprintf( '%.2f', $shipping_with_tax ),
+				'price_without_tax' => sprintf( '%.2f', $shipping ),
+				'tax_price'         => sprintf( '%.2f', $tax ),
+				'tax_percent'       => sprintf( '%.2f', $tax_percent ),
+			);
 		}
 
 		// Add fee lines
 		foreach ( $order->get_fees() as $order_fee ) {
 			/** @var \WC_Order_Item_Fee $order_fee */
-			$fee        = $order_fee->get_total();
-			$tax        = $order_fee->get_total_tax();
-			$feeWithTax = $fee + $tax;
-			$taxPercent = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
+			$fee          = $order_fee->get_total();
+			$tax          = $order_fee->get_total_tax();
+			$fee_with_tax = $fee + $tax;
+			$tax_percent  = ( $tax > 0 ) ? round( 100 / ( $fee / $tax ) ) : 0;
 
-			$item[] = [
+			$item[] = array(
 				'type'              => 'fee',
 				'name'              => $order_fee->get_name(),
 				'qty'               => 1,
-				'price_with_tax'    => sprintf( "%.2f", $feeWithTax ),
-				'price_without_tax' => sprintf( "%.2f", $fee ),
-				'tax_price'         => sprintf( "%.2f", $tax ),
-				'tax_percent'       => sprintf( "%.2f", $taxPercent )
-			];
+				'price_with_tax'    => sprintf( '%.2f', $fee_with_tax ),
+				'price_without_tax' => sprintf( '%.2f', $fee ),
+				'tax_price'         => sprintf( '%.2f', $tax ),
+				'tax_percent'       => sprintf( '%.2f', $tax_percent ),
+			);
 		}
 
 		// Add discount line
 		if ( $order->get_total_discount( false ) > 0 ) {
-			$discount        = $order->get_total_discount( true );
-			$discountWithTax = $order->get_total_discount( false );
-			$tax             = $discountWithTax - $discount;
-			$taxPercent      = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
+			$discount          = $order->get_total_discount( true );
+			$discount_with_tax = $order->get_total_discount( false );
+			$tax               = $discount_with_tax - $discount;
+			$tax_percent       = ( $tax > 0 ) ? round( 100 / ( $discount / $tax ) ) : 0;
 
-			$item[] = [
+			$item[] = array(
 				'type'              => 'discount',
-				'name'              => __( 'Discount', \WC_Swedbank_Pay::TEXT_DOMAIN ),
+				'name'              => __( 'Discount', 'swedbank-pay-woocommerce-payments' ),
 				'qty'               => 1,
-				'price_with_tax'    => sprintf( "%.2f", - 1 * $discountWithTax ),
-				'price_without_tax' => sprintf( "%.2f", - 1 * $discount ),
-				'tax_price'         => sprintf( "%.2f", - 1 * $tax ),
-				'tax_percent'       => sprintf( "%.2f", $taxPercent )
-			];
+				'price_with_tax'    => sprintf( '%.2f', - 1 * $discount_with_tax ),
+				'price_without_tax' => sprintf( '%.2f', - 1 * $discount ),
+				'tax_price'         => sprintf( '%.2f', - 1 * $tax ),
+				'tax_percent'       => sprintf( '%.2f', $tax_percent ),
+			);
 		}
 
 		return $item;
@@ -619,26 +645,26 @@ class Adapter extends PaymentAdapter implements PaymentAdapterInterface {
 	 */
 	private function get_order_info( $order ) {
 		$amount       = 0;
-		$vatAmount    = 0;
-		$descriptions = [];
+		$vat_amount   = 0;
+		$descriptions = array();
 		$items        = $this->get_order_items( $order );
 		foreach ( $items as $item ) {
-			$amount         += $item['price_with_tax'];
-			$vatAmount      += $item['tax_price'];
-			$descriptions[] = [
+			$amount        += $item['price_with_tax'];
+			$vat_amount    += $item['tax_price'];
+			$descriptions[] = array(
 				'amount'      => $item['price_with_tax'],
 				'vatAmount'   => $item['tax_price'], // @todo Validate
-				'itemAmount'  => sprintf( "%.2f", $item['price_with_tax'] / $item['qty'] ),
+				'itemAmount'  => sprintf( '%.2f', $item['price_with_tax'] / $item['qty'] ),
 				'quantity'    => $item['qty'],
-				'description' => $item['name']
-			];
+				'description' => $item['name'],
+			);
 		}
 
-		return [
+		return array(
 			'amount'     => $amount,
-			'vat_amount' => $vatAmount,
-			'items'      => $descriptions
-		];
+			'vat_amount' => $vat_amount,
+			'items'      => $descriptions,
+		);
 	}
 
 	/**
