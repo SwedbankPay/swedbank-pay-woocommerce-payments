@@ -28,9 +28,9 @@ jobs:
 
       - name: Build WooCommerce Test Enviroment
         run: |
-          cd $GITHUB_WORKSPACE\woocommerce
+          cd $GITHUB_WORKSPACE/woocommerce
           bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
-          cd $GITHUB_WORKSPACE\swedbank-pay-woocommerce-payments
+          cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
 
       - name: Run tests
         uses: php-actions/phpunit@v1
