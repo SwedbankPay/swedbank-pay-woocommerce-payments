@@ -27,9 +27,7 @@ jobs:
           path: woocommerce
 
       - name: Set up MySQL
-        uses: mirromutth/mysql-action@v1.1
-        with:
-          mysql root password: 'root'
+        run: sudo systemctl start mysql.service
 
       - name: Build WooCommerce Test Enviroment
         run: |
