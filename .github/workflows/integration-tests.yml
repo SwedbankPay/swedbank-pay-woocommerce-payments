@@ -40,10 +40,9 @@ jobs:
         env:
           MERCHANT_TOKEN: ${{ secrets.MERCHANT_TOKEN }}
           PAYEE_ID: ${{ secrets.PAYEE_ID }}
-        with:
-          config: $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments/phpunit.xml.dist
-          memory: 256M
-          bootstrap: $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments/tests/bootstrap.php
+        run: |
+          cd cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
+          phpunit
 
       - name: Run PHPCS inspection
         uses: rtCamp/action-phpcs-code-review@v2.0.2
