@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    name: Install SDK and verify version
+    name: Run tests
     runs-on: ubuntu-16.04
 
     steps:
@@ -41,9 +41,9 @@ jobs:
           MERCHANT_TOKEN: ${{ secrets.MERCHANT_TOKEN }}
           PAYEE_ID: ${{ secrets.PAYEE_ID }}
         with:
-          config: phpunit.xml.dist
+          config: $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments/phpunit.xml.dist
           memory: 256M
-          bootstrap: tests/bootstrap.php
+          bootstrap: $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments/tests/bootstrap.php
 
       - name: Run PHPCS inspection
         uses: rtCamp/action-phpcs-code-review@v2.0.2
