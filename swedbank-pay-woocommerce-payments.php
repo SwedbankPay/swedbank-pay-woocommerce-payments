@@ -79,7 +79,6 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 	 * WooCommerce Loaded: load classes
 	 */
 	public function woocommerce_loaded() {
-		include_once( dirname( __FILE__ ) . '/includes/class-wc-adapter.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-cc.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-invoice.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-vipps.php' );

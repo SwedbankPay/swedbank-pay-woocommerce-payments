@@ -2,7 +2,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-use SwedbankPay\Payments\WooCommerce\WC_Adapter;
+use SwedbankPay\Core\Adapter\WC_Adapter;
 use SwedbankPay\Payments\WooCommerce\WC_Background_Swedbank_Pay_Queue;
 use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
 use SwedbankPay\Core\Core;

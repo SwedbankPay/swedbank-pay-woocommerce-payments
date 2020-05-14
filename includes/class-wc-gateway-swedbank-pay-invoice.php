@@ -3,7 +3,7 @@
 defined( 'ABSPATH' ) || exit;
 
 use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
-use SwedbankPay\Payments\WooCommerce\WC_Adapter;
+use SwedbankPay\Core\Adapter\WC_Adapter;
 use SwedbankPay\Core\Core;
 
 class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
