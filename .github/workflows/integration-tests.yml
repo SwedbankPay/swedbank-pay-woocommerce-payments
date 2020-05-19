@@ -34,6 +34,7 @@ jobs:
           cd $GITHUB_WORKSPACE/woocommerce
           bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
+          composer install
 
       - name: Run tests
         uses: php-actions/phpunit@v1
