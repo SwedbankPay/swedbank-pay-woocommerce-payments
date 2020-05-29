@@ -1,16 +1,14 @@
 <?php
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
-}
+defined( 'ABSPATH' ) || exit;
 
 class WC_Swedbank_Pay_Icon {
 	/**
 	 * Constructor
 	 */
 	public function __construct() {
-		add_filter( 'woocommerce_gateway_icon', [ $this, 'gateway_icon' ], 60, 2 );
-		add_action( 'woocommerce_init', [ $this, 'woocommerce_init'], 100 );
+		add_filter( 'woocommerce_gateway_icon', array( $this, 'gateway_icon' ), 60, 2 );
+		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ), 100 );
 	}
 
 	/**
@@ -20,10 +18,13 @@ class WC_Swedbank_Pay_Icon {
 		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
 		foreach ( $gateways as $payment_id => $gateway ) {
 			if ( strpos( $payment_id, 'payex_' ) !== false ) {
-				add_filter( 'woocommerce_settings_api_form_fields_' . $payment_id, [
-					$this,
-					'add_icon_settings'
-				] );
+				add_filter(
+					'woocommerce_settings_api_form_fields_' . $payment_id,
+					array(
+						$this,
+						'add_icon_settings',
+					)
+				);
 			}
 		}
 	}
@@ -36,13 +37,13 @@ class WC_Swedbank_Pay_Icon {
 	 * @return mixed
 	 */
 	public function add_icon_settings( $form_fields ) {
-		$form_fields['gateway_icon'] = [
-			'title' => __( 'Checkout Icon', WC_Swedbank_Pay::TEXT_DOMAIN ),
-			'type' => 'text',
-			'description' => __( 'Enter an image URL to change the icon.', WC_Swedbank_Pay::TEXT_DOMAIN ),
-			'desc_tip' => true,
-			'default' => '',
-		];
+		$form_fields['gateway_icon'] = array(
+			'title'       => __( 'Checkout Icon', 'swedbank-pay-woocommerce-payments' ),
+			'type'        => 'text',
+			'description' => __( 'Enter an image URL to change the icon.', 'swedbank-pay-woocommerce-payments' ),
+			'desc_tip'    => true,
+			'default'     => '',
+		);
 
 		return $form_fields;
 	}
@@ -57,9 +58,15 @@ class WC_Swedbank_Pay_Icon {
 	 */
 	public function gateway_icon( $icon, $payment_id ) {
 		if ( strpos( $payment_id, 'payex_' ) !== false ) {
-			$gateway = swedbank_pay_payment_method( $payment_id );
-			if ( $gateway && ! empty( $gateway->settings['gateway_icon'] ) ) {
-				$icon = self::modify_img( $icon, $gateway->settings['gateway_icon'] );
+			// Get Payment Gateway
+			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+
+			if ( isset( $gateways[ $payment_id ] ) ) {
+				$gateway = $gateways[ $payment_id ];
+
+				if ( ! empty( $gateway->settings['gateway_icon'] ) ) {
+					$icon = self::modify_img( $icon, $gateway->settings['gateway_icon'] );
+				}
 			}
 
 			return $icon;

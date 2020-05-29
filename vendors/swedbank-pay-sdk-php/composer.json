@@ -1,5 +1,0 @@
-{
-    "require": {
-        "swedbank-pay/swedbank-pay-sdk-php": "^3.0"
-    }
-}
