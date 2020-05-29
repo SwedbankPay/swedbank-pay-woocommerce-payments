@@ -755,6 +755,19 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		}
 
 		try {
+			// Verify the order key
+			$order_id  = absint(  wc_clean( $_GET['order_id'] ) ); // WPCS: input var ok, CSRF ok.
+			$order_key = empty( $_GET['key'] ) ? '' : wc_clean( wp_unslash( $_GET['key'] ) ); // WPCS: input var ok, CSRF ok.
+
+			if ( empty( $order_id ) || empty( $order_id ) ) {
+				throw new Exception( 'An order ID or order key wasn\'t provided' );
+			}
+
+			$order = wc_get_order( $order_id );
+			if ( ! $order || ! hash_equals( $order->get_order_key(), $order_key ) ) {
+				throw new Exception( 'A provided order key has been invalid.' );
+			}
+
 			if ( empty( $data ) ) {
 				throw new Exception( 'Error: Empty request received' );
 			}

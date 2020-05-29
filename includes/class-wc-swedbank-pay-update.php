@@ -1,5 +1,7 @@
 <?php
 
+namespace SwedbankPay\Payments\WooCommerce;
+
 defined( 'ABSPATH' ) || exit;
 
 class WC_Swedbank_Pay_Update {
@@ -14,7 +16,7 @@ class WC_Swedbank_Pay_Update {
 	 * Handle updates
 	 */
 	public static function update() {
-		$current_version = get_option( 'woocommerce_payex_psp_version' );
+		$current_version = get_option( WC_Swedbank_Plugin::DB_VERSION_SLUG, '1.0.0' );
 		foreach ( self::$db_updates as $version => $updater ) {
 			if ( version_compare( $current_version, $version, '<' ) ) {
 				include dirname( __FILE__ ) . '/../' . $updater;
@@ -29,7 +31,7 @@ class WC_Swedbank_Pay_Update {
 	 * @param string $version
 	 */
 	private static function update_db_version( $version ) {
-		delete_option( 'woocommerce_payex_psp_version' );
-		add_option( 'woocommerce_payex_psp_version', $version );
+		delete_option( WC_Swedbank_Plugin::DB_VERSION_SLUG );
+		add_option( WC_Swedbank_Plugin::DB_VERSION_SLUG, $version );
 	}
 }

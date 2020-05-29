@@ -4,8 +4,6 @@ namespace SwedbankPay\Payments\WooCommerce;
 
 defined( 'ABSPATH' ) || exit;
 
-use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
-use SwedbankPay\Payments\WooCommerce\WC_Background_Swedbank_Pay_Queue;
 use WC_Order;
 use WC_Admin_Meta_Boxes;
 use Exception;
@@ -14,12 +12,15 @@ class WC_Swedbank_Plugin {
 
 	/** Payment IDs */
 	const PAYMENT_METHODS = array(
-		'payex_checkout',
 		'payex_psp_cc',
 		'payex_psp_invoice',
 		'payex_psp_vipps',
 		'payex_psp_swish',
 	);
+
+	const DB_VERSION = '1.2.0';
+	const DB_VERSION_SLUG = 'woocommerce_payex_psp_version';
+	const ADMIN_UPGRADE_PAGE_SLUG = 'swedbank-pay-payments-upgrade';
 
 	/**
 	 * @var WC_Background_Swedbank_Pay_Queue
@@ -78,7 +79,9 @@ class WC_Swedbank_Plugin {
 		add_action( 'admin_menu', array( $this, 'admin_menu' ), 99 );
 
 		// Add Upgrade Notice
-		if ( version_compare( get_option( 'woocommerce_payex_psp_version', '1.2.0' ), '1.2.0', '<' ) ) {
+		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
+             current_user_can( 'manage_woocommerce' )
+        ) {
 			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
 		}
 	}
@@ -111,8 +114,8 @@ class WC_Swedbank_Plugin {
 		WC_Swedbank_Pay_Transactions::instance()->install_schema();
 
 		// Set Version
-		if ( ! get_option( 'woocommerce_payex_psp_version' ) ) {
-			add_option( 'woocommerce_payex_psp_version', '1.1.0' );
+		if ( ! get_option( self::DB_VERSION_SLUG ) ) {
+			add_option( self::DB_VERSION_SLUG, self::DB_VERSION );
 		}
 	}
 
@@ -214,6 +217,11 @@ class WC_Swedbank_Plugin {
 			'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 			10
 		);
+		remove_action(
+			'woocommerce_order_status_changed',
+			'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+			10
+		);
 
 		$payment_method = $order->get_payment_method();
 		if ( ! in_array( $payment_method, self::PAYMENT_METHODS, true ) ) {
@@ -267,6 +275,11 @@ class WC_Swedbank_Plugin {
 		add_action(
 			'woocommerce_order_status_changed',
 			'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+			10
+		);
+		add_action(
+			'woocommerce_order_status_changed',
+			'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 			10
 		);
 	}
@@ -475,7 +488,7 @@ class WC_Swedbank_Plugin {
 		// Add Upgrade Page
 		global $_registered_pages;
 
-		$hookname = get_plugin_page_hookname( 'wc-payex-psp-upgrade', '' );
+		$hookname = get_plugin_page_hookname( self::ADMIN_UPGRADE_PAGE_SLUG, '' );
 		if ( ! empty( $hookname ) ) {
 			add_action( $hookname, __CLASS__ . '::upgrade_page' );
 		}
@@ -487,13 +500,13 @@ class WC_Swedbank_Plugin {
 	 * Upgrade Page
 	 */
 	public static function upgrade_page() {
-		if ( ! current_user_can( 'update_plugins' ) ) {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
 			return;
 		}
 
 		// Run Database Update
 		include_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-update.php' );
-		\WC_Swedbank_Pay_Update::update();
+		WC_Swedbank_Pay_Update::update();
 
 		echo esc_html__( 'Upgrade finished.', 'swedbank-pay-woocommerce-payments' );
 	}
@@ -502,27 +515,25 @@ class WC_Swedbank_Plugin {
 	 * Upgrade Notice
 	 */
 	public static function upgrade_notice() {
-		if ( current_user_can( 'update_plugins' ) ) {
-			?>
-			<div id="message" class="error">
-				<p>
-					<?php
-					echo esc_html__(
-						'Warning! Swedbank Pay WooCommerce payments plugin requires to update the database structure.',
+		?>
+        <div id="message" class="error">
+            <p>
+				<?php
+				echo esc_html__(
+					'Warning! Swedbank Pay Payments plugin requires to update the database structure.',
+					'swedbank-pay-woocommerce-payments'
+				);
+				echo ' ' . sprintf(
+					/* translators: 1: start tag 2: end tag */                        esc_html__(
+						'Please click %1$s here %2$s to start upgrade.',
 						'swedbank-pay-woocommerce-payments'
-					);
-					echo ' ' . sprintf(
-						/* translators: 1: start tag 2: end tag */                        esc_html__(
-							'Please click %1$s here %2$s to start upgrade.',
-							'swedbank-pay-woocommerce-payments'
-						),
-						'<a href="' . esc_url( admin_url( 'admin.php?page=wc-payex-psp-upgrade' ) ) . '">',
+					),
+						'<a href="' . esc_url( admin_url( 'admin.php?page=' . self::ADMIN_UPGRADE_PAGE_SLUG ) ) . '">',
 						'</a>'
 					);
-					?>
-				</p>
-			</div>
-			<?php
-		}
+				?>
+            </p>
+        </div>
+		<?php
 	}
 }
