@@ -12,7 +12,6 @@ class WC_Swedbank_Plugin {
 
 	/** Payment IDs */
 	const PAYMENT_METHODS = array(
-		'payex_checkout',
 		'payex_psp_cc',
 		'payex_psp_invoice',
 		'payex_psp_vipps',
