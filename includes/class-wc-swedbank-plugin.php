@@ -78,12 +78,7 @@ class WC_Swedbank_Plugin {
 		// Add admin menu
 		add_action( 'admin_menu', array( $this, 'admin_menu' ), 99 );
 
-		// Add Upgrade Notice
-		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
-             current_user_can( 'manage_woocommerce' )
-        ) {
-			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
-		}
+		add_action( 'init', __CLASS__ . '::may_add_notice' );
 	}
 
 	public function includes() {
@@ -510,6 +505,17 @@ class WC_Swedbank_Plugin {
 
 		echo esc_html__( 'Upgrade finished.', 'swedbank-pay-woocommerce-payments' );
 	}
+
+	/**
+	 * Add Upgrade notice
+	 */
+	public static function may_add_notice() {
+		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
+		     current_user_can( 'manage_woocommerce' )
+		) {
+			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
+		}
+    }
 
 	/**
 	 * Upgrade Notice
