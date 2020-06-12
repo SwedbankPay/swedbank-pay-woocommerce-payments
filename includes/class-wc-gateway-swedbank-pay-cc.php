@@ -108,6 +108,13 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public $is_change_credit_card;
 
 	/**
+     * Payment Token Class.
+     *
+	 * @var string
+	 */
+	public $payment_token_class = 'WC_Payment_Token_Swedbank_Pay';
+
+	/**
 	 * Init
 	 */
 	public function __construct() {
