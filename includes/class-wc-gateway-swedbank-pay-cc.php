@@ -577,7 +577,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			} else {
 				// Initiate new payment card
 				$this->is_change_credit_card = true;
-				$result                      = $this->core->initiateNewCreditCardPayment( $order->get_id() );
+				$result                      = $this->core->initiateVerifyCreditCardPayment( $order->get_id() );
 
 				$order->update_meta_data( '_payex_generate_token', '1' );
 				$order->update_meta_data( '_payex_replace_token', '1' );
