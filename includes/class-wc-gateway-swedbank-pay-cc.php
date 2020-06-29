@@ -80,6 +80,13 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public $terms_url = '';
 
 	/**
+     * Url of Merchant Logo.
+     *
+	 * @var string
+	 */
+	public $logo_url = '';
+
+	/**
 	 * Reject Credit Cards
 	 * @var string
 	 */
@@ -162,6 +169,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$this->auto_capture   = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
 		$this->save_cc        = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
 		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+		$this->logo_url       = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
 
 		// Reject Cards
 		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
@@ -358,6 +366,24 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				'type'        => 'text',
 				'description' => __( 'Terms & Conditions Url', 'swedbank-pay-woocommerce-payments' ),
 				'default'     => get_site_url(),
+			),
+			'logo_url'              => array(
+				'title'       => __( 'Logo Url', 'swedbank-pay-woocommerce-payments' ),
+				'type'        => 'text',
+				'description' => __( 'The URL that will be used for showing the customer logo. Must be a picture with maximum 50px height and 400px width. Require https.', 'swedbank-pay-woocommerce-payments' ),
+				'desc_tip'    => true,
+				'default'     => '',
+				'sanitize_callback' => function( $value ) {
+					if ( ! empty( $value ) ) {
+						if ( ! filter_var( $value, FILTER_VALIDATE_URL ) ) {
+							throw new Exception( __( 'Logo Url is invalid.', 'swedbank-pay-woocommerce-payments' ) );
+						} elseif ( 'https' !== parse_url( $value, PHP_URL_SCHEME ) ) {
+							throw new Exception( __( 'Logo Url should use https scheme.', 'swedbank-pay-woocommerce-payments' ) );
+						}
+					}
+
+					return $value;
+				},
 			),
 			'reject_credit_cards'    => array(
 				'title'   => __( 'Reject Credit Cards', 'swedbank-pay-woocommerce-payments' ),
