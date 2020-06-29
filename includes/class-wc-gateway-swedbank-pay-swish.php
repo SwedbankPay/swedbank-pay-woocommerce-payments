@@ -93,6 +93,7 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 		$this->method         = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
 		$this->ecom_only      = isset( $this->settings['ecom_only'] ) ? $this->settings['ecom_only'] : $this->ecom_only;
 		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+		$this->logo_url       = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
 
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
 		if ( ! filter_var( $this->terms_url, FILTER_VALIDATE_URL ) ) {
@@ -216,6 +217,24 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 				'type'        => 'text',
 				'description' => __( 'Terms & Conditions Url', 'swedbank-pay-woocommerce-payments' ),
 				'default'     => get_site_url(),
+			),
+			'logo_url'              => array(
+				'title'       => __( 'Logo Url', 'swedbank-pay-woocommerce-payments' ),
+				'type'        => 'text',
+				'description' => __( 'The URL that will be used for showing the customer logo. Must be a picture with maximum 50px height and 400px width. Require https.', 'swedbank-pay-woocommerce-payments' ),
+				'desc_tip'    => true,
+				'default'     => '',
+				'sanitize_callback' => function( $value ) {
+					if ( ! empty( $value ) ) {
+						if ( ! filter_var( $value, FILTER_VALIDATE_URL ) ) {
+							throw new Exception( __( 'Logo Url is invalid.', 'swedbank-pay-woocommerce-payments' ) );
+						} elseif ( 'https' !== parse_url( $value, PHP_URL_SCHEME ) ) {
+							throw new Exception( __( 'Logo Url should use https scheme.', 'swedbank-pay-woocommerce-payments' ) );
+						}
+					}
+
+					return $value;
+				},
 			),
 		);
 	}
