@@ -431,7 +431,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 		try {
 			$this->is_new_credit_card = true;
-			$result                   = $this->core->initiateNewCreditCardPayment( $order->get_id() );
+			$result                   = $this->core->initiateVerifyCreditCardPayment( $order->get_id() );
 		} catch ( Exception $e ) {
 			wc_add_notice( $e->getMessage(), 'error' );
 
