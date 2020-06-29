@@ -252,6 +252,17 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			2
 		);
 
+		// Lock "Save card" if needs
+		add_filter(
+			'woocommerce_payment_gateway_save_new_payment_method_option_html',
+			array(
+				$this,
+				'save_new_payment_method_option_html',
+			),
+			10,
+			2
+        );
+
 		$this->adapter = new WC_Adapter( $this );
 		$this->core    = new Core( $this->adapter );
 	}
@@ -381,36 +392,13 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public function payment_fields() {
 		parent::payment_fields();
 
-		if ( 'yes' === $this->save_cc ) :
-			if ( ! is_add_payment_method_page() ) :
+		if ( 'yes' === $this->save_cc ) {
+			if ( ! is_add_payment_method_page() ) {
 				$this->tokenization_script();
 				$this->saved_payment_methods();
 				$this->save_payment_method_checkbox();
-
-				// Lock "Save to Account" for Recurring Payments / Payment Change
-				if ( $this->wcs_cart_have_subscription() || $this->wcs_is_payment_change() ) :
-					?>
-					<script type="application/javascript">
-						(function ($) {
-							$(document).ready(function () {
-								$('input[name="wc-payex_psp_cc-new-payment-method"]').prop({
-									'checked': true,
-									'disabled': true
-								});
-							});
-
-							$(document).on('updated_checkout', function () {
-								$('input[name="wc-payex_psp_cc-new-payment-method"]').prop({
-									'checked': true,
-									'disabled': true
-								});
-							});
-						}(jQuery));
-					</script>
-					<?php
-				endif;
-			endif;
-		endif;
+			}
+		}
 	}
 
 	/**
@@ -443,7 +431,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 		try {
 			$this->is_new_credit_card = true;
-			$result                   = $this->core->initiateNewCreditCardPayment( $order->get_id() );
+			$result                   = $this->core->initiateVerifyCreditCardPayment( $order->get_id() );
 		} catch ( Exception $e ) {
 			wc_add_notice( $e->getMessage(), 'error' );
 
@@ -472,7 +460,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			$payment_id = WC()->session->get( 'verification_payment_id' );
 
 			if ( ! $payment_id ) {
-				throw new Exception( __( 'There was a problem adding the card.', 'swedbank-pay-woocommerce-payments' ) );
+				return;
 			}
 
 			$list = $this->core->fetchVerificationList( $payment_id );
@@ -543,7 +531,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 		// Try to load saved token
 		$token = new WC_Payment_Token_Swedbank_Pay();
-		if ( 'new' !== $token_id ) {
+		if ( absint( $token_id ) > 0 ) {
 			$token = new WC_Payment_Token_Swedbank_Pay( $token_id );
 			if ( ! $token->get_id() ) {
 				wc_add_notice( __( 'Failed to load token.', 'swedbank-pay-woocommerce-payments' ), 'error' );
@@ -559,19 +547,37 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			$generate_token = false;
 		}
 
-		// Change Payment Method
-		// Orders with Zero Amount
-		if ( (float) $order->get_total() === 0 || self::wcs_is_payment_change() ) {
-			// Store new Card
-			if ( 'new' !== $token_id ) {
-				try {
-					$this->is_change_credit_card = true;
-					$result                      = $this->core->initiateNewCreditCardPayment( $order->get_id() );
-				} catch ( Exception $e ) {
-					wc_add_notice( $e->getMessage(), 'error' );
-
-					return false;
+		// Change a payment method
+		// or process orders that have zero amount
+		if ( (float) $order->get_total() <= 0.01 || self::wcs_is_payment_change() ) {
+			if ( absint( $token_id ) > 0 ) {
+				// Replace the token to another saved before
+				$token = new WC_Payment_Token_Swedbank_Pay( $token_id );
+				if ( ! $token->get_id() ) {
+					throw new Exception( 'Failed to load token.' );
 				}
+
+				// Check access
+				if ( $token->get_user_id() !== $order->get_user_id() ) {
+					throw new Exception( 'Access denied.' );
+				}
+
+				// Replace token
+				delete_post_meta( $order->get_id(), '_payment_tokens' );
+				$order->add_payment_token( $token );
+
+				if ( self::wcs_is_payment_change() ) {
+					wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-payments' ) );
+				}
+
+				return array(
+					'result'   => 'success',
+					'redirect' => $this->get_return_url( $order ),
+				);
+			} else {
+				// Initiate new payment card
+				$this->is_change_credit_card = true;
+				$result                      = $this->core->initiateVerifyCreditCardPayment( $order->get_id() );
 
 				$order->update_meta_data( '_payex_generate_token', '1' );
 				$order->update_meta_data( '_payex_replace_token', '1' );
@@ -591,17 +597,6 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				return array(
 					'result'   => 'success',
 					'redirect' => $result->getOperationByRel( 'redirect-verification' ),
-				);
-			} else {
-				// Replace token
-				delete_post_meta( $order->get_id(), '_payment_tokens' );
-				$order->add_payment_token( $token );
-
-				wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-payments' ) );
-
-				return array(
-					'result'   => 'success',
-					'redirect' => $this->get_return_url( $order ),
 				);
 			}
 		}
@@ -1110,7 +1105,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 						// Disable status change hook
 						remove_action(
 							'woocommerce_order_status_changed',
-							'WC_Swedbank_Pay::order_status_changed',
+							'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+							10
+						);
+						remove_action(
+							'woocommerce_order_status_changed',
+							'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 							10
 						);
 
@@ -1119,9 +1119,13 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 						// Enable status change hook
 						add_action(
 							'woocommerce_order_status_changed',
-							'WC_Swedbank_Pay::order_status_changed',
-							10,
-							4
+							'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+							10
+						);
+						add_action(
+							'woocommerce_order_status_changed',
+							'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+							10
 						);
 					} catch ( \Exception $e ) {
 						$this->adapter->log(
@@ -1132,9 +1136,13 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 						// Enable status change hook
 						add_action(
 							'woocommerce_order_status_changed',
-							'WC_Swedbank_Pay::order_status_changed',
-							10,
-							4
+							'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+							10
+						);
+						add_action(
+							'woocommerce_order_status_changed',
+							'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+							10
 						);
 
 						continue;
@@ -1187,6 +1195,37 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Modify "Save to account" to lock that if needs.
+	 *
+	 * @param string $html
+	 * @param WC_Payment_Gateway $gateway
+	 *
+	 * @return string
+	 */
+	public function save_new_payment_method_option_html( $html, $gateway ) {
+		if ( $gateway->id !== $this->id ) {
+			return $html;
+		}
+
+		// Lock "Save to Account" for Recurring Payments / Payment Change
+		if ( self::wcs_cart_have_subscription() || self::wcs_is_payment_change() ) {
+			// Load XML
+			libxml_use_internal_errors( true );
+			$doc = new \DOMDocument();
+			$status = @$doc->loadXML( $html );
+			if ( false !== $status ) {
+				$item = $doc->getElementsByTagName('input')->item( 0 );
+				$item->setAttribute('checked','checked' );
+				$item->setAttribute('disabled','disabled' );
+
+				$html = $doc->saveHTML($doc->documentElement);
+			}
+		}
+
+		return $html;
+	}
+
+	/**
 	 * WC Subscriptions: Is Payment Change.
 	 *
 	 * @return bool
@@ -1202,14 +1241,14 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 * @return bool
 	 */
 	private function wcs_cart_have_subscription() {
-		if ( ! class_exists( 'WC_Product_Subscription', false ) ) {
+		if ( ! class_exists( 'WC_Subscriptions_Product' ) ) {
 			return false;
 		}
 
 		// Check is Recurring Payment
 		$cart = WC()->cart->get_cart();
 		foreach ( $cart as $key => $item ) {
-			if ( is_object( $item['data'] ) && get_class( $item['data'] ) === 'WC_Product_Subscription' ) {
+			if ( is_object( $item['data'] ) && WC_Subscriptions_Product::is_subscription( $item['data'] ) ) {
 				return true;
 			}
 		}
