@@ -147,23 +147,14 @@ class WC_Swedbank_Pay_Migration
 	 * Migrate Orders
 	 */
 	private static function migrate_orders() {
-		// Convert orders data
-		$orders = get_posts( array(
-			'numberposts'      => -1,
-			'orderby'          => 'ID',
-			'order'            => 'ASC',
-			'meta_key'         => '_payment_method',
-			'meta_value'       => 'payex',
-			'post_type'        => 'shop_order',
-			'post_status'      => 'any',
-			'post_parent'      => 0,
-			'suppress_filters' => true,
-		));
+		$args = array(
+			'numberposts'    => -1,
+			'type'           => array( 'shop_order', 'shop_subscription' ),
+			'payment_method' => 'payex'
+		);
 
-		foreach ( $orders as $order) {
-			$order_id = $order->ID;
-			$order = wc_get_order( $order_id );
-
+		$orders = wc_get_orders( $args );
+		foreach ( $orders as $order ) {
 			if ( ! $order ) {
 				self::log( sprintf( '[WARNING] Order #%s has been skipped. Order can\'t be loaded.',
 					$order->get_id()
