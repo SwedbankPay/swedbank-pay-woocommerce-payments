@@ -21,6 +21,7 @@ class WC_Swedbank_Plugin {
 	const DB_VERSION = '1.2.0';
 	const DB_VERSION_SLUG = 'woocommerce_payex_psp_version';
 	const ADMIN_UPGRADE_PAGE_SLUG = 'swedbank-pay-payments-upgrade';
+	const ADMIN_MIGRATE_PAGE_SLUG = 'swedbank-pay-payex-migrate';
 
 	/**
 	 * @var WC_Background_Swedbank_Pay_Queue
@@ -480,14 +481,21 @@ class WC_Swedbank_Plugin {
 	 * Provide Admin Menu items
 	 */
 	public function admin_menu() {
-		// Add Upgrade Page
 		global $_registered_pages;
 
+		// Add Upgrade Page
 		$hookname = get_plugin_page_hookname( self::ADMIN_UPGRADE_PAGE_SLUG, '' );
 		if ( ! empty( $hookname ) ) {
 			add_action( $hookname, __CLASS__ . '::upgrade_page' );
 		}
 
+		$_registered_pages[ $hookname ] = true;
+
+		// Add Plugin migrate Page
+		$hookname = get_plugin_page_hookname( self::ADMIN_MIGRATE_PAGE_SLUG, '' );
+		if ( ! empty( $hookname ) ) {
+			add_action( $hookname, __CLASS__ . '::migration_page' );
+		}
 		$_registered_pages[ $hookname ] = true;
 	}
 
@@ -507,6 +515,21 @@ class WC_Swedbank_Plugin {
 	}
 
 	/**
+	 * Migration Page
+	 */
+	public static function migration_page() {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+			return;
+		}
+
+		// Run Database Update
+		include_once( dirname( __FILE__ ) . '/class-wc-swedbank-migration.php' );
+		\WC_Swedbank_Pay_Migration::update();
+
+		echo esc_html__( 'Upgrade finished.', 'swedbank-pay-woocommerce-payments' );
+	}
+
+	/**
 	 * Add Upgrade notice
 	 */
 	public static function may_add_notice() {
@@ -514,6 +537,28 @@ class WC_Swedbank_Plugin {
 		     current_user_can( 'manage_woocommerce' )
 		) {
 			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
+		}
+
+		// THe old plugin migration
+		if ( current_user_can( 'manage_woocommerce' ) ) {
+			// Check if it has been already migrated
+			if ( get_option( 'sb_payex_migrated' ) !== false ) {
+				return;
+			}
+
+			// Check if woocommerce-gateway-payex-payment is exists
+			include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+
+			$plugins = get_plugins();
+			foreach ( $plugins as $file => $plugin ) {
+				if ( strpos( $file, 'woocommerce-gateway-payex-payment.php' ) !== false
+                     && is_plugin_active( $file )
+                ) {
+					add_action( 'admin_notices', __CLASS__ . '::migration_notice', 40 );
+
+					break;
+				}
+			}
 		}
     }
 
@@ -538,6 +583,33 @@ class WC_Swedbank_Plugin {
 						'</a>'
 					);
 				?>
+            </p>
+        </div>
+		<?php
+	}
+
+	/**
+	 * Check for backward compatibility with woocommerce-gateway-payex
+	 */
+	public static function migration_notice() {
+		?>
+        <div id="message" class="updated woocommerce-message">
+            <p class="main">
+                <strong><?php echo esc_html__( 'Data migration.', 'swedbank-pay-woocommerce-payments' ); ?></strong>
+            </p>
+            <p>
+				<?php
+				echo esc_html__( 'We\'ve detected that you\'ve used an older version of the WooCommerce PayEx integration.', 'swedbank-pay-woocommerce-payments' );
+				echo '<br />';
+				echo esc_html__( 'Click the "Upgrade" button below to setup this new integration with your existing Swedbankpay Payments details', 'swedbank-pay-woocommerce-payments' );
+				echo '<br />';
+				echo esc_html__( 'Please be sure to backup your website before doing this. Thank you for choosing Swedbankpay Payments!', 'swedbank-pay-woocommerce-payments' );
+				?>
+            </p>
+            <p class="submit">
+                <a class="button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::ADMIN_MIGRATE_PAGE_SLUG ) ); ?>">
+					<?php echo esc_html__( 'Upgrade', 'swedbank-pay-woocommerce-payments' ); ?>
+                </a>
             </p>
         </div>
 		<?php
