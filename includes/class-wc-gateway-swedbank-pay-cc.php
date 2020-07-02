@@ -87,6 +87,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public $logo_url = '';
 
 	/**
+	 * Send cardholder info
+	 * @var string
+	 */
+	public $use_cardholder_info = 'yes';
+
+	/**
 	 * Reject Credit Cards
 	 * @var string
 	 */
@@ -157,19 +163,20 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled        = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title          = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description    = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->merchant_token = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
-		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
-		$this->subsite        = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
-		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
-		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-		$this->auto_capture   = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
-		$this->save_cc        = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
-		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
-		$this->logo_url       = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
+		$this->enabled                = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title                  = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description            = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->merchant_token         = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
+		$this->payee_id               = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite                = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
+		$this->testmode               = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
+		$this->debug                  = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->culture                = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->auto_capture           = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
+		$this->save_cc                = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
+		$this->terms_url              = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+		$this->logo_url               = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
+		$this->use_cardholder_info    = isset( $this->settings['use_cardholder_info'] ) ? $this->settings['use_cardholder_info'] : $this->use_cardholder_info;
 
 		// Reject Cards
 		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
@@ -404,6 +411,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 					return $value;
 				},
+			),
+			'use_cardholder_info'        => array(
+				'title'   => __( 'Send card holder information', 'swedbank-pay-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Send name, email, phone, billing/delivery addresses of payer to Swedbank Pay', 'swedbank-pay-woocommerce-payments' ),
+				'default' => $this->use_cardholder_info
 			),
 			'reject_credit_cards'    => array(
 				'title'   => __( 'Reject Credit Cards', 'swedbank-pay-woocommerce-payments' ),
