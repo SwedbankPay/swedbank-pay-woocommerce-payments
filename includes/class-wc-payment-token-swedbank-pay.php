@@ -68,7 +68,7 @@ class WC_Payment_Token_Swedbank_Pay extends WC_Payment_Token_CC {
 	 * @return string
 	 */
 	protected function get_hook_prefix() {
-		return 'woocommerce_payment_token_payex_get_';
+		return 'woocommerce_payment_token_swedbankpay_get_';
 	}
 
 	/**
@@ -145,7 +145,7 @@ class WC_Payment_Token_Swedbank_Pay extends WC_Payment_Token_CC {
 	 * @return array                           Filtered item.
 	 */
 	public static function wc_get_account_saved_payment_methods_list_item( $item, $payment_token ) {
-		if ( 'swedbank' !== strtolower( $payment_token->get_type() ) || 'payex' !== strtolower( $payment_token->get_type() ) ) {
+		if ( 'swedbank' !== strtolower( $payment_token->get_type() ) && 'payex' !== strtolower( $payment_token->get_type() ) ) {
 			return $item;
 		}
 
@@ -173,9 +173,15 @@ class WC_Payment_Token_Swedbank_Pay extends WC_Payment_Token_CC {
 	 */
 	public static function wc_account_payment_methods_column_method( $method ) {
 		if ( 'payex_psp_cc' === $method['method']['gateway'] ) {
-			$token = new WC_Payment_Token_Swedbank_Pay( $method['method']['id'] );
-			echo esc_html( $token->get_display_name() );
+			if ( isset($method['method']['id'])) {
+				$token = new WC_Payment_Token_Swedbank_Pay( $method['method']['id'] );
+				echo $token->get_display_name(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			}
 
+			return;
+		}
+
+		if ( ! isset($method['method']['brand']) ) {
 			return;
 		}
 
@@ -183,7 +189,7 @@ class WC_Payment_Token_Swedbank_Pay extends WC_Payment_Token_CC {
 		// @see woocommerce/myaccount/payment-methods.php
 		if ( ! empty( $method['method']['last4'] ) ) {
 			/* translators: 1: credit card type 2: last 4 digits */
-			echo sprintf(
+			echo sprintf( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				__( '%1$s ending in %2$s', 'woocommerce' ),
 				esc_html( wc_get_credit_card_type_label( $method['method']['brand'] ) ),
 				esc_html( $method['method']['last4'] )
@@ -218,13 +224,15 @@ class WC_Payment_Token_Swedbank_Pay extends WC_Payment_Token_CC {
 	 * @return string
 	 */
 	public static function payment_token_class( $class_name, $type ) {
-		if ( 'Payex' === $type ) {
-			$class_name = 'WC_Payment_Token_Swedbank_Pay';
+		if ( in_array( $type, array( 'Payex', 'Swedbank' ) ) ) {
+			$class_name = __CLASS__;
 		}
 
 		return $class_name;
 	}
 }
+
+add_filter( 'woocommerce_payment_token_class', 'WC_Payment_Token_Swedbank_Pay::payment_token_class', 10, 2 );
 
 // Improve Payment Method output
 add_filter(
@@ -245,6 +253,3 @@ add_filter(
 	10,
 	3
 );
-
-// Backward compatibility
-add_filter( 'woocommerce_payment_token_class', 'WC_Payment_Token_Swedbank_Pay::payment_token_class', 10, 2 );
