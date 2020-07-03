@@ -649,7 +649,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$times = 0;
 		$updated = false;
 		while ( true ) {
-			sleep( 10 );
+			sleep( 1 );
 			clean_post_cache( $order->get_id() );
 			$order = wc_get_order( $order->get_id() );
 
