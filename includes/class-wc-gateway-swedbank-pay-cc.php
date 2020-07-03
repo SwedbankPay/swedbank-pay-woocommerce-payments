@@ -184,15 +184,13 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			$this->terms_url = '';
 		}
 
-		// Actions
+		// Actions and filters
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
-		add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'thankyou_page' ) );
+		add_action( 'woocommerce_before_thankyou', array( $this, 'thankyou_page' ) );
+		add_filter( 'woocommerce_order_has_status', __CLASS__ . '::order_has_status', 10, 3 );
 
 		// Payment listener/API hook
 		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
-
-		// Payment confirmation
-		add_action( 'the_post', array( $this, 'payment_confirm' ) );
 
 		// Pending Cancel
 		add_action(
@@ -570,7 +568,140 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 * @return void
 	 */
 	public function thankyou_page( $order_id ) {
-		//
+		$order = wc_get_order( $order_id );
+		if ( ! $order ) {
+			return;
+		}
+
+		if ( $order->get_payment_method() !== $this->id ) {
+			return;
+		}
+
+		$payment_id = $order->get_meta( '_payex_payment_id' );
+		if ( empty( $payment_id ) ) {
+			return;
+		}
+
+		// Check tokens that should be saved or replaced
+		if ( '1' === $order->get_meta( '_payex_replace_token' ) ) {
+			try {
+				$result = $this->core->fetchPaymentInfo( $payment_id, 'authorizations,verifications' );
+
+				// Check payment state
+				switch ( $result['payment']['state'] ) {
+					case 'Ready':
+						// Replace token for:
+						// Change Payment Method
+						// Orders with Zero Amount
+						// Prepare sources where can be tokens
+						$sources = array();
+						if ( isset( $result['payment']['verifications'] ) ) {
+							$sources = array_merge( $sources, $result['payment']['verifications']['verificationList'] );
+						}
+
+						if ( isset( $result['payment']['authorizations'] ) ) {
+							$sources = array_merge($sources, $result['payment']['authorizations']['authorizationList']);
+						}
+
+						foreach ( $sources as $source ) {
+							$payment_token    = $source['paymentToken'];
+							$recurrence_token = $source['recurrenceToken'];
+							$card_brand       = $source['cardBrand'];
+							$masked_pan       = $source['maskedPan'];
+							$expiry_date      = explode( '/', $source['expiryDate'] );
+
+							// Create Payment Token
+							$token = new WC_Payment_Token_Swedbank_Pay();
+							$token->set_gateway_id( $this->id );
+							$token->set_token( $payment_token );
+							$token->set_recurrence_token( $recurrence_token );
+							$token->set_last4( substr( $masked_pan, - 4 ) );
+							$token->set_expiry_year( $expiry_date[1] );
+							$token->set_expiry_month( $expiry_date[0] );
+							$token->set_card_type( strtolower( $card_brand ) );
+							$token->set_user_id( get_current_user_id() );
+							$token->set_masked_pan( $masked_pan );
+
+							// Save Credit Card
+							$token->save();
+
+							// Replace token
+							delete_post_meta( $order->get_id(), '_payex_replace_token' );
+							delete_post_meta( $order->get_id(), '_payment_tokens' );
+							$order->add_payment_token( $token );
+
+							wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-payments' ) );
+
+							break;
+						}
+					default:
+						// no default
+				}
+			} catch ( Exception $e ) {
+				$this->adapter->log(
+					LogLevel::WARNING, sprintf( '%s::%s %s', __CLASS__, __METHOD__, $e->getMessage() )
+				);
+			}
+		}
+
+		// Wait for order status update by a callback
+		$status = $order->get_status();
+		$times = 0;
+		$updated = false;
+		while ( true ) {
+			sleep( 10 );
+			clean_post_cache( $order->get_id() );
+			$order = wc_get_order( $order->get_id() );
+
+			// Check if status has been updated
+			if ( ! $order->has_status( $status ) ) {
+				$updated = true;
+				break;
+			}
+
+			// by timeout
+			$times ++;
+			if ( $times > 60 ) {
+				break;
+			}
+		}
+
+		if ( ! $updated ) {
+			// Update an order status
+			try {
+				$this->core->fetchTransactionsAndUpdateOrder( $order_id );
+			} catch ( Exception $e ) {
+				$this->adapter->log(
+					LogLevel::WARNING, sprintf( 'fetchTransactionsAndUpdateOrder: %s', $e->getMessage() )
+				);
+			}
+		}
+	}
+
+	/**
+	 * Workaround for "order received page".
+	 * We need for actual status because order status
+	 * can be updated in "woocommerce_before_thankyou" hook.
+	 *
+	 * @param bool $result
+	 * @param string $status
+	 * @param WC_Order $order
+	 *
+	 * @return bool
+	 */
+	public static function order_has_status( $result, $order, $status ) {
+		if ( 'payex_psp_cc' !== $order->get_payment_method() ) {
+			return $result;
+		}
+
+		if ( is_order_received_page() ) {
+			// Reload an order and check status again
+			$order = wc_get_order( $order );
+
+			return $order->get_status() === $status;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -700,95 +831,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 * Payment confirm action
 	 */
 	public function payment_confirm() {
-		if ( empty( $_GET['key'] ) ) {
-			return;
-		}
-
-		// Validate Payment Method
-		$order_id = wc_get_order_id_by_order_key( $_GET['key'] );
-		if ( ! $order_id ) {
-			return;
-		}
-
-		$order = wc_get_order( $order_id );
-		if ( ! $order ) {
-			return;
-		}
-
-		if ( ! in_array( $order->get_payment_method(), WC_Swedbank_Pay::PAYMENT_METHODS, true ) ) {
-			return;
-		}
-
-		$payment_id = $order->get_meta( '_payex_payment_id' );
-		if ( empty( $payment_id ) ) {
-			return;
-		}
-
-		// Fetch payment info
-		try {
-			$result = $this->core->fetchPaymentInfo( $payment_id, 'authorizations,verifications' );
-		} catch ( Exception $e ) {
-			return;
-		}
-
-		// Check payment state
-		switch ( $result['payment']['state'] ) {
-			case 'Ready':
-				// Replace token for:
-				// Change Payment Method
-				// Orders with Zero Amount
-				if ( '1' === $order->get_meta( '_payex_replace_token' ) ) {
-					foreach ( $result['payment']['verifications']['verificationList'] as $verification ) {
-						$payment_token    = $verification['paymentToken'];
-						$recurrence_token = $verification['recurrenceToken'];
-						$card_brand       = $verification['cardBrand'];
-						$masked_pan       = $verification['maskedPan'];
-						$expiry_date      = explode( '/', $verification['expiryDate'] );
-
-						// Create Payment Token
-						$token = new WC_Payment_Token_Swedbank_Pay();
-						$token->set_gateway_id( $this->id );
-						$token->set_token( $payment_token );
-						$token->set_recurrence_token( $recurrence_token );
-						$token->set_last4( substr( $masked_pan, - 4 ) );
-						$token->set_expiry_year( $expiry_date[1] );
-						$token->set_expiry_month( $expiry_date[0] );
-						$token->set_card_type( strtolower( $card_brand ) );
-						$token->set_user_id( get_current_user_id() );
-						$token->set_masked_pan( $masked_pan );
-
-						// Save Credit Card
-						$token->save();
-
-						// Replace token
-						delete_post_meta( $order->get_id(), '_payex_replace_token' );
-						delete_post_meta( $order->get_id(), '_payment_tokens' );
-						$order->add_payment_token( $token );
-
-						wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-payments' ) );
-
-						break;
-					}
-				}
-
-				return;
-			case 'Failed':
-				$this->core->updateOrderStatus(
-					OrderInterface::STATUS_FAILED,
-					__( 'Payment failed.', 'swedbank-pay-woocommerce-payments' )
-				);
-
-				return;
-			case 'Aborted':
-				$this->core->updateOrderStatus(
-					OrderInterface::STATUS_CANCELLED,
-					__( 'Payment canceled.', 'swedbank-pay-woocommerce-payments' )
-				);
-
-				return;
-			default:
-				// Payment state is ok
-		}
+		//
 	}
 
 	/**

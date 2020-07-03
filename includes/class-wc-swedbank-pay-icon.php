@@ -8,7 +8,7 @@ class WC_Swedbank_Pay_Icon {
 	 */
 	public function __construct() {
 		add_filter( 'woocommerce_gateway_icon', array( $this, 'gateway_icon' ), 60, 2 );
-		add_action( 'woocommerce_init', array( $this, 'woocommerce_init' ), 100 );
+		add_action( 'woocommerce_after_register_post_type', array( $this, 'woocommerce_init' ), 100 );
 	}
 
 	/**

@@ -174,36 +174,19 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		}
 
 		try {
-			// Fetch transactions list
-			$transactions = $gateway->core->fetchTransactionsList( $payment_id );
-			$gateway->core->saveTransactions( $order_id, $transactions );
+			// Disable status change hook
+			remove_action(
+				'woocommerce_order_status_changed',
+				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
+			remove_action(
+				'woocommerce_order_status_changed',
+				'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
 
-			// Extract transaction from list
-			$transaction_id = $data['transaction']['number'];
-			$transaction    = $gateway->core->findTransaction( 'number', $transaction_id );
-			$this->log( sprintf( 'Transaction: %s', var_export( $transaction, true ) ) );
-			if ( ! $transaction ) {
-				throw new \Exception( sprintf( 'Failed to fetch transaction number #%s', $transaction_id ) );
-			}
-
-			// Process transaction
-			try {
-				// Disable status change hook
-				remove_action(
-					'woocommerce_order_status_changed',
-					'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-					10
-				);
-				remove_action(
-					'woocommerce_order_status_changed',
-					'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-					10
-				);
-
-				$gateway->core->processTransaction( $order->get_id(), $transaction );
-			} catch ( \Exception $e ) {
-				$this->log( sprintf( '[WARNING]: Transaction processing: %s', $e->getMessage() ) );
-			}
+			$gateway->core->fetchTransactionsAndUpdateOrder( $order_id, $data['transaction']['number'] );
 
 			// Enable status change hook
 			add_action(
@@ -216,8 +199,6 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 				'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 				10
 			);
-
-			return false;
 		} catch ( \Exception $e ) {
 			$this->log( sprintf( '[ERROR]: %s', $e->getMessage() ) );
 		}
