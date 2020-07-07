@@ -16,6 +16,7 @@ class WC_Swedbank_Plugin {
 		'payex_psp_invoice',
 		'payex_psp_vipps',
 		'payex_psp_swish',
+		'payex_psp_mobilepay',
 	);
 
 	const DB_VERSION = '1.2.0';
