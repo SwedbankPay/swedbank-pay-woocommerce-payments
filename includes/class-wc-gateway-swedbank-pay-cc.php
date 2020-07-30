@@ -931,6 +931,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
 				10
 			);
+			remove_action(
+				'woocommerce_order_status_changed',
+				'\SwedbankPay\Checkout\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
+				10
+			);
+
 
 			$this->core->refund( $order->get_id(), $amount );
 
