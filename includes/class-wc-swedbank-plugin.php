@@ -100,6 +100,7 @@ class WC_Swedbank_Plugin {
 
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-transactions.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-icon.php' );
+		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-intl-tel.php' );
 	}
 
 	/**
