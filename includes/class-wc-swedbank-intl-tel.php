@@ -44,7 +44,7 @@ class WC_Swedbank_Intl_Tel {
 			'type'        => 'checkbox',
 			'description' => __( 'Improves phone field using International Telephone Input. A JavaScript plugin for entering and validating international telephone numbers. It adds a flag dropdown to any input, detects the user\'s country, displays a relevant placeholder and provides formatting/validation methods.', 'swedbank-pay-woocommerce-payments' ),
 			'desc_tip'    => true,
-			'default'     => 'yes',
+			'default'     => 'no',
 		);
 
 		return $form_fields;
@@ -55,9 +55,9 @@ class WC_Swedbank_Intl_Tel {
 			return;
 		}
 
-		$settings = get_option( 'woocommerce_payex_psp_cc_settings', array( 'enable_intl_tel' => 'yes' ) );
+		$settings = get_option( 'woocommerce_payex_psp_cc_settings', array( 'enable_intl_tel' => 'no' ) );
 		if ( ! isset( $settings['enable_intl_tel'] ) ) {
-			$settings['enable_intl_tel'] = 'yes';
+			$settings['enable_intl_tel'] = 'no';
 		}
 
 		if ( 'no' === $settings['enable_intl_tel'] ) {
