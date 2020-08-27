@@ -99,7 +99,7 @@ class WC_Swedbank_Intl_Tel {
 			'swedbank-intl-tel-js',
 			'WC_Gateway_Swedbank_Pay_Intl_Tel',
 			array(
-				'utils_script' => untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/utils.js',
+				'utils_script' => untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/utils' . $suffix . '.js',
 			)
 		);
 
