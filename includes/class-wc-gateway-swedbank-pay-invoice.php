@@ -159,17 +159,17 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 				),
 				'default'     => __( 'Invoice', 'swedbank-pay-woocommerce-payments' ),
 			),
-			'merchant_token' => array(
-				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
-				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
-				'default'     => $this->merchant_token,
-			),
 			'payee_id'       => array(
 				'title'       => __( 'Payee Id', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
 				'description' => __( 'Payee Id', 'swedbank-pay-woocommerce-payments' ),
 				'default'     => $this->payee_id,
+			),
+			'merchant_token' => array(
+				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
+				'type'        => 'text',
+				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->merchant_token,
 			),
 			'subsite'        => array(
 				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
