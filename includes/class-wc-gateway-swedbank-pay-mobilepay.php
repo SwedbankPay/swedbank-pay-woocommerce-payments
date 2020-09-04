@@ -234,6 +234,14 @@ class WC_Gateway_Swedbank_Pay_Mobilepay extends WC_Gateway_Swedbank_Pay_Cc {
 			wc_add_notice( __( 'Phone number required.', 'swedbank-pay-woocommerce-payments' ), 'error' );
 		}
 
+		$matches = array();
+		preg_match( '/^((\\+45)|(\\+358))[0-9]+$/u', $billing_phone, $matches );
+		if ( ! isset( $matches[0] ) || $matches[0] !== $billing_phone ) {
+			wc_add_notice( __( 'Input your number like this +45xxxxxxxx', 'swedbank-pay-woocommerce-payments' ), 'error' );
+
+			return false;
+		}
+
 		return true;
 	}
 
