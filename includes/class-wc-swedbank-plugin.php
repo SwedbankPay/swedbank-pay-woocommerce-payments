@@ -18,6 +18,8 @@ class WC_Swedbank_Plugin {
 		'payex_psp_swish',
 	);
 
+	const PLUGIN_NAME = 'Swedbank Pay Payments plugin';
+	const PLUGIN_PATH = 'swedbank-pay-woocommerce-payments/swedbank-pay-woocommerce-payments.php';
 	const DB_VERSION = '1.2.0';
 	const DB_VERSION_SLUG = 'woocommerce_payex_psp_version';
 	const ADMIN_UPGRADE_PAGE_SLUG = 'swedbank-pay-payments-upgrade';
@@ -588,6 +590,11 @@ class WC_Swedbank_Plugin {
 	 * Add Upgrade notice
 	 */
 	public static function may_add_notice() {
+		// Check if WooCommerce is missing
+		if ( ! class_exists( 'WooCommerce', false ) || ! defined( 'WC_ABSPATH' ) ) {
+			add_action( 'admin_notices', __CLASS__ . '::missing_woocommerce_notice' );
+		}
+
 		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
 		     current_user_can( 'manage_woocommerce' )
 		) {
@@ -615,7 +622,7 @@ class WC_Swedbank_Plugin {
 				}
 			}
 		}
-    }
+	}
 
 	/**
 	 * Upgrade Notice
@@ -625,10 +632,14 @@ class WC_Swedbank_Plugin {
         <div id="message" class="error">
             <p>
 				<?php
-				echo esc_html__(
-					'Warning! Swedbank Pay Payments plugin requires to update the database structure.',
+				echo sprintf(
+					/* translators: 1: plugin name */                        esc_html__(
+						'Warning! %1$s requires to update the database structure.',
 					'swedbank-pay-woocommerce-payments'
+					),
+					self::PLUGIN_NAME
 				);
+
 				echo ' ' . sprintf(
 					/* translators: 1: start tag 2: end tag */                        esc_html__(
 						'Please click %1$s here %2$s to start upgrade.',
@@ -668,5 +679,35 @@ class WC_Swedbank_Plugin {
             </p>
         </div>
 		<?php
+	}
+
+	/**
+	 * Check if WooCommerce is missing, and deactivate the plugin if needs
+	 */
+	public static function missing_woocommerce_notice() {
+		?>
+        <div id="message" class="error">
+            <p class="main">
+                <strong><?php echo esc_html__( 'WooCommerce is inactive or missing.', 'swedbank-pay-woocommerce-payments' ); ?></strong>
+            </p>
+            <p>
+				<?php
+				echo esc_html__( 'WooCommerce plugin is inactive or missing. Please install and active it.', 'swedbank-pay-woocommerce-payments' );
+				echo '<br />';
+				echo sprintf(
+				    /* translators: 1: plugin name */                        esc_html__(
+					    '%1$s will be deactivated.',
+					    'swedbank-pay-woocommerce-payments'
+				    ),
+					self::PLUGIN_NAME
+				);
+
+				?>
+            </p>
+        </div>
+		<?php
+
+        // Deactivate the plugin
+		deactivate_plugins( self::PLUGIN_PATH, true );
 	}
 }
