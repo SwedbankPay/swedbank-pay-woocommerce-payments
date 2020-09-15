@@ -88,12 +88,14 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-invoice.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-vipps.php' );
 		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-swish.php' );
+		include_once( dirname( __FILE__ ) . '/includes/class-wc-gateway-swedbank-pay-trustly.php' );
 
 		// Register Gateways
 		WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Cc' );
 		WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Invoice' );
 		WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Vipps' );
 		WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Swish' );
+		WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Trustly' );
 	}
 }
 

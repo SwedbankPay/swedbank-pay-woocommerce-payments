@@ -1361,4 +1361,20 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 		return false;
 	}
+
+	/**
+	 * Get Custom Logo
+	 *
+	 * @return string
+	 */
+	public function get_custom_logo() {
+		$logo_url = '';
+		$custom_logo_id = get_theme_mod( 'custom_logo' );
+		if ( $custom_logo_id ) {
+			$image = wp_get_attachment_image_src( $custom_logo_id, 'thumbnail', false );
+			list( $logo_url, $width, $height ) = $image;
+		}
+
+		return $logo_url;
+	}
 }
