@@ -16,6 +16,7 @@ class WC_Swedbank_Plugin {
 		'payex_psp_invoice',
 		'payex_psp_vipps',
 		'payex_psp_swish',
+		'payex_psp_mobilepay',
 		'payex_psp_trustly',
 	);
 
