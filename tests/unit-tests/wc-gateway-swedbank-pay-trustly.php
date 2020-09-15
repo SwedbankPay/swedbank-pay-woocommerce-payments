@@ -1,8 +1,8 @@
 <?php
 
-class WC_Unit_Gateway_Swedbank_Pay_Vipps extends WC_Unit_Test_Case {
+class WC_Unit_Gateway_Swedbank_Pay_Trustly extends WC_Unit_Test_Case {
 	/**
-	 * @var WC_Gateway_Swedbank_Pay_Vipps
+	 * @var WC_Gateway_Swedbank_Pay_Trustly
 	 */
 	private $gateway;
 
@@ -20,10 +20,11 @@ class WC_Unit_Gateway_Swedbank_Pay_Vipps extends WC_Unit_Test_Case {
 		$this->wc = WC();
 
 		// Init SwedbankPay Payments plugin
-		$this->gateway              = new WC_Gateway_Swedbank_Pay_Vipps();
+		$this->gateway              = new WC_Gateway_Swedbank_Pay_Trustly();
 		$this->gateway->enabled     = 'yes';
 		$this->gateway->testmode    = 'yes';
 		$this->gateway->description = 'Test';
+		$this->gateway->method      = 'redirect';
 
 		// Add SwedbankPay to PM List
 		tests_add_filter( 'woocommerce_payment_gateways', array( $this, 'payment_gateways' ) );
@@ -50,7 +51,7 @@ class WC_Unit_Gateway_Swedbank_Pay_Vipps extends WC_Unit_Test_Case {
 		$gateways = $gateways->payment_gateways();
 		//$this->assertIsArray( $gateways );
 		$this->assertTrue( is_array( $gateways ) );
-		$this->assertArrayHasKey( 'payex_psp_vipps', $gateways );
+		$this->assertArrayHasKey( 'payex_psp_trustly', $gateways );
 	}
 
 	public function test_order() {
