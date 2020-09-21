@@ -1,3 +1,20 @@
+Version 3.0.0
+* Use save instead of save_meta_data
+* Implemented MobilePay
+* Implemented Trustly
+* Add additional checks for transaction db operations
+* Disable plugin and show warning if WooCommerce is inactive
+* Switch positions of Token and Payee ID in settings
+* Implemented "International Telephone Input" feature
+* Fixes which related to refunds
+* Fix problems with order status changing.
+* Implemented Migration script
+* Add Logo Url to options
+* Fixes for WC Subscriptions
+* Show hint if composer dependencies weren't installed
+* Replace fullname parser to adci/full-name-parser.
+* Format the code with WordPress Standards
+
 Version 2.0.0
 * Updates for Swedbank Pay
 * Implemented filters sb_get_payee_reference and sb_get_payee_reference_order
