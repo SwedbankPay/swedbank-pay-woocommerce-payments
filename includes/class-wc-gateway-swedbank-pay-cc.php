@@ -772,7 +772,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 				// Save payment ID
 				$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
-				$order->save_meta_data();
+				$order->save();
 
 				// Redirect
 				$order->add_order_note(
@@ -816,7 +816,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 		// Save payment ID
 		$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
-		$order->save_meta_data();
+		$order->save();
 
 		// Redirect
 		$order->add_order_note( __( 'Customer has been redirected to Swedbank Pay.', 'swedbank-pay-woocommerce-payments' ) );
@@ -1198,7 +1198,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 				// Save payment ID
 				$renewal_order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
-				$renewal_order->save_meta_data();
+				$renewal_order->save();
 
 				// Fetch transactions list
 				$transactions = $this->core->fetchTransactionsList( $payment_id );
