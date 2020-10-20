@@ -86,6 +86,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 */
 	public $logo_url = '';
 
+    /**
+     * Send payer info
+     * @var string
+     */
+    public $use_payer_info = 'yes';
+
 	/**
 	 * Reject Credit Cards
 	 * @var string
@@ -170,6 +176,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$this->save_cc        = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
 		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 		$this->logo_url       = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
+        $this->use_payer_info = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
 
 		// Reject Cards
 		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
@@ -403,6 +410,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 					return $value;
 				},
 			),
+            'use_payer_info'        => array(
+                'title'   => __( 'Send payer information', 'swedbank-pay-woocommerce-payments' ),
+                'type'    => 'checkbox',
+                'label'   => __( 'Send billing/delivery addresses of payer to Swedbank Pay', 'swedbank-pay-woocommerce-paymentst' ),
+                'default' => $this->use_payer_info
+            ),
 			'reject_credit_cards'    => array(
 				'title'   => __( 'Reject Credit Cards', 'swedbank-pay-woocommerce-payments' ),
 				'type'    => 'checkbox',
