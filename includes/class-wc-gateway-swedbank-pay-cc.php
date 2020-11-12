@@ -659,47 +659,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			}
 		}
 
-		if ( 'failed' === $order->get_status() ) {
-			// Wait for "Completed" transaction state
-			// Current payment can be changed
-			$attempts = 0;
-			while ( true ) {
-				sleep( 1 );
-				$attempts++;
-				if ($attempts > 60) {
-					break;
-				}
-
-				$transactions = $this->core->fetchTransactionsList( $payment_id );
-				foreach ($transactions as $transaction) {
-					if ( in_array( $transaction->getType(), ['Authorization', 'Sale'] ) ) {
-						switch ( $transaction->getState() ) {
-							case 'Completed':
-								// Transaction has found: update the order state
-								$this->core->fetchTransactionsAndUpdateOrder( $order_id, $transaction->getNumber() );
-
-								break 3;
-							case 'Failed':
-								// Log failed transaction
-								$this->adapter->log(
-									LogLevel::WARNING,
-									sprintf( 'Failed transaction: (%s), (%s), (%s), (%s), (%s), (%s), (%s)',
-										$order_id,
-										$payment_id,
-										$transaction->getId(),
-										$transaction->getData('failedReason'),
-										$transaction->getData('failedActivityName'),
-										$transaction->getData('failedErrorCode'),
-										$transaction->getData('failedErrorDescription')
-									)
-								);
-
-								break;
-						}
-					}
-				}
-			}
-		}
+		$this->core->updateTransactionsOnFailure( $order->get_id() );
 	}
 
 	/**
