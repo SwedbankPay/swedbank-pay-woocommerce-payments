@@ -80,8 +80,8 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public $terms_url = '';
 
 	/**
-     * Url of Merchant Logo.
-     *
+	 * Url of Merchant Logo.
+	 *
 	 * @var string
 	 */
 	public $logo_url = '';
@@ -121,8 +121,8 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public $is_change_credit_card;
 
 	/**
-     * Payment Token Class.
-     *
+	 * Payment Token Class.
+	 *
 	 * @var string
 	 */
 	public $payment_token_class = 'WC_Payment_Token_Swedbank_Pay';
@@ -274,7 +274,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			),
 			10,
 			2
-        );
+		);
 
 		$this->adapter = new WC_Adapter( $this );
 		$this->core    = new Core( $this->adapter );
@@ -334,13 +334,13 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				'custom_attributes' => array(
 					'required' => 'required'
 				),
-                'sanitize_callback' => function( $value ) {
-	                if ( empty( $value ) ) {
-		                throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
-	                }
+				'sanitize_callback' => function( $value ) {
+					if ( empty( $value ) ) {
+						throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
+					}
 
-				    return $value;
-                },
+					return $value;
+				},
 			),
 			'subsite'                => array(
 				'title'       => __( 'Subsite', 'swedbank-pay-woocommerce-payments' ),
@@ -445,7 +445,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 	/**
 	 * Output the gateway settings screen.
-     *
+	 *
 	 * @return void
 	 */
 	public function admin_options() {
@@ -595,6 +595,8 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			return;
 		}
 
+		$this->adapter->log( LogLevel::INFO, __METHOD__ );
+
 		// Check tokens that should be saved or replaced
 		if ( '1' === $order->get_meta( '_payex_replace_token' ) ) {
 			try {
@@ -657,38 +659,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			}
 		}
 
-		// Wait for order status update by a callback
-		$status = $order->get_status();
-		$times = 0;
-		$updated = false;
-		while ( true ) {
-			sleep( 1 );
-			clean_post_cache( $order->get_id() );
-			$order = wc_get_order( $order->get_id() );
-
-			// Check if status has been updated
-			if ( ! $order->has_status( $status ) ) {
-				$updated = true;
-				break;
-			}
-
-			// by timeout
-			$times ++;
-			if ( $times > 60 ) {
-				break;
-			}
-		}
-
-		if ( ! $updated ) {
-			// Update an order status
-			try {
-				$this->core->fetchTransactionsAndUpdateOrder( $order_id );
-			} catch ( Exception $e ) {
-				$this->adapter->log(
-					LogLevel::WARNING, sprintf( 'fetchTransactionsAndUpdateOrder: %s', $e->getMessage() )
-				);
-			}
-		}
+		$this->core->updateTransactionsOnFailure( $order->get_id() );
 	}
 
 	/**
