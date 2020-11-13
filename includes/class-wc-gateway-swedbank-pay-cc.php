@@ -595,7 +595,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			return;
 		}
 
-		$this->adapter->log( LogLevel::INFO, __METHOD__ );
+		$this->core->log( LogLevel::INFO, __METHOD__ );
 
 		// Check tokens that should be saved or replaced
 		if ( '1' === $order->get_meta( '_payex_replace_token' ) ) {
@@ -653,7 +653,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 						// no default
 				}
 			} catch ( Exception $e ) {
-				$this->adapter->log(
+				$this->core->log(
 					LogLevel::WARNING, sprintf( '%s::%s %s', __CLASS__, __METHOD__, $e->getMessage() )
 				);
 			}
@@ -825,11 +825,11 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public function return_handler() {
 		$raw_body = file_get_contents( 'php://input' );
 
-		$this->adapter->log(
+		$this->core->log(
 			LogLevel::INFO,
 			sprintf( 'Incoming Callback: Initialized %s from %s', $_SERVER['REQUEST_URI'], $_SERVER['REMOTE_ADDR'] )
 		);
-		$this->adapter->log(
+		$this->core->log(
 			LogLevel::INFO,
 			sprintf( 'Incoming Callback. Post data: %s', var_export( $raw_body, true ) )
 		);
@@ -876,12 +876,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			);
 			$background_process->save();
 
-			$this->adapter->log(
+			$this->core->log(
 				LogLevel::INFO,
 				sprintf( 'Incoming Callback: Task enqueued. Transaction ID: %s', $data['transaction']['number'] )
 			);
 		} catch ( Exception $e ) {
-			$this->adapter->log( LogLevel::INFO, sprintf( 'Incoming Callback: %s', $e->getMessage() ) );
+			$this->core->log( LogLevel::INFO, sprintf( 'Incoming Callback: %s', $e->getMessage() ) );
 		}
 	}
 
@@ -1005,7 +1005,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		try {
 			$this->core->abort( $order_id );
 		} catch ( \Exception $e ) {
-			$this->adapter->log( LogLevel::INFO, sprintf( 'Pending Cancel. Error: %s', $e->getMessage() ) );
+			$this->core->log( LogLevel::INFO, sprintf( 'Pending Cancel. Error: %s', $e->getMessage() ) );
 		}
 	}
 
@@ -1218,7 +1218,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 							10
 						);
 					} catch ( \Exception $e ) {
-						$this->adapter->log(
+						$this->core->log(
 							LogLevel::INFO,
 							sprintf( '[WC_Subscriptions]: Warning: %s', $e->getMessage() )
 						);
