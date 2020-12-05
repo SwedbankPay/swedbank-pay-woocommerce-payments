@@ -2,6 +2,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+use SwedbankPay\Core\OrderItemInterface;
 use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
 use SwedbankPay\Core\Adapter\WC_Adapter;
 use SwedbankPay\Core\Core;
@@ -579,12 +580,12 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 			$vat_amount    += $item['tax_price'];
 			$unit_price     = sprintf( '%.2f', $item['price_without_tax'] / $item['qty'] );
 			$descriptions[] = array(
-				'product'    => $item['name'],
-				'quantity'   => $item['qty'],
-				'unitPrice'  => (int) round( $unit_price * 100 ),
-				'amount'     => (int) round( $item['price_with_tax'] * 100 ),
-				'vatAmount'  => (int) round( $item['tax_price'] * 100 ),
-				'vatPercent' => sprintf( '%.2f', $item['tax_percent'] ),
+				OrderItemInterface::FIELD_NAME        => $item['name'],
+				OrderItemInterface::FIELD_QTY         => $item['qty'],
+				OrderItemInterface::FIELD_UNITPRICE   => (int) round( $unit_price * 100 ),
+				OrderItemInterface::FIELD_AMOUNT      => (int) round( $item['price_with_tax'] * 100 ),
+				OrderItemInterface::FIELD_VAT_AMOUNT  => (int) round( $item['tax_price'] * 100 ),
+				OrderItemInterface::FIELD_VAT_PERCENT => (int) round( $item['tax_percent'] * 100 ),
 			);
 		}
 
