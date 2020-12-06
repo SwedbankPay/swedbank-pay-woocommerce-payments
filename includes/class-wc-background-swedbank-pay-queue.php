@@ -74,37 +74,48 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		$results = array();
 
 		// phpcs:disable
-		$data    = $wpdb->get_results(
+		$data = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT * FROM {$table} WHERE {$column} LIKE %s ORDER BY {$key_column} ASC",
 			$key ) ); // @codingStandardsIgnoreLine.
 		// phpcs:enable
 
+        // Check the records
 		foreach ( $data as $id => $result ) {
 			$task = array_filter( (array) maybe_unserialize( $result->$value_column ) );
+			if ( ! is_array( $task ) ||
+				empty( $task[0]['webhook_data'] ) ||
+			    null === json_decode( $task[0]['webhook_data'], true )
+			) {
+				// Remove invalid record from the database
+				// phpcs:disable
+				$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE {$key_column} = %s", $data[$key_column] ) ); // @codingStandardsIgnoreLine.
+				// phpcs:enable
+
+				continue;
+			}
+
+			// Check the payment method ID
+			if ( ! in_array( $task[0]['payment_method_id'], WC_Swedbank_Plugin::PAYMENT_METHODS ) ) {
+				// Try with another queue processor
+				continue;
+			}
 
 			$batch       = new \stdClass();
 			$batch->key  = $result->$column;
 			$batch->data = $task;
 
-			$results[ $id ] = $batch;
-
 			// Create Sorting Flow by Transaction Number
-			$sorting_flow[ $id ] = 0;
-			$webhook             = json_decode( $task[0]['webhook_data'], true );
-			if ( JSON_ERROR_NONE !== json_last_error() ) {
-				if ( $webhook && isset( $webhook['transaction']['number'] ) ) {
-					$sorting_flow[ $id ] = $webhook['transaction']['number'];
-				}
-			}
+			$webhook = json_decode( $task[0]['webhook_data'], true );
+			$sorting_flow[ $id ] = $webhook['transaction']['number'];
+			$results[ $id ] = $batch;
 		}
 
 		// Sorting
 		array_multisort( $sorting_flow, SORT_ASC, SORT_NUMERIC, $results );
 		unset( $data, $sorting_flow );
 
-		// Get first result
-		$batch = array_shift( $results );
+		$batch = array_shift( $results ); // Get first result
 
 		return $batch;
 	}
@@ -115,7 +126,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 	 * @param $message
 	 */
 	private function log( $message ) {
-		$this->logger->info( $message, array( 'source' => 'wc_swedbank_pay_queue' ) );
+		$this->logger->info( $message, array( 'source' => $this->action ) );
 	}
 
 	/**
@@ -123,7 +134,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 	 *
 	 * @param mixed $item Queue item to iterate over.
 	 *
-	 * @return bool
+	 * @return mixed
 	 */
 	protected function task( $item ) {
 		$this->log( sprintf( 'Start task: %s', var_export( $item, true ) ) );
@@ -170,6 +181,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		} catch ( \Exception $e ) {
 			$this->log( sprintf( '[ERROR]: Validation error: %s', $e->getMessage() ) );
 
+			// Remove from queue
 			return false;
 		}
 
@@ -203,7 +215,8 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 			$this->log( sprintf( '[ERROR]: %s', $e->getMessage() ) );
 		}
 
-		return true;
+		// Remove from queue
+		return false;
 	}
 
 	/**
@@ -214,7 +227,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 	protected function complete() {
 		parent::complete();
 
-		$this->log( 'Completed swedbank-pay queue job.' );
+		$this->log( 'Completed ' . $this->action . ' queue job.' );
 	}
 
 	/**
