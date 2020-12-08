@@ -1,3 +1,8 @@
+Version 3.2.0
+* Update the background queue processor
+* Fixed invoice capture
+* Fixed the problem of order status when AutoCapture is enabled
+
 Version 3.1.0
 * Use logging by the core
 * Fixed notices in the admin backend
