@@ -9,10 +9,10 @@ use SwedbankPay\Core\Core;
 class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 
 	/**
-	 * Merchant Token
+	 * Access Token
 	 * @var string
 	 */
-	public $merchant_token = '';
+	public $access_token = '';
 
 	/**
 	 * Payee Id
@@ -75,18 +75,18 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 		$this->init_settings();
 
 		// Define user set variables
-		$this->enabled        = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title          = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description    = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->merchant_token = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
-		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
-		$this->subsite        = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
-		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
-		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-		$this->method         = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
-		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
-		$this->logo_url       = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
+		$this->enabled      = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title        = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description  = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->access_token = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
+		$this->payee_id     = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite      = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
+		$this->testmode     = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
+		$this->debug        = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->culture      = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->method       = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
+		$this->terms_url    = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+		$this->logo_url     = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
 
 		// JS Scrips
 		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
@@ -135,11 +135,11 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 				),
 				'default'     => __( 'Trustly Payments', 'swedbank-pay-woocommerce-payments' ),
 			),
-			'merchant_token' => array(
-				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
+			'access_token' => array(
+				'title'       => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
-				'default'     => $this->merchant_token,
+				'description' => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->access_token,
 			),
 			'payee_id'       => array(
 				'title'       => __( 'Payee Id', 'swedbank-pay-woocommerce-payments' ),

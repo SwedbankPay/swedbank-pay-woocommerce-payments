@@ -115,7 +115,7 @@ msgstr ""
 #: ../includes/class-wc-gateway-swedbank-pay-swish.php:143
 #: ../includes/class-wc-gateway-swedbank-pay-vipps.php:127
 #: ../includes/class-wc-gateway-swedbank-pay-vipps.php:129
-msgid "Merchant Token"
+msgid "Access Token"
 msgstr ""
 
 #: ../includes/class-wc-gateway-swedbank-pay-cc.php:206
