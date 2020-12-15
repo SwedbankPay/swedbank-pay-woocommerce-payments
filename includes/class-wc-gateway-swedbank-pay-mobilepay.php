@@ -128,17 +128,17 @@ class WC_Gateway_Swedbank_Pay_Mobilepay extends WC_Gateway_Swedbank_Pay_Cc {
 				),
 				'default'     => __( 'MobilePay Online', 'swedbank-pay-woocommerce-payments' ),
 			),
-			'access_token'   => array(
-				'title'       => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
-				'type'        => 'text',
-				'description' => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
-				'default'     => $this->access_token,
-			),
 			'payee_id'       => array(
 				'title'       => __( 'Payee Id', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
 				'description' => __( 'Payee Id', 'swedbank-pay-woocommerce-payments' ),
 				'default'     => $this->payee_id,
+			),
+			'access_token'   => array(
+				'title'       => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
+				'type'        => 'text',
+				'description' => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->access_token,
 			),
 			'subsite'        => array(
 				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
