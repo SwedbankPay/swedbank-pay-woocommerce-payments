@@ -11,7 +11,7 @@ on:
 jobs:
   test:
     name: Run tests
-    runs-on: ubuntu-16.04
+    runs-on: ubuntu-18.04
 
     steps:
       - name: Checkout
@@ -41,6 +41,7 @@ jobs:
         run: |
           cd $GITHUB_WORKSPACE/woocommerce
           bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
+          zip -r /tmp/woocommerce.zip ./
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
           composer install
           zip -r /tmp/swedbank-pay-woocommerce-payments.zip ./
