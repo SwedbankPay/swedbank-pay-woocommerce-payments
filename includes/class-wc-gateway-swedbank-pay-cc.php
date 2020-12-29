@@ -27,10 +27,10 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public $transactions;
 
 	/**
-	 * Merchant Token
+	 * Access Token
 	 * @var string
 	 */
-	public $merchant_token = '';
+	public $access_token = '';
 
 	/**
 	 * Payee Id
@@ -169,22 +169,28 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		// Load the settings.
 		$this->init_settings();
 
+		// Update access_token if merchant_token is exists
+		if ( empty( $this->settings['access_token'] ) && ! empty( $this->settings['merchant_token'] ) ) {
+			$this->settings['access_token'] = $this->settings['merchant_token'];
+			$this->update_option( 'access_token', $this->settings['access_token'] );
+		}
+
 		// Define user set variables
-		$this->enabled         = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title           = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description     = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->merchant_token  = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
-		$this->payee_id        = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
-		$this->subsite         = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
-		$this->testmode        = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
-		$this->debug           = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->culture         = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-		$this->auto_capture    = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
+		$this->enabled        = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title          = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description    = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->access_token   = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
+		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite        = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
+		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
+		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->auto_capture   = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
 		$this->instant_capture = isset( $this->settings['instant_capture'] ) ? $this->settings['instant_capture'] : $this->instant_capture;
-		$this->save_cc         = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
-		$this->terms_url       = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
-		$this->logo_url        = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
-        $this->use_payer_info  = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
+		$this->save_cc        = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
+		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+		$this->logo_url       = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
+		$this->use_payer_info = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
 
 		// Reject Cards
 		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
@@ -334,17 +340,17 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 					return $value;
 				},
 			),
-			'merchant_token'         => array(
-				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
+			'access_token'         => array(
+				'title'       => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
-				'default'     => $this->merchant_token,
+				'description' => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->access_token,
 				'custom_attributes' => array(
 					'required' => 'required'
 				),
 				'sanitize_callback' => function( $value ) {
 					if ( empty( $value ) ) {
-						throw new Exception( __( '"Merchant Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
+						throw new Exception( __( '"Access Token" field can\'t be empty.', 'swedbank-pay-woocommerce-payments' ) );
 					}
 
 					return $value;
@@ -476,6 +482,79 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$this->display_errors();
 
 		parent::admin_options();
+	}
+
+	/**
+	 * Processes and saves options.
+	 * If there is an error thrown, will continue to save and validate fields, but will leave the erroring field out.
+	 *
+	 * @return bool was anything saved?
+	 */
+	public function process_admin_options() {
+		$result = parent::process_admin_options();
+
+		// Reload settings
+		$this->init_settings();
+		$this->merchant_token = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
+		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+
+		// Test API Credentials
+		try {
+			switch ( $this->id ) {
+				case 'payex_psp_cc':
+					new SwedbankPay\Api\Service\Creditcard\Request\Test(
+						$this->merchant_token,
+						$this->payee_id,
+						$this->testmode === 'yes'
+					);
+
+					break;
+				case 'payex_psp_invoice':
+					new SwedbankPay\Api\Service\Invoice\Request\Test(
+						$this->merchant_token,
+						$this->payee_id,
+						$this->testmode === 'yes'
+					);
+
+					break;
+				case 'payex_psp_mobilepay':
+					new SwedbankPay\Api\Service\MobilePay\Request\Test(
+						$this->merchant_token,
+						$this->payee_id,
+						$this->testmode === 'yes'
+					);
+
+					break;
+				case 'payex_psp_swish':
+					new SwedbankPay\Api\Service\Swish\Request\Test(
+						$this->merchant_token,
+						$this->payee_id,
+						$this->testmode === 'yes'
+					);
+
+					break;
+				case 'payex_psp_trustly':
+					new SwedbankPay\Api\Service\Trustly\Request\Test(
+						$this->merchant_token,
+						$this->payee_id,
+						$this->testmode === 'yes'
+					);
+
+					break;
+				case 'payex_psp_vipps':
+					new SwedbankPay\Api\Service\Vipps\Request\Test(
+						$this->merchant_token,
+						$this->payee_id,
+						$this->testmode === 'yes'
+					);
+
+					break;
+			}
+		} catch (\Exception $e) {
+			WC_Admin_Settings::add_error( $e->getMessage() );
+		}
+
+		return $result;
 	}
 
 	/**

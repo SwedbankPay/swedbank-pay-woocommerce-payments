@@ -10,10 +10,10 @@ use SwedbankPay\Core\Core;
 class WC_Gateway_Swedbank_Pay_Mobilepay extends WC_Gateway_Swedbank_Pay_Cc {
 
 	/**
-	 * Merchant Token
+	 * Access Token
 	 * @var string
 	 */
-	public $merchant_token = '';
+	public $access_token = '';
 
 	/**
 	 * Payee Id
@@ -69,11 +69,17 @@ class WC_Gateway_Swedbank_Pay_Mobilepay extends WC_Gateway_Swedbank_Pay_Cc {
 		// Load the settings.
 		$this->init_settings();
 
+		// Update access_token if merchant_token is exists
+		if ( empty( $this->settings['access_token'] ) && ! empty( $this->settings['merchant_token'] ) ) {
+			$this->settings['access_token'] = $this->settings['merchant_token'];
+			$this->update_option( 'access_token', $this->settings['access_token'] );
+		}
+
 		// Define user set variables
 		$this->enabled         = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
 		$this->title           = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
 		$this->description     = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->merchant_token  = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
+		$this->access_token    = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
 		$this->payee_id        = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
 		$this->subsite         = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
 		$this->testmode        = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
@@ -131,17 +137,17 @@ class WC_Gateway_Swedbank_Pay_Mobilepay extends WC_Gateway_Swedbank_Pay_Cc {
 				),
 				'default'     => __( 'MobilePay Online', 'swedbank-pay-woocommerce-payments' ),
 			),
-			'merchant_token' => array(
-				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
-				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
-				'default'     => $this->merchant_token,
-			),
 			'payee_id'       => array(
 				'title'       => __( 'Payee Id', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
 				'description' => __( 'Payee Id', 'swedbank-pay-woocommerce-payments' ),
 				'default'     => $this->payee_id,
+			),
+			'access_token'   => array(
+				'title'       => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
+				'type'        => 'text',
+				'description' => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->access_token,
 			),
 			'subsite'        => array(
 				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
