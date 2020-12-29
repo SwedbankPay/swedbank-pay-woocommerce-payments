@@ -9,10 +9,10 @@ use SwedbankPay\Core\Core;
 class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 
 	/**
-	 * Merchant Token
+	 * Access Token
 	 * @var string
 	 */
-	public $merchant_token = '';
+	public $access_token = '';
 
 	/**
 	 * Payee Id
@@ -68,18 +68,24 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 		// Load the settings.
 		$this->init_settings();
 
+		// Update access_token if merchant_token is exists
+		if ( empty( $this->settings['access_token'] ) && ! empty( $this->settings['merchant_token'] ) ) {
+			$this->settings['access_token'] = $this->settings['merchant_token'];
+			$this->update_option( 'access_token', $this->settings['access_token'] );
+		}
+
 		// Define user set variables
-		$this->enabled        = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title          = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description    = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->merchant_token = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
-		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
-		$this->subsite        = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
-		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
-		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
-		$this->logo_url       = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
+		$this->enabled      = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title        = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description  = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->access_token = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
+		$this->payee_id     = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite      = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
+		$this->testmode     = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
+		$this->debug        = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->culture      = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->terms_url    = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+		$this->logo_url     = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
 
 		// TermsOfServiceUrl contains unsupported scheme value http in Only https supported.
 		if ( ! filter_var( $this->terms_url, FILTER_VALIDATE_URL ) ) {
@@ -143,11 +149,11 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 				'description' => __( 'Payee Id', 'swedbank-pay-woocommerce-payments' ),
 				'default'     => $this->payee_id,
 			),
-			'merchant_token' => array(
-				'title'       => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
+			'access_token' => array(
+				'title'       => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
-				'description' => __( 'Merchant Token', 'swedbank-pay-woocommerce-payments' ),
-				'default'     => $this->merchant_token,
+				'description' => __( 'Access Token', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->access_token,
 			),
 			'subsite'        => array(
 				'title'       => __( 'Subsite', 'woocommerce-gateway-payex-checkout' ),
