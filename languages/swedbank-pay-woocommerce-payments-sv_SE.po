@@ -115,8 +115,8 @@ msgstr "Detta styr den beskrivning som användaren ser vid utcheckningen."
 #: ../includes/class-wc-gateway-swedbank-pay-swish.php:143
 #: ../includes/class-wc-gateway-swedbank-pay-vipps.php:127
 #: ../includes/class-wc-gateway-swedbank-pay-vipps.php:129
-msgid "Merchant Token"
-msgstr "Merchant Token"
+msgid "Access Token"
+msgstr "Access Token"
 
 #: ../includes/class-wc-gateway-swedbank-pay-cc.php:206
 #: ../includes/class-wc-gateway-swedbank-pay-cc.php:208
