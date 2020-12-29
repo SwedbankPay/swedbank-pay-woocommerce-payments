@@ -265,6 +265,8 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 			wc_add_notice( __( 'Phone number required.', 'swedbank-pay-woocommerce-payments' ), 'error' );
 		}
 
+		$billing_phone = apply_filters( 'swedbank_pay_swish_phone_format', $billing_phone, null );
+
 		$matches = array();
 		preg_match( '/^\+46[0-9]{6,13}$/u', $billing_phone, $matches );
 		if ( ! isset( $matches[0] ) || $matches[0] !== $billing_phone ) {
@@ -457,7 +459,7 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @return string
 	 */
 	public function swish_phone_format( $phone, $order ) {
-		return $phone;
+		return str_replace( array(' ', '-'), '', $phone );
 	}
 }
 
