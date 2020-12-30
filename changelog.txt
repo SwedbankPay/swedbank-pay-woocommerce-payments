@@ -1,3 +1,8 @@
+Version 3.3.0
+* Rename Merchant Token to Access Token
+* Swish: Fix phone number problem
+* Implemented Instant capture
+
 Version 3.2.0
 * Update the background queue processor
 * Fixed invoice capture
