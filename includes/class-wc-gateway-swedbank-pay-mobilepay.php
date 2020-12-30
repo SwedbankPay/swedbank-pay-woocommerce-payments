@@ -3,6 +3,7 @@
 defined( 'ABSPATH' ) || exit;
 
 use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
+use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Instant_Capture;
 use SwedbankPay\Core\Adapter\WC_Adapter;
 use SwedbankPay\Core\Core;
 
@@ -75,17 +76,19 @@ class WC_Gateway_Swedbank_Pay_Mobilepay extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		// Define user set variables
-		$this->enabled      = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title        = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description  = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->access_token = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
-		$this->payee_id     = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
-		$this->subsite      = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
-		$this->testmode     = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
-		$this->debug        = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->culture      = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-		$this->terms_url    = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
-		$this->logo_url     = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
+		$this->enabled         = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title           = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description     = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->access_token    = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
+		$this->payee_id        = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite         = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
+		$this->testmode        = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
+		$this->debug           = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->culture         = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->auto_capture    = 'no';
+		$this->instant_capture = isset( $this->settings['instant_capture'] ) ? $this->settings['instant_capture'] : $this->instant_capture;
+		$this->terms_url       = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+		$this->logo_url        = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
 
 		// Actions
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
@@ -163,6 +166,20 @@ class WC_Gateway_Swedbank_Pay_Mobilepay extends WC_Gateway_Swedbank_Pay_Cc {
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable logging', 'swedbank-pay-woocommerce-payments' ),
 				'default' => $this->debug,
+			),
+			'instant_capture'         => array(
+				'title'          => __( 'Instant Capture', 'swedbank-pay-woocommerce-payments' ),
+				'description'    => __( 'Capture payment automatically depends on the product type.', 'swedbank-pay-woocommerce-payments' ),
+				'type'           => 'multiselect',
+				'css'            => 'height: 150px',
+				'options'        => array(
+					WC_Swedbank_Pay_Instant_Capture::CAPTURE_VIRTUAL   => __( 'Virtual products', 'swedbank-pay-woocommerce-payments' ),
+					WC_Swedbank_Pay_Instant_Capture::CAPTURE_PHYSICAL  => __( 'Physical  products', 'swedbank-pay-woocommerce-payments' ),
+					WC_Swedbank_Pay_Instant_Capture::CAPTURE_RECURRING => __( 'Recurring (subscription) products', 'swedbank-pay-woocommerce-payments' ),
+					WC_Swedbank_Pay_Instant_Capture::CAPTURE_FEE       => __( 'Fees', 'swedbank-pay-woocommerce-payments' ),
+				),
+				'select_buttons' => true,
+				'default'     => $this->instant_capture
 			),
 			'culture'        => array(
 				'title'       => __( 'Language', 'swedbank-pay-woocommerce-payments' ),

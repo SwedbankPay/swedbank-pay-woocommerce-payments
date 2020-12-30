@@ -5,6 +5,7 @@ defined( 'ABSPATH' ) || exit;
 use SwedbankPay\Core\Adapter\WC_Adapter;
 use SwedbankPay\Payments\WooCommerce\WC_Background_Swedbank_Pay_Queue;
 use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
+use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Instant_Capture;
 use SwedbankPay\Core\Core;
 use SwedbankPay\Core\OrderInterface;
 use SwedbankPay\Core\Log\LogLevel;
@@ -66,6 +67,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 * @var string
 	 */
 	public $auto_capture = 'no';
+
+	/**
+	 * Instant Capture
+	 * @var array
+	 */
+	public $instant_capture = array();
 
 	/**
 	 * Save CC
@@ -179,10 +186,11 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->auto_capture   = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
+		$this->instant_capture = isset( $this->settings['instant_capture'] ) ? $this->settings['instant_capture'] : $this->instant_capture;
 		$this->save_cc        = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
 		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
 		$this->logo_url       = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
-        $this->use_payer_info = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
+		$this->use_payer_info = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
 
 		// Reject Cards
 		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
@@ -381,10 +389,26 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				'default'     => $this->culture,
 			),
 			'auto_capture'           => array(
-				'title'   => __( 'Auto Capture', 'swedbank-pay-woocommerce-payments' ),
+				'title'   => __( 'Auto Capture Intent', 'swedbank-pay-woocommerce-payments' ),
 				'type'    => 'checkbox',
-				'label'   => __( 'Enable Auto Capture', 'swedbank-pay-woocommerce-payments' ),
+				'label'   => __( 'Enable Auto Capture Intent', 'swedbank-pay-woocommerce-payments' ),
+				'description' => __( 'A one phase option that enable capture of funds automatically after authorization.', 'swedbank-pay-woocommerce-payments' ),
+				'desc_tip'    => true,
 				'default' => $this->auto_capture,
+			),
+			'instant_capture'         => array(
+				'title'          => __( 'Instant Capture', 'swedbank-pay-woocommerce-payments' ),
+				'description'    => __( 'Capture payment automatically depends on the product type. It\'s working when Auto Capture Intent is off.', 'swedbank-pay-woocommerce-payments' ),
+				'type'           => 'multiselect',
+				'css'            => 'height: 150px',
+				'options'        => array(
+					WC_Swedbank_Pay_Instant_Capture::CAPTURE_VIRTUAL   => __( 'Virtual products', 'swedbank-pay-woocommerce-payments' ),
+					WC_Swedbank_Pay_Instant_Capture::CAPTURE_PHYSICAL  => __( 'Physical  products', 'swedbank-pay-woocommerce-payments' ),
+					WC_Swedbank_Pay_Instant_Capture::CAPTURE_RECURRING => __( 'Recurring (subscription) products', 'swedbank-pay-woocommerce-payments' ),
+					WC_Swedbank_Pay_Instant_Capture::CAPTURE_FEE       => __( 'Fees', 'swedbank-pay-woocommerce-payments' ),
+				),
+				'select_buttons' => true,
+				'default'     => $this->instant_capture
 			),
 			'save_cc'                => array(
 				'title'   => __( 'Save CC', 'swedbank-pay-woocommerce-payments' ),
