@@ -24,6 +24,7 @@ class WC_Unit_Gateway_Swedbank_Pay_Invoice extends WC_Unit_Test_Case {
 		$this->gateway->enabled     = 'yes';
 		$this->gateway->testmode    = 'yes';
 		$this->gateway->description = 'Test';
+		$this->gateway->method      = WC_Gateway_Swedbank_Pay_Invoice::METHOD_REDIRECT;
 
 		// Add SwedbankPay to PM List
 		tests_add_filter( 'woocommerce_payment_gateways', array( $this, 'payment_gateways' ) );
@@ -68,8 +69,7 @@ class WC_Unit_Gateway_Swedbank_Pay_Invoice extends WC_Unit_Test_Case {
 		$order->set_currency( 'SEK' );
 		$order->save();
 
-		$_POST['social-security-number'] = '971020-2392';
-		$result                          = $this->gateway->process_payment( $order->get_id() );
+		$result = $this->gateway->process_payment( $order->get_id() );
 
 		$this->assertFalse( $result );
 	}
