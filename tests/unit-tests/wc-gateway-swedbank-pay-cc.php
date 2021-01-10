@@ -64,8 +64,7 @@ class WC_Unit_Gateway_Swedbank_Pay_CC extends WC_Unit_Test_Case {
 		$this->assertInstanceOf( WC_Payment_Gateways::class, new $gateways );
 
 		$gateways = $gateways->payment_gateways();
-		//$this->assertIsArray( $gateways );
-		$this->assertTrue( is_array( $gateways ) );
+		$this->assertIsArray( $gateways );
 		$this->assertArrayHasKey( 'payex_psp_cc', $gateways );
 	}
 
