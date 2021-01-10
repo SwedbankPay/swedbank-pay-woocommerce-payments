@@ -73,10 +73,14 @@ class WC_Unit_Gateway_Swedbank_Pay_Mobilepay extends WC_Unit_Test_Case {
 		$order->save();
 
 		$result = $this->gateway->process_payment( $order->get_id() );
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'result', $result );
-		$this->assertArrayHasKey( 'redirect', $result );
-		$this->assertEquals( 'success', $result['result'] );
+		if ( ! $result ) {
+			$this->assertFalse( $result );
+		} else {
+			$this->assertIsArray( $result );
+			$this->assertArrayHasKey( 'result', $result );
+			$this->assertArrayHasKey( 'redirect', $result );
+			$this->assertEquals( 'success', $result['result'] );
+		}
 	}
 
 	public function test_capture_payment() {
