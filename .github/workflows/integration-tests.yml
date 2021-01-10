@@ -58,7 +58,7 @@ jobs:
           PAYEE_ID: ${{ secrets.PAYEE_ID }}
         run: |
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
-          WP_TESTS_DIR=/tmp/wordpress-tests-lib WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit
+          WP_TESTS_DIR=/tmp/wordpress-tests-lib WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit --configuration=./tests/phpunit.xml --bootstrap=./tests/bootstrap.php ./tests/ --coverage-clover=coverage.xml
 
       - name: Run PHPCS inspection
         run: |
@@ -70,3 +70,8 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           path: /tmp/wordpress/wp-content/uploads/wc-logs/*.log
+
+      - name: Upload code coverage report to Codecov
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: bash <(curl -s https://codecov.io/bash)

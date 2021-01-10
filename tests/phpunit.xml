@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <phpunit
-	bootstrap="tests/bootstrap.php"
+	bootstrap="./bootstrap.php"
 	backupGlobals="false"
 	colors="true"
 	convertErrorsToExceptions="true"
@@ -9,12 +9,17 @@
 	>
 	<testsuites>
 		<testsuite name="Test Suite">
-			<directory suffix=".php">./tests/unit-tests</directory>
+			<directory suffix=".php">./unit-tests</directory>
 		</testsuite>
 	</testsuites>
+	<filter>
+		<whitelist addUncoveredFilesFromWhitelist="true">
+			<directory>../includes</directory>
+			<file>swedbank-pay-woocommerce-payments.php</file>
+		</whitelist>
+	</filter>
 	<php>
 		<ini name="display_errors" value="On" />
 		<ini name="display_startup_errors" value="On" />
 	</php>
-
 </phpunit>
