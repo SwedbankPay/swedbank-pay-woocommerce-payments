@@ -11,6 +11,12 @@ class WC_Unit_Gateway_Swedbank_Pay_CC extends WC_Unit_Test_Case {
 	 */
 	private $wc;
 
+	private $settings = array(
+		'enabled' => 'yes',
+		'testmode' => 'yes',
+		'debug' => 'yes'
+	);
+
 	/**
 	 * Setup test case.
 	 */
@@ -18,12 +24,20 @@ class WC_Unit_Gateway_Swedbank_Pay_CC extends WC_Unit_Test_Case {
 		parent::setUp();
 
 		$this->wc = WC();
+		$this->gateway = new WC_Gateway_Swedbank_Pay_Cc();
 
-		// Init SwedbankPay Payments plugin
-		$this->gateway              = new WC_Gateway_Swedbank_Pay_Cc();
-		$this->gateway->enabled     = 'yes';
-		$this->gateway->testmode    = 'yes';
-		$this->gateway->description = 'Test';
+		$this->settings['payee_id'] = getenv( 'PAYEE_ID' );
+		$this->settings['access_token'] = getenv( 'ACCESS_TOKEN' );
+
+		if ( empty( $this->settings['payee_id'] ) || empty( $this->settings['access_token'] ) ) {
+			echo "PAYEE_ID or ACCESS_TOKEN wasn't defined\n";
+		}
+
+		update_option(
+			$this->gateway->get_option_key(),
+			apply_filters( 'woocommerce_settings_api_sanitized_fields_' . $this->gateway->id, $this->settings ),
+			'yes'
+		);
 
 		// Add SwedbankPay to PM List
 		tests_add_filter( 'woocommerce_payment_gateways', array( $this, 'payment_gateways' ) );
@@ -37,6 +51,8 @@ class WC_Unit_Gateway_Swedbank_Pay_CC extends WC_Unit_Test_Case {
 	 * @return mixed
 	 */
 	public function payment_gateways( $gateways ) {
+		$this->gateway->init_settings();
+
 		$payment_gateways[ $this->gateway->id ] = $this->gateway;
 
 		return $gateways;
