@@ -1,8 +1,8 @@
 <?php
 
-class WC_Unit_Gateway_Swedbank_Pay_Swish extends WC_Unit_Test_Case {
+class WC_Unit_Gateway_Swedbank_Pay_Mobilepay extends WC_Unit_Test_Case {
 	/**
-	 * @var WC_Gateway_Swedbank_Pay_Swish
+	 * @var WC_Gateway_Swedbank_Pay_Mobilepay
 	 */
 	private $gateway;
 
@@ -22,14 +22,14 @@ class WC_Unit_Gateway_Swedbank_Pay_Swish extends WC_Unit_Test_Case {
 	public function setUp() {
 		parent::setUp();
 
-		$this->gateway = new WC_Gateway_Swedbank_Pay_Swish();
+		$this->gateway = new WC_Gateway_Swedbank_Pay_Mobilepay();
 
-		$this->settings['payee_id'] = getenv( 'PAYEE_ID' );
-		$this->settings['access_token'] = getenv( 'ACCESS_TOKEN' );
+		$this->settings['payee_id'] = getenv( 'PAYEE_ID_MOBILEPAY' );
+		$this->settings['access_token'] = getenv( 'ACCESS_TOKEN_MOBILEPAY' );
 		$this->settings = array_merge( $this->gateway->settings, $this->settings );
 
 		if ( empty( $this->settings['payee_id'] ) || empty( $this->settings['access_token'] ) ) {
-			$this->fail("ACCESS_TOKEN or PAYEE_ID wasn't configured in environment variable.");
+			$this->fail("ACCESS_TOKEN_MOBILEPAY or PAYEE_ID_MOBILEPAY wasn't configured in environment variable.");
 		}
 
 		update_option(
@@ -39,7 +39,7 @@ class WC_Unit_Gateway_Swedbank_Pay_Swish extends WC_Unit_Test_Case {
 		);
 
 		$this->gateway->init_settings();
-		$this->gateway = new WC_Gateway_Swedbank_Pay_Swish();
+		$this->gateway = new WC_Gateway_Swedbank_Pay_Mobilepay();
 	}
 
 	public function test_payment_gateway() {
@@ -49,13 +49,13 @@ class WC_Unit_Gateway_Swedbank_Pay_Swish extends WC_Unit_Test_Case {
 
 		$gateways = $gateways->payment_gateways();
 		$this->assertIsArray( $gateways );
-		$this->assertArrayHasKey($this->gateway->id, $gateways );
+		$this->assertArrayHasKey( $this->gateway->id, $gateways );
 	}
 
 	public function test_order() {
 		$order = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
-		$order->set_currency( 'SEK' );
+		$order->set_currency( 'DKK' );
 		$order->save();
 
 		$this->assertEquals( $this->gateway->id, $order->get_payment_method() );
@@ -64,25 +64,29 @@ class WC_Unit_Gateway_Swedbank_Pay_Swish extends WC_Unit_Test_Case {
 	public function test_process_payment() {
 		$order = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
-		$order->set_currency( 'SEK' );
+		$order->set_currency( 'DKK' );
 		$order->set_customer_user_agent(
 			'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87 Safari/537'
 		);
-		$order->set_billing_country( 'SE' );
-		$order->set_billing_phone('+46739000001');
+		$order->set_billing_country( 'DK' );
+		$order->set_billing_phone('+4522222222');
 		$order->save();
 
 		$result = $this->gateway->process_payment( $order->get_id() );
-		$this->assertIsArray( $result );
-		$this->assertArrayHasKey( 'result', $result );
-		$this->assertArrayHasKey( 'redirect', $result );
-		$this->assertEquals( 'success', $result['result'] );
+		if ( ! $result ) {
+			$this->assertFalse( $result );
+		} else {
+			$this->assertIsArray( $result );
+			$this->assertArrayHasKey( 'result', $result );
+			$this->assertArrayHasKey( 'redirect', $result );
+			$this->assertEquals( 'success', $result['result'] );
+		}
 	}
 
 	public function test_capture_payment() {
 		$order = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
-		$order->set_currency( 'SEK' );
+		$order->set_currency( 'DKK' );
 
 		$this->expectException( Exception::class );
 		$this->gateway->capture_payment( $order );
@@ -91,7 +95,7 @@ class WC_Unit_Gateway_Swedbank_Pay_Swish extends WC_Unit_Test_Case {
 	public function test_cancel_payment() {
 		$order = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
-		$order->set_currency( 'SEK' );
+		$order->set_currency( 'DKK' );
 
 		$this->expectException( Exception::class );
 		$this->gateway->cancel_payment( $order );
@@ -100,7 +104,7 @@ class WC_Unit_Gateway_Swedbank_Pay_Swish extends WC_Unit_Test_Case {
 	public function test_cancel_pending() {
 		$order = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
-		$order->set_currency( 'SEK' );
+		$order->set_currency( 'DKK' );
 
 		$this->gateway->cancel_pending( $order->get_id(), $order );
 		$this->assertEquals( $this->gateway->id, $order->get_payment_method() );
@@ -109,7 +113,7 @@ class WC_Unit_Gateway_Swedbank_Pay_Swish extends WC_Unit_Test_Case {
 	public function test_process_refund() {
 		$order  = WC_Helper_Order::create_order();
 		$order->set_payment_method( $this->gateway );
-		$order->set_currency( 'SEK' );
+		$order->set_currency( 'DKK' );
 
 		$result = $this->gateway->process_refund( $order->get_id(), $order->get_total(), 'Test' );
 		$this->assertInstanceOf( 'WP_Error', $result );
