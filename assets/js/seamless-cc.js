@@ -2,103 +2,17 @@
 jQuery( function( $ ) {
     'use strict';
 
-    $( document ).ajaxComplete( function ( event, xhr, settings ) {
-        if ( ( settings.url === wc_checkout_params.checkout_url ) || ( settings.url.indexOf( 'wc-ajax=complete_order' ) > -1 ) ) {
-            const data = xhr.responseText;
-
-            // Parse
-            try {
-                const result = JSON.parse( data );
-
-                // Check is response from payment gateway
-                if ( ! result.hasOwnProperty( 'is_swedbank_pay_cc' ) ) {
-                    return false;
-                }
-
-                // Save js_url value
-                wc_sb_cc.setJsUrl( result.js_url );
-            } catch ( e ) {
-                return false;
-            }
-        }
-    } );
-
     /**
      * Object to handle Cc payment forms.
      */
     window.wc_sb_cc = {
         xhr: false,
-
-        /**
-         * Initialize e handlers and UI state.
-         */
-        init: function( form ) {
-            this.form         = form;
-            this.form_submit  = false;
-            this.js_url       = null;
-
-            $( this.form )
-                // We need to bind directly to the click (and not checkout_place_order_payex_checkout) to avoid popup blockers
-                // especially on mobile devices (like on Chrome for iOS) from blocking payex_checkout(payment_id, {}, 'open'); from opening a tab
-                .on( 'click', '#place_order', {'obj': window.wc_sb_cc}, this.onSubmit )
-
-                // WooCommerce lets us return a false on checkout_place_order_{gateway} to keep the form from submitting
-                .on( 'submit checkout_place_order_payex_psp_cc' );
-        },
-
-        /**
-         * Initiate Payment Menu.
-         * Payment Javascript must be loaded.
-         *
-         * @param id
-         * @param callback
-         */
-        initPaymentMenu: function ( id, callback ) {
-            console.log( 'initPaymentMenu' );
-
-            if ( typeof callback === 'undefined' ) {
-                callback = function () {};
-            }
-
-            // Load payment frame
-            this.paymentMenu = window.payex.hostedView.creditCard( {
-                container: id,
-                culture: WC_Gateway_Swedbank_Pay_Cc.culture,
-                onApplicationConfigured: function( data ) {
-                    console.log( 'onApplicationConfigured' );
-                    console.log( data );
-                    callback( null );
-                },
-                onPaymentCreated: function () {
-                    console.log( 'onPaymentCreated' );
-                },
-                onPaymentCompleted: function ( data ) {
-                    console.log( 'onPaymentCompleted' );
-                    console.log( data );
-
-                    self.location.href = data.redirectUrl;
-                },
-                onPaymentCanceled: function ( data ) {
-                    console.log( 'onPaymentCanceled' );
-                    console.log( data );
-                },
-                onPaymentFailed: function ( data ) {
-                    console.log( 'onPaymentFailed' );
-                    console.log( data );
-
-                    self.location.href = data.redirectUrl;
-                },
-                onError: function ( data ) {
-                    console.log( data );
-                    callback( data );
-                }
-            } );
-
-            this.paymentMenu.open();
-        },
+        gateway_id: 'payex_psp_cc',
+        key: 'is_swedbank_pay_cc',
+        culture: WC_Gateway_Swedbank_Pay_Cc.culture,
+        hostedView: 'creditCard',
     };
 
-    delete window.wc_sb_seamless.init;
     $.extend( window.wc_sb_cc, window.wc_sb_seamless );
 
     window.wc_sb_cc.init( $( "form.checkout, form#order_review, form#add_payment_method" ) );

@@ -16,13 +16,15 @@ jQuery( function( $ ) {
             this.form_submit  = false;
             this.js_url       = null;
 
+            // We need to bind directly to the click (and not checkout_place_order_{gateway}) to avoid popup blockers
+            // especially on mobile devices (like on Chrome for iOS) from blocking payex.hostedView from opening a tab
             $( this.form )
-                // We need to bind directly to the click (and not checkout_place_order_payex_checkout) to avoid popup blockers
-                // especially on mobile devices (like on Chrome for iOS) from blocking payex_checkout(payment_id, {}, 'open'); from opening a tab
-                //.on( 'click', '#place_order', this.onSubmit )
+                .on( 'click', '#place_order', {'obj': this}, this.onSubmit );
 
-                // WooCommerce lets us return a false on checkout_place_order_{gateway} to keep the form from submitting
-                //.on( 'submit checkout_place_order_payex_psp_cc' );
+            // WooCommerce lets us return a false on checkout_place_order_{gateway} to keep the form from submitting
+            $( this.form ).on( 'submit checkout_place_order_' + this.gateway_id );
+
+            this.addAjaxHook();
         },
 
         onSubmit: function( event ) {
@@ -109,7 +111,9 @@ jQuery( function( $ ) {
                 if ( self.js_url ) {
                     console.log( 'waitForJsUrl: ' + self.js_url )
                     window.clearInterval( interval );
-                    self.initFrame( self.js_url );
+                    self.initFrame( self.js_url, function () {
+                        self.js_url = null;
+                    } );
                 }
             }, 1000 );
         },
@@ -125,18 +129,30 @@ jQuery( function( $ ) {
                 callback = function () {};
             }
 
+            // Destroy old script instances
+            $( "script[src*='px.creditcard.client.js']" ).remove();
+            $( "script[src*='px.invoice.client.js']" ).remove();
+            $( "script[src*='px.mobilepay.client.js']" ).remove();
+            $( "script[src*='px.swish.client.js']" ).remove();
+            $( "script[src*='px.trustly.client.js']" ).remove();
+            $( "script[src*='px.vipps.client.js']" ).remove();
+
             // Load JS
             var self = this;
             this.loadJs( url, function () {
-                $.featherlight( '<div id="swedbank-pay-seamless">&nbsp;</div>', {
+                $( '.swedbank-pay-seamless iframe' ).remove();
+
+                $.featherlight( '<div class="swedbank-pay-seamless" id="swedbank-pay-seamless' + self.gateway_id + '">&nbsp;</div>', {
                     variant: 'featherlight-swedbank-seamless',
-                    persist: true,
+                    persist: false,
                     closeOnClick: false,
                     closeOnEsc: false,
                     afterOpen: function () {
-                        self.initPaymentMenu( 'swedbank-pay-seamless' );
+                        console.log(self);
+                        self.initPaymentMenu( 'swedbank-pay-seamless' + self.gateway_id );
                     },
                     afterClose: function () {
+                        $( '.swedbank-pay-seamless iframe' ).remove();
                         self.form.removeClass( 'processing' ).unblock();
                     }
                 } );
@@ -170,6 +186,84 @@ jQuery( function( $ ) {
             }
 
             return script;
+        },
+
+        /**
+         * Initiate Payment Menu.
+         * Payment Javascript must be loaded.
+         *
+         * @param id
+         * @param callback
+         */
+        initPaymentMenu: function ( id, callback ) {
+            console.log( 'initPaymentMenu' );
+
+            if ( typeof callback === 'undefined' ) {
+                callback = function () {};
+            }
+
+            // Load payment frame
+            // @see https://developer.swedbankpay.com/payment-instruments/card/other-features#seamless-view-events
+            this.paymentMenu = window.payex.hostedView[this.hostedView]( {
+                container: id,
+                culture: this.culture,
+                onApplicationConfigured: function( data ) {
+                    console.log( 'onApplicationConfigured' );
+                    console.log( data );
+                    callback( null );
+                },
+                onPaymentCreated: function ( data ) {
+                    console.log( 'onPaymentCreated' );
+                    console.log( data.id );
+                },
+                onPaymentCompleted: function ( data ) {
+                    console.log( 'onPaymentCompleted' );
+                    console.log( data );
+
+                    self.location.href = data.redirectUrl;
+                },
+                onPaymentCanceled: function ( data ) {
+                    console.log( 'onPaymentCanceled' );
+                    console.log( data );
+                },
+                onPaymentFailed: function ( data ) {
+                    console.log( 'onPaymentFailed' );
+                    console.log( data );
+
+                    self.location.href = data.redirectUrl;
+                },
+                onError: function ( data ) {
+                    console.log( data );
+                    callback( data );
+                }
+            } );
+
+            this.paymentMenu.open();
+        },
+
+        addAjaxHook: function () {
+            var self = this;
+
+            $( document ).ajaxComplete( function ( event, xhr, settings ) {
+                if ( ( settings.url === wc_checkout_params.checkout_url ) || ( settings.url.indexOf( 'wc-ajax=complete_order' ) > -1 ) ) {
+                    const data = xhr.responseText;
+
+                    // Parse
+                    try {
+                        const result = JSON.parse( data );
+
+                        // Check is response from payment gateway
+                        if ( ! result.hasOwnProperty( self.key ) ) {
+                            return false;
+                        }
+
+                        // Save js_url value
+                        self.setJsUrl( result.js_url );
+                    } catch ( e ) {
+                        return false;
+                    }
+                }
+            } );
         },
     }
 } );
