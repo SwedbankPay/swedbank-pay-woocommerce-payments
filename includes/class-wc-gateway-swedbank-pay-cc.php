@@ -1346,6 +1346,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 * @param WC_Order $renewal_order
 	 */
 	public function scheduled_subscription_payment( $amount_to_charge, $renewal_order ) {
+		$user_agent = $renewal_order->get_customer_user_agent();
+		if ( empty( $user_agent ) ) {
+			$renewal_order->set_customer_user_agent( 'WooCommerce/' . WC()->version );
+			$renewal_order->save();
+		}
+
 		try {
 			$tokens = $renewal_order->get_payment_tokens();
 
