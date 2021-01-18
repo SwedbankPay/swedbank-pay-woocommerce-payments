@@ -11,6 +11,10 @@ use SwedbankPay\Core\OrderInterface;
 use SwedbankPay\Core\Log\LogLevel;
 
 class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
+	const METHOD_DIRECT = 'direct';
+	const METHOD_REDIRECT = 'redirect';
+	const METHOD_SEAMLESS = 'seamless';
+
 	/**
 	 * @var WC_Adapter
 	 */
@@ -61,6 +65,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 * @var string
 	 */
 	public $culture = 'en-US';
+
+	/**
+	 * Checkout Method
+	 * @var string
+	 */
+	public $method = self::METHOD_REDIRECT;
 
 	/**
 	 * Auto Capture
@@ -176,21 +186,22 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		}
 
 		// Define user set variables
-		$this->enabled        = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title          = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description    = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->access_token   = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
-		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
-		$this->subsite        = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
-		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
-		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-		$this->auto_capture   = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
+		$this->enabled         = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title           = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description     = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->access_token    = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
+		$this->payee_id        = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite         = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
+		$this->testmode        = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
+		$this->debug           = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->culture         = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->method          = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
+		$this->auto_capture    = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
 		$this->instant_capture = isset( $this->settings['instant_capture'] ) ? $this->settings['instant_capture'] : $this->instant_capture;
-		$this->save_cc        = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
-		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
-		$this->logo_url       = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
-		$this->use_payer_info = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
+		$this->save_cc         = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
+		$this->terms_url       = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+		$this->logo_url        = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
+		$this->use_payer_info  = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
 
 		// Reject Cards
 		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
@@ -204,6 +215,9 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		} elseif ( 'https' !== parse_url( $this->terms_url, PHP_URL_SCHEME ) ) {
 			$this->terms_url = '';
 		}
+
+		// JS Scrips
+		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
 
 		// Actions and filters
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
@@ -378,15 +392,34 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				'title'       => __( 'Language', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'select',
 				'options'     => array(
+					'da-DK' => 'Danish',
+					'de-DE' => 'German',
+					'ee-EE' => 'Estonian',
 					'en-US' => 'English',
-					'sv-SE' => 'Swedish',
+					'es-ES' => 'Spanish',
+					'fi-FI' => 'Finnish',
+					'fr-FR' => 'French',
+					'lt-LT' => 'Lithuanian',
+					'lv-LV' => 'Latvian',
 					'nb-NO' => 'Norway',
+					'ru-RU' => 'Russian',
+					'sv-SE' => 'Swedish',
 				),
 				'description' => __(
 					'Language of pages displayed by Swedbank Pay during payment.',
 					'swedbank-pay-woocommerce-payments'
 				),
 				'default'     => $this->culture,
+			),
+			'method'         => array(
+				'title'       => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
+				'type'        => 'select',
+				'options'     => array(
+					self::METHOD_REDIRECT   => __( 'Redirect', 'swedbank-pay-woocommerce-payments' ),
+					self::METHOD_SEAMLESS   => __( 'Seamless View', 'swedbank-pay-woocommerce-payments' ),
+				),
+				'description' => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->method,
 			),
 			'auto_capture'           => array(
 				'title'   => __( 'Auto Capture Intent', 'swedbank-pay-woocommerce-payments' ),
@@ -555,6 +588,44 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		}
 
 		return $result;
+	}
+
+	/**
+	 * payment_scripts function.
+	 *
+	 * Outputs scripts used for payment
+	 *
+	 * @return void
+	 */
+	public function payment_scripts() {
+		if ( ! is_checkout() || 'no' === $this->enabled || self::METHOD_SEAMLESS !== $this->method ) {
+			return;
+		}
+
+		$this->enqueue_seamless();
+
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_register_script(
+			'wc-sb-cc',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/seamless-cc' . $suffix . '.js',
+			array(
+				'wc-sb-seamless',
+			),
+			false,
+			true
+		);
+
+		// Localize the script with new data
+		wp_localize_script(
+			'wc-sb-cc',
+			'WC_Gateway_Swedbank_Pay_Cc',
+			array(
+				'culture' => $this->culture,
+			)
+		);
+
+		wp_enqueue_script( 'wc-sb-cc' );
 	}
 
 	/**
@@ -905,13 +976,28 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
 		$order->save();
 
-		// Redirect
-		$order->add_order_note( __( 'Customer has been redirected to Swedbank Pay.', 'swedbank-pay-woocommerce-payments' ) );
+		switch ( $this->method ) {
+			case self::METHOD_REDIRECT:
+				// Redirect
+				$order->add_order_note( __( 'Customer has been redirected to Swedbank Pay.', 'swedbank-pay-woocommerce-payments' ) );
 
-		return array(
-			'result'   => 'success',
-			'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
-		);
+				return array(
+					'result'   => 'success',
+					'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
+				);
+			case self::METHOD_SEAMLESS:
+				return array(
+					'result'                   => 'success',
+					'redirect'                 => '#!swedbank-pay-cc',
+					'is_swedbank_pay_cc'       => true,
+					'js_url'                   => $result->getOperationByRel( 'view-authorization' ),
+				);
+
+			default:
+				wc_add_notice( __( 'Wrong method', 'swedbank-pay-woocommerce-payments' ), 'error' );
+
+				return false;
+		}
 	}
 
 	/**
@@ -1453,6 +1539,65 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		}
 
 		return false;
+	}
+
+
+	/**
+	 * Add seamless scripts
+	 */
+	protected function enqueue_seamless() {
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_enqueue_script(
+			'featherlight',
+			untrailingslashit(
+				plugins_url(
+					'/',
+					__FILE__
+				)
+			) . '/../assets/js/featherlight/featherlight' . $suffix . '.js',
+			array( 'jquery' ),
+			'1.7.13',
+			true
+		);
+
+		wp_enqueue_style(
+			'featherlight-css',
+			untrailingslashit(
+				plugins_url(
+					'/',
+					__FILE__
+				)
+			) . '/../assets/js/featherlight/featherlight' . $suffix . '.css',
+			array(),
+			'1.7.13',
+			'all'
+		);
+
+		wp_enqueue_style(
+			'featherlight-sb-seamless-css',
+			untrailingslashit(
+				plugins_url(
+					'/',
+					__FILE__
+				)
+			) . '/../assets/css/seamless' . $suffix . '.css',
+			array(),
+			null,
+			'all'
+		);
+
+		wp_register_script(
+			'wc-sb-seamless',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/seamless' . $suffix . '.js',
+			array(
+				'jquery',
+				'wc-checkout',
+				'featherlight',
+			),
+			false,
+			true
+		);
 	}
 
 	/**

@@ -289,54 +289,15 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 			return;
 		}
 
+		$this->enqueue_seamless();
+
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-
-		wp_enqueue_script(
-			'featherlight',
-			untrailingslashit(
-				plugins_url(
-					'/',
-					__FILE__
-				)
-			) . '/../assets/js/featherlight/featherlight' . $suffix . '.js',
-			array( 'jquery' ),
-			'1.7.13',
-			true
-		);
-
-		wp_enqueue_style(
-			'featherlight-css',
-			untrailingslashit(
-				plugins_url(
-					'/',
-					__FILE__
-				)
-			) . '/../assets/js/featherlight/featherlight' . $suffix . '.css',
-			array(),
-			'1.7.13',
-			'all'
-		);
-
-		wp_enqueue_style(
-			'sb-invoice-css',
-			untrailingslashit(
-				plugins_url(
-					'/',
-					__FILE__
-				)
-			) . '/../assets/css/invoice' . $suffix . '.css',
-			array(),
-			null,
-			'all'
-		);
 
 		wp_register_script(
 			'wc-sb-invoice',
-			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/invoice' . $suffix . '.js',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/seamless-invoice' . $suffix . '.js',
 			array(
-				'jquery',
-				'wc-checkout',
-				'featherlight',
+				'wc-sb-seamless',
 			),
 			false,
 			true

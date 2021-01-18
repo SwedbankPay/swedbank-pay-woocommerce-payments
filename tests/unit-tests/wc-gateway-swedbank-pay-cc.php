@@ -1,5 +1,7 @@
 <?php
 
+use Automattic\Jetpack\Constants;
+
 class WC_Unit_Gateway_Swedbank_Pay_CC extends WC_Unit_Test_Case {
 	/**
 	 * @var WC_Gateway_Swedbank_Pay_Cc
@@ -157,5 +159,18 @@ class WC_Unit_Gateway_Swedbank_Pay_CC extends WC_Unit_Test_Case {
 
 		$result = $this->gateway->scheduled_subscription_payment( 10, $order );
 		$this->assertNull( $result );
+	}
+
+	public function test_payment_scripts() {
+		Constants::set_constant( 'WOOCOMMERCE_CHECKOUT', true );
+		$this->gateway->method = WC_Gateway_Swedbank_Pay_Cc::METHOD_SEAMLESS;
+
+		$this->gateway->payment_scripts();
+
+		$wp_scripts = wp_scripts();
+
+		$this->assertTrue(
+			$wp_scripts->registered > 0
+		);
 	}
 }
