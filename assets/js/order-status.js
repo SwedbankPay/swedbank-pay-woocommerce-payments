@@ -44,6 +44,14 @@ jQuery( function( $ ) {
          * @return {JQueryPromise<any>}
          */
         checkPayment: function ( callback ) {
+            $( '.woocommerce-order' ).block( {
+                message: WC_Gateway_Swedbank_Pay_Order_Status.check_message,
+                overlayCSS: {
+                    background: '#fff',
+                    opacity: 0.6
+                }
+            } );
+
             return $.ajax( {
                 type: 'POST',
                 url: WC_Gateway_Swedbank_Pay_Order_Status.ajax_url,
@@ -55,15 +63,8 @@ jQuery( function( $ ) {
                 },
                 dataType: 'json'
             } ).always( function() {
-                $( '.woocommerce-order' ).block( {
-                    message: WC_Gateway_Swedbank_Pay_Order_Status.check_message,
-                    overlayCSS: {
-                        background: '#fff',
-                        opacity: 0.6
-                    }
-                } );
+                $( '.woocommerce-order' ).unblock();
             } ).done( function ( response ) {
-                $( '.woocommerce' ).unblock();
                 callback( null, response.data );
             } );
         },
