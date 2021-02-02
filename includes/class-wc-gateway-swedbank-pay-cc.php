@@ -103,11 +103,11 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 */
 	public $logo_url = '';
 
-    /**
-     * Send payer info
-     * @var string
-     */
-    public $use_payer_info = 'yes';
+	/**
+	 * Send payer info
+	 * @var string
+	 */
+	public $use_payer_info = 'yes';
 
 	/**
 	 * Reject Credit Cards
@@ -473,12 +473,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 					return $value;
 				},
 			),
-            'use_payer_info'        => array(
-                'title'   => __( 'Send payer information', 'swedbank-pay-woocommerce-payments' ),
-                'type'    => 'checkbox',
-                'label'   => __( 'Send billing/delivery addresses of payer to Swedbank Pay', 'swedbank-pay-woocommerce-paymentst' ),
-                'default' => $this->use_payer_info
-            ),
+			'use_payer_info'        => array(
+				'title'   => __( 'Send payer information', 'swedbank-pay-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Send billing/delivery addresses of payer to Swedbank Pay', 'swedbank-pay-woocommerce-paymentst' ),
+				'default' => $this->use_payer_info
+			),
 			'reject_credit_cards'    => array(
 				'title'   => __( 'Reject Credit Cards', 'swedbank-pay-woocommerce-payments' ),
 				'type'    => 'checkbox',
@@ -705,41 +705,45 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				return;
 			}
 
-			$list = $this->core->fetchVerificationList( $payment_id );
-			if ( isset( $list[0] ) &&
-				( ! empty( $list[0]['paymentToken'] ) || ! empty( $list[0]['recurrenceToken'] ) )
-			) {
-				$verification     = $list[0];
-				$payment_token    = isset( $verification['paymentToken'] ) ? $verification['paymentToken'] : '';
-				$recurrence_token = isset( $verification['recurrenceToken'] ) ? $verification['recurrenceToken'] : '';
-				$card_brand       = $verification['cardBrand'];
-				$masked_pan       = $verification['maskedPan'];
-				$expiry_date      = explode( '/', $verification['expiryDate'] );
-
-				// Create Payment Token
-				$token = new WC_Payment_Token_Swedbank_Pay();
-				$token->set_gateway_id( $this->id );
-				$token->set_token( $payment_token );
-				$token->set_recurrence_token( $recurrence_token );
-				$token->set_last4( substr( $masked_pan, - 4 ) );
-				$token->set_expiry_year( $expiry_date[1] );
-				$token->set_expiry_month( $expiry_date[0] );
-				$token->set_card_type( strtolower( $card_brand ) );
-				$token->set_user_id( get_current_user_id() );
-				$token->set_masked_pan( $masked_pan );
-
-				// Save Credit Card
-				$token->save();
-				if ( ! $token->get_id() ) {
-					throw new Exception( __( 'There was a problem adding the card.', 'swedbank-pay-woocommerce-payments' ) );
+			$verifications = $this->core->fetchVerificationList( $payment_id );
+			foreach ($verifications as $verification) {
+				// Skip verification which failed transaction state
+				if ($verification->getTransaction()->isFailed()) {
+					continue;
 				}
 
-				WC()->session->__unset( 'verification_payment_id' );
+				if ($verification->getPaymentToken() || $verification->getRecurrenceToken()) {
+					// Add payment token
+					$expiry_date = explode( '/', $verification['expiryDate'] );
 
-				wc_add_notice( __( 'Payment method successfully added.', 'swedbank-pay-woocommerce-payments' ) );
-				wp_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
-				exit();
+					// Create Payment Token
+					$token = new WC_Payment_Token_Swedbank_Pay();
+					$token->set_gateway_id( $this->id );
+					$token->set_token( $verification->getPaymentToken() );
+					$token->set_recurrence_token( $verification->getRecurrenceToken() );
+					$token->set_last4( substr( $verification->getMaskedPan(), - 4 ) );
+					$token->set_expiry_year( $expiry_date[1] );
+					$token->set_expiry_month( $expiry_date[0] );
+					$token->set_card_type( strtolower( $verification->getCardBrand() ) );
+					$token->set_user_id( get_current_user_id() );
+					$token->set_masked_pan( $verification->getMaskedPan() );
+
+					// Save Credit Card
+					$token->save();
+					if ( ! $token->get_id() ) {
+						throw new Exception( __( 'There was a problem adding the card.', 'swedbank-pay-woocommerce-payments' ) );
+					}
+
+					// Only first
+					break;
+				}
 			}
+
+			WC()->session->__unset( 'verification_payment_id' );
+
+			wc_add_notice( __( 'Payment method successfully added.', 'swedbank-pay-woocommerce-payments' ) );
+			wp_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
+			exit();
 		} catch ( Exception $e ) {
 			wc_add_notice( $e->getMessage(), 'error' );
 			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
