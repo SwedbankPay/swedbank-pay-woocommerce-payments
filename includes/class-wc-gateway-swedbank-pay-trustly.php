@@ -48,7 +48,7 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 	 * Checkout Method
 	 * @var string
 	 */
-	public $method = 'redirect';
+	public $method = self::METHOD_REDIRECT;
 
 	/**
 	 * Init
@@ -190,8 +190,8 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 				'title'       => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'select',
 				'options'     => array(
-					'redirect'   => __( 'Redirect', 'swedbank-pay-woocommerce-payments' ),
-					'seamless'   => __( 'Seamless View', 'swedbank-pay-woocommerce-payments' ),
+					self::METHOD_REDIRECT => __( 'Redirect', 'swedbank-pay-woocommerce-payments' ),
+					self::METHOD_SEAMLESS => __( 'Seamless View', 'swedbank-pay-woocommerce-payments' ),
 				),
 				'description' => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
 				'default'     => $this->method,
@@ -243,58 +243,19 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @return void
 	 */
 	public function payment_scripts() {
-		if ( ! is_checkout() || 'no' === $this->enabled || 'seamless' !== $this->method ) {
+		if ( ! is_checkout() || 'no' === $this->enabled || self::METHOD_SEAMLESS !== $this->method ) {
 			return;
 		}
 
+		$this->enqueue_seamless();
+
 		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-
-		wp_enqueue_script(
-			'featherlight',
-			untrailingslashit(
-				plugins_url(
-					'/',
-					__FILE__
-				)
-			) . '/../assets/js/featherlight/featherlight' . $suffix . '.js',
-			array( 'jquery' ),
-			'1.7.13',
-			true
-		);
-
-		wp_enqueue_style(
-			'featherlight-css',
-			untrailingslashit(
-				plugins_url(
-					'/',
-					__FILE__
-				)
-			) . '/../assets/js/featherlight/featherlight' . $suffix . '.css',
-			array(),
-			'1.7.13',
-			'all'
-		);
-
-		wp_enqueue_style(
-			'trustly-css',
-			untrailingslashit(
-				plugins_url(
-					'/',
-					__FILE__
-				)
-			) . '/../assets/css/trustly' . $suffix . '.css',
-			array(),
-			null,
-			'all'
-		);
 
 		wp_register_script(
 			'wc-sb-trustly',
-			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/trustly' . $suffix . '.js',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/seamless-trustly' . $suffix . '.js',
 			array(
-				'jquery',
-				'wc-checkout',
-				'featherlight',
+				'wc-sb-seamless',
 			),
 			false,
 			true
@@ -353,14 +314,14 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
 
 		switch ( $this->method ) {
-			case 'redirect':
+			case self::METHOD_REDIRECT:
 				// Get Redirect
 
 				return array(
 					'result'   => 'success',
 					'redirect' => $result->getOperationByRel( 'redirect-sale' ),
 				);
-			case 'seamless':
+			case self::METHOD_SEAMLESS:
 				return array(
 					'result'                   => 'success',
 					'redirect'                 => '#!swedbank-pay-trustly',

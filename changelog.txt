@@ -1,3 +1,14 @@
+Version 3.3.0
+* Rename Merchant Token to Access Token
+* Swish: Fix phone number problem
+* Implemented Instant capture
+* Updates of Invoice payment method
+* Implemented Seamless View
+* Fixed: Payment.UserAgent: The UserAgent field is required
+* Fixed problem with recurrence token saving
+* Improved payment confirmation page (order-received page)
+* Skip transactions which have been processed before
+
 Version 3.2.0
 * Update the background queue processor
 * Fixed invoice capture

@@ -48,7 +48,7 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 	 * Checkout Method
 	 * @var string
 	 */
-	public $method = 'redirect';
+	public $method = self::METHOD_REDIRECT;
 
 	/**
 	 * ecomOnlyEnabled Flag
@@ -107,6 +107,9 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 		} elseif ( 'https' !== parse_url( $this->terms_url, PHP_URL_SCHEME ) ) {
 			$this->terms_url = '';
 		}
+
+		// JS Scrips
+		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
 
 		// Actions
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
@@ -205,8 +208,9 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 				'title'       => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'select',
 				'options'     => array(
-					'redirect' => __( 'Redirect', 'swedbank-pay-woocommerce-payments' ),
-					'direct'   => __( 'Direct', 'swedbank-pay-woocommerce-payments' ),
+					self::METHOD_REDIRECT => __( 'Redirect', 'swedbank-pay-woocommerce-payments' ),
+					self::METHOD_DIRECT   => __( 'Direct', 'swedbank-pay-woocommerce-payments' ),
+					self::METHOD_SEAMLESS   => __( 'Seamless View', 'swedbank-pay-woocommerce-payments' ),
 				),
 				'description' => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
 				'default'     => $this->method,
@@ -243,6 +247,44 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 				},
 			),
 		);
+	}
+
+	/**
+	 * payment_scripts function.
+	 *
+	 * Outputs scripts used for payment
+	 *
+	 * @return void
+	 */
+	public function payment_scripts() {
+		if ( ! is_checkout() || 'no' === $this->enabled || self::METHOD_SEAMLESS !== $this->method ) {
+			return;
+		}
+
+		$this->enqueue_seamless();
+
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_register_script(
+			'wc-sb-swish',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/seamless-swish' . $suffix . '.js',
+			array(
+				'wc-sb-seamless',
+			),
+			false,
+			true
+		);
+
+		// Localize the script with new data
+		wp_localize_script(
+			'wc-sb-swish',
+			'WC_Gateway_Swedbank_Pay_Swish',
+			array(
+				'culture' => $this->culture,
+			)
+		);
+
+		wp_enqueue_script( 'wc-sb-swish' );
 	}
 
 	/**
@@ -316,15 +358,14 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
 
 		switch ( $this->method ) {
-			case 'redirect':
+			case self::METHOD_REDIRECT:
 				// Get Redirect
 
 				return array(
 					'result'   => 'success',
 					'redirect' => $result->getOperationByRel( 'redirect-sale' ),
 				);
-				break;
-			case 'direct':
+			case self::METHOD_DIRECT:
 				// Sale payment
 				try {
 					$this->core->initiateSwishPaymentDirect(
@@ -341,9 +382,13 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 					'result'   => 'success',
 					'redirect' => $this->get_return_url( $order ),
 				);
-
-				break;
-
+			case self::METHOD_SEAMLESS:
+				return array(
+					'result'                   => 'success',
+					'redirect'                 => '#!swedbank-pay-swish',
+					'is_swedbank_pay_swish'    => true,
+					'js_url'                   => $result->getOperationByRel( 'view-sales' ),
+				);
 			default:
 				wc_add_notice( __( 'Wrong method', 'swedbank-pay-woocommerce-payments' ), 'error' );
 
