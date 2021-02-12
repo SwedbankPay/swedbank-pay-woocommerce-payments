@@ -46,6 +46,12 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 	public $culture = 'en-US';
 
 	/**
+	 * Checkout Method
+	 * @var string
+	 */
+	public $method = self::METHOD_REDIRECT;
+
+	/**
 	 * Init
 	 */
 	public function __construct() {
@@ -85,6 +91,7 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 		$this->testmode        = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug           = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture         = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->method          = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
 		$this->auto_capture    = 'no';
 		$this->instant_capture = isset( $this->settings['instant_capture'] ) ? $this->settings['instant_capture'] : $this->instant_capture;
 		$this->terms_url       = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
@@ -96,6 +103,9 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 		} elseif ( 'https' !== parse_url( $this->terms_url, PHP_URL_SCHEME ) ) {
 			$this->terms_url = '';
 		}
+
+		// JS Scrips
+		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
 
 		// Actions
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
@@ -204,6 +214,16 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 				),
 				'default'     => $this->culture,
 			),
+			'method'         => array(
+				'title'       => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
+				'type'        => 'select',
+				'options'     => array(
+					self::METHOD_REDIRECT => __( 'Redirect', 'swedbank-pay-woocommerce-payments' ),
+					self::METHOD_SEAMLESS => __( 'Seamless View', 'swedbank-pay-woocommerce-payments' ),
+				),
+				'description' => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->method,
+			),
 			'terms_url'      => array(
 				'title'       => __( 'Terms & Conditions Url', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
@@ -232,6 +252,44 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 	}
 
 	/**
+	 * payment_scripts function.
+	 *
+	 * Outputs scripts used for payment
+	 *
+	 * @return void
+	 */
+	public function payment_scripts() {
+		if ( ! is_checkout() || 'no' === $this->enabled || self::METHOD_SEAMLESS !== $this->method ) {
+			return;
+		}
+
+		$this->enqueue_seamless();
+
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_register_script(
+			'wc-sb-vipps',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/seamless-vipps' . $suffix . '.js',
+			array(
+				'wc-sb-seamless',
+			),
+			false,
+			true
+		);
+
+		// Localize the script with new data
+		wp_localize_script(
+			'wc-sb-vipps',
+			'WC_Gateway_Swedbank_Pay_Vipps',
+			array(
+				'culture' => $this->culture,
+			)
+		);
+
+		wp_enqueue_script( 'wc-sb-vipps' );
+	}
+
+	/**
 	 * If There are no payment fields show the description if set.
 	 */
 	public function payment_fields() {
@@ -250,6 +308,8 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 		if ( empty( $billing_phone ) ) {
 			wc_add_notice( __( 'Phone number required.', 'swedbank-pay-woocommerce-payments' ), 'error' );
 		}
+
+		$billing_phone = apply_filters( 'swedbank_pay_vipps_phone_format', $billing_phone, null );
 
 		$matches = array();
 		preg_match( '/^(\+47)(?:4[015-8]|5[89]|87|9\d)\d{6}$/u', $billing_phone, $matches );
@@ -289,18 +349,35 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 				$order_id,
 				apply_filters( 'swedbank_pay_vipps_phone_format', $order->get_billing_phone(), $order )
 			);
-
-			// Save payment ID
-			update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
-
-			return array(
-				'result'   => 'success',
-				'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
-			);
 		} catch ( Exception $e ) {
 			wc_add_notice( $e->getMessage(), 'error' );
 
 			return false;
+		}
+
+		// Save payment ID
+		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
+
+		switch ( $this->method ) {
+			case self::METHOD_REDIRECT:
+				// Get Redirect
+
+				return array(
+					'result'   => 'success',
+					'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
+				);
+			case self::METHOD_SEAMLESS:
+				return array(
+					'result'                   => 'success',
+					'redirect'                 => '#!swedbank-pay-vipps',
+					'is_swedbank_pay_vipps'    => true,
+					'js_url'                   => $result->getOperationByRel( 'view-payment' ),
+				);
+
+			default:
+				wc_add_notice( __( 'Wrong method', 'swedbank-pay-woocommerce-payments' ), 'error' );
+
+				return false;
 		}
 	}
 
@@ -412,7 +489,7 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @return string
 	 */
 	public function vipps_phone_format( $phone, $order ) {
-		return $phone;
+		return str_replace( array(' ', '-'), '', $phone );
 	}
 }
 
