@@ -1,3 +1,17 @@
+Version 3.2.0
+* Update the background queue processor
+* Fixed invoice capture
+* Fixed the problem of order status when AutoCapture is enabled
+
+Version 3.1.0
+* Use logging by the core
+* Fixed notices in the admin backend
+* Added dependencies checking
+* Use `updateTransactionsOnFailure()` of the core library
+* Fixed formatting of non-nordic phone numbers
+* Fixed inf loop when order get status failed
+* Option: Send billing/delivery addresses of payer to Swedbank Pay
+
 Version 3.0.1
 * Fixed "VERSION not found"
 

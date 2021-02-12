@@ -106,6 +106,7 @@ class WC_Swedbank_Plugin {
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-transactions.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-icon.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-intl-tel.php' );
+		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-instant-capture.php' );
 	}
 
 	/**
@@ -597,6 +598,9 @@ class WC_Swedbank_Plugin {
 			add_action( 'admin_notices', __CLASS__ . '::missing_woocommerce_notice' );
 		}
 
+		// Check dependencies
+		add_action( 'admin_notices', __CLASS__ . '::check_dependencies' );
+
 		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
 		     current_user_can( 'manage_woocommerce' )
 		) {
@@ -711,5 +715,45 @@ class WC_Swedbank_Plugin {
 
         // Deactivate the plugin
 		deactivate_plugins( self::PLUGIN_PATH, true );
+	}
+
+	/**
+	 * Check dependencies
+	 */
+	public static function check_dependencies() {
+	    $dependencies = array( 'curl', 'bcmath', 'json' );
+
+	    $errors = array();
+	    foreach ($dependencies as $dependency) {
+            if ( ! extension_loaded( $dependency ) ) {
+                $errors[] = sprintf( esc_html__( 'Extension %s is missing.', 'swedbank-pay-woocommerce-payments' ), $dependency );
+            }
+	    }
+
+	    if ( count( $errors ) > 0 ):
+	    ?>
+            <div id="message" class="error">
+                <p class="main">
+                    <strong><?php echo esc_html__( 'Required extensions are missing.', 'swedbank-pay-woocommerce-payments' ); ?></strong>
+                </p>
+                <p>
+				    <?php
+                    foreach ( $errors as $error ) {
+                        echo $error;
+                    }
+				    echo '<br />';
+				    echo sprintf(
+				    /* translators: 1: plugin name */                        esc_html__(
+					    '%1$s requires that. Please configure PHP or contact the server administrator.',
+					    'swedbank-pay-woocommerce-payments'
+				    ),
+					    self::PLUGIN_NAME
+				    );
+
+				    ?>
+                </p>
+            </div>
+	    <?php
+        endif;
 	}
 }
