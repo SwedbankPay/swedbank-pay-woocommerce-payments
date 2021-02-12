@@ -2,31 +2,10 @@
 jQuery( function( $ ) {
     'use strict';
 
-    $( document ).ajaxComplete( function ( event, xhr, settings ) {
-        if ( ( settings.url === wc_checkout_params.checkout_url ) || ( settings.url.indexOf( 'wc-ajax=complete_order' ) > -1 ) ) {
-            const data = xhr.responseText;
-
-            // Parse
-            try {
-                const result = $.parseJSON( data );
-
-                // Check is response from payment gateway
-                if ( ! result.hasOwnProperty( 'is_swedbank_pay_trustly' ) ) {
-                    return false;
-                }
-
-                // Save js_url value
-                wc_sb_trustly.setJsUrl( result.js_url );
-            } catch ( e ) {
-                return false;
-            }
-        }
-    } );
-
     /**
-     * Object to handle Trustly payment forms.
+     * Object to handle Seamless payment forms.
      */
-    window.wc_sb_trustly = {
+    window.wc_sb_seamless = {
         xhr: false,
 
         /**
@@ -37,34 +16,34 @@ jQuery( function( $ ) {
             this.form_submit  = false;
             this.js_url       = null;
 
+            // We need to bind directly to the click (and not checkout_place_order_{gateway}) to avoid popup blockers
+            // especially on mobile devices (like on Chrome for iOS) from blocking payex.hostedView from opening a tab
             $( this.form )
-                // We need to bind directly to the click (and not checkout_place_order_payex_checkout) to avoid popup blockers
-                // especially on mobile devices (like on Chrome for iOS) from blocking payex_checkout(payment_id, {}, 'open'); from opening a tab
-                .on( 'click', '#place_order', this.onSubmit )
+                .on( 'click', '#place_order', {'obj': this}, this.onSubmit );
 
-                // WooCommerce lets us return a false on checkout_place_order_{gateway} to keep the form from submitting
-                .on( 'submit checkout_place_order_payex_psp_trustly' );
+            // WooCommerce lets us return a false on checkout_place_order_{gateway} to keep the form from submitting
+            $( this.form ).on( 'submit checkout_place_order_' + this.gateway_id );
+
+            this.addAjaxHook();
         },
 
-        onSubmit: function( e ) {
-            if ( wc_sb_trustly.form_submit ) {
+        onSubmit: function( event ) {
+            if ( event.data.obj.form_submit ) {
                 return true;
             }
 
-            if ( ! wc_sb_trustly.validateForm() ) {
+            if ( ! event.data.obj.validateForm() ) {
                 return false;
             }
 
             console.log( 'onSubmit' );
 
-            if ( wc_sb_trustly.form.is( '.processing' ) ) {
+            if ( event.data.obj.form.is( '.processing' ) ) {
                 return false;
             }
 
-            console.log( 'onSubmit1' );
             console.log(this.js_url);
-
-            wc_sb_trustly.waitForJsUrl();
+            event.data.obj.waitForJsUrl();
         },
 
         /**
@@ -118,6 +97,7 @@ jQuery( function( $ ) {
          * @param url
          */
         setJsUrl: function ( url ) {
+            console.log( 'setJsUrl' );
             console.log( url );
             this.js_url = url;
         },
@@ -126,11 +106,14 @@ jQuery( function( $ ) {
          * Wait for JS url availability
          */
         waitForJsUrl: function () {
+            var self = this;
             let interval = window.setInterval( function () {
-                if ( wc_sb_trustly.js_url ) {
+                if ( self.js_url ) {
+                    console.log( 'waitForJsUrl: ' + self.js_url )
                     window.clearInterval( interval );
-
-                    wc_sb_trustly.initFrame( wc_sb_trustly.js_url );
+                    self.initFrame( self.js_url, function () {
+                        self.js_url = null;
+                    } );
                 }
             }, 1000 );
         },
@@ -146,18 +129,31 @@ jQuery( function( $ ) {
                 callback = function () {};
             }
 
+            // Destroy old script instances
+            $( "script[src*='px.creditcard.client.js']" ).remove();
+            $( "script[src*='px.invoice.client.js']" ).remove();
+            $( "script[src*='px.mobilepay.client.js']" ).remove();
+            $( "script[src*='px.swish.client.js']" ).remove();
+            $( "script[src*='px.trustly.client.js']" ).remove();
+            $( "script[src*='px.vipps.client.js']" ).remove();
+
             // Load JS
-            wc_sb_trustly.loadJs( url, function () {
-                $.featherlight( '<div id="swedbank-pay-trustly">&nbsp;</div>', {
-                    variant: 'featherlight-swedbank-pay-trustly',
-                    persist: true,
+            var self = this;
+            this.loadJs( url, function () {
+                $( '.swedbank-pay-seamless iframe' ).remove();
+
+                $.featherlight( '<div class="swedbank-pay-seamless" id="swedbank-pay-seamless' + self.gateway_id + '">&nbsp;</div>', {
+                    variant: 'featherlight-swedbank-seamless',
+                    persist: false,
                     closeOnClick: false,
                     closeOnEsc: false,
                     afterOpen: function () {
-                        wc_sb_trustly.initPaymentMenu( 'swedbank-pay-trustly' );
+                        console.log(self);
+                        self.initPaymentMenu( 'swedbank-pay-seamless' + self.gateway_id );
                     },
                     afterClose: function () {
-                        wc_sb_trustly.form.removeClass( 'processing' ).unblock();
+                        $( '.swedbank-pay-seamless iframe' ).remove();
+                        self.form.removeClass( 'processing' ).unblock();
                     }
                 } );
 
@@ -206,17 +202,19 @@ jQuery( function( $ ) {
                 callback = function () {};
             }
 
-            // Load Trustly frame
-            this.paymentMenu = window.payex.hostedView.trustly( {
+            // Load payment frame
+            // @see https://developer.swedbankpay.com/payment-instruments/card/other-features#seamless-view-events
+            this.paymentMenu = window.payex.hostedView[this.hostedView]( {
                 container: id,
-                culture: WC_Gateway_Swedbank_Pay_Trustly.culture,
+                culture: this.culture,
                 onApplicationConfigured: function( data ) {
                     console.log( 'onApplicationConfigured' );
                     console.log( data );
                     callback( null );
                 },
-                onPaymentCreated: function () {
+                onPaymentCreated: function ( data ) {
                     console.log( 'onPaymentCreated' );
+                    console.log( data.id );
                 },
                 onPaymentCompleted: function ( data ) {
                     console.log( 'onPaymentCompleted' );
@@ -242,7 +240,30 @@ jQuery( function( $ ) {
 
             this.paymentMenu.open();
         },
-    }
 
-    window.wc_sb_trustly.init( $( "form.checkout, form#order_review, form#add_payment_method" ) );
+        addAjaxHook: function () {
+            var self = this;
+
+            $( document ).ajaxComplete( function ( event, xhr, settings ) {
+                if ( ( settings.url === wc_checkout_params.checkout_url ) || ( settings.url.indexOf( 'wc-ajax=complete_order' ) > -1 ) ) {
+                    const data = xhr.responseText;
+
+                    // Parse
+                    try {
+                        const result = JSON.parse( data );
+
+                        // Check is response from payment gateway
+                        if ( ! result.hasOwnProperty( self.key ) ) {
+                            return false;
+                        }
+
+                        // Save js_url value
+                        self.setJsUrl( result.js_url );
+                    } catch ( e ) {
+                        return false;
+                    }
+                }
+            } );
+        },
+    }
 } );

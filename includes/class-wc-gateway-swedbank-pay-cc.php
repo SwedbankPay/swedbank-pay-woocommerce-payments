@@ -11,6 +11,10 @@ use SwedbankPay\Core\OrderInterface;
 use SwedbankPay\Core\Log\LogLevel;
 
 class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
+	const METHOD_DIRECT = 'direct';
+	const METHOD_REDIRECT = 'redirect';
+	const METHOD_SEAMLESS = 'seamless';
+
 	/**
 	 * @var WC_Adapter
 	 */
@@ -63,6 +67,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public $culture = 'en-US';
 
 	/**
+	 * Checkout Method
+	 * @var string
+	 */
+	public $method = self::METHOD_REDIRECT;
+
+	/**
 	 * Auto Capture
 	 * @var string
 	 */
@@ -93,11 +103,11 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 */
 	public $logo_url = '';
 
-    /**
-     * Send payer info
-     * @var string
-     */
-    public $use_payer_info = 'yes';
+	/**
+	 * Send payer info
+	 * @var string
+	 */
+	public $use_payer_info = 'yes';
 
 	/**
 	 * Reject Credit Cards
@@ -176,21 +186,22 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		}
 
 		// Define user set variables
-		$this->enabled        = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
-		$this->title          = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
-		$this->description    = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
-		$this->access_token   = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
-		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
-		$this->subsite        = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
-		$this->testmode       = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
-		$this->debug          = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
-		$this->culture        = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
-		$this->auto_capture   = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
+		$this->enabled         = isset( $this->settings['enabled'] ) ? $this->settings['enabled'] : 'no';
+		$this->title           = isset( $this->settings['title'] ) ? $this->settings['title'] : '';
+		$this->description     = isset( $this->settings['description'] ) ? $this->settings['description'] : '';
+		$this->access_token    = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
+		$this->payee_id        = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
+		$this->subsite         = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
+		$this->testmode        = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
+		$this->debug           = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->culture         = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->method          = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
+		$this->auto_capture    = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
 		$this->instant_capture = isset( $this->settings['instant_capture'] ) ? $this->settings['instant_capture'] : $this->instant_capture;
-		$this->save_cc        = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
-		$this->terms_url      = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
-		$this->logo_url       = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
-		$this->use_payer_info = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
+		$this->save_cc         = isset( $this->settings['save_cc'] ) ? $this->settings['save_cc'] : $this->save_cc;
+		$this->terms_url       = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
+		$this->logo_url        = isset( $this->settings['logo_url'] ) ? $this->settings['logo_url'] : $this->logo_url;
+		$this->use_payer_info  = isset( $this->settings['use_payer_info'] ) ? $this->settings['use_payer_info'] : $this->use_payer_info;
 
 		// Reject Cards
 		$this->reject_credit_cards    = isset( $this->settings['reject_credit_cards'] ) ? $this->settings['reject_credit_cards'] : $this->reject_credit_cards;
@@ -205,10 +216,14 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			$this->terms_url = '';
 		}
 
+		// JS Scrips
+		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
+
 		// Actions and filters
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+		add_filter( 'wc_get_template', array( $this, 'override_template' ), 5, 20 );
 		add_action( 'woocommerce_before_thankyou', array( $this, 'thankyou_page' ) );
-		add_filter( 'woocommerce_order_has_status', __CLASS__ . '::order_has_status', 10, 3 );
+		add_action( 'wp_enqueue_scripts', array( $this, 'thankyou_scripts' ) );
 
 		// Payment listener/API hook
 		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
@@ -223,6 +238,10 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			10,
 			2
 		);
+
+		// Action for "Check payment"
+		add_action( 'wp_ajax_swedbank_pay_check_payment', array( $this, 'ajax_check_payment' ) );
+		add_action( 'wp_ajax_nopriv_swedbank_pay_check_payment', array( $this, 'ajax_check_payment' ) );
 
 		// Action for "Add Payment Method"
 		add_action( 'wp_ajax_swedbank_card_store', array( $this, 'swedbank_card_store' ) );
@@ -378,15 +397,34 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				'title'       => __( 'Language', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'select',
 				'options'     => array(
+					'da-DK' => 'Danish',
+					'de-DE' => 'German',
+					'ee-EE' => 'Estonian',
 					'en-US' => 'English',
-					'sv-SE' => 'Swedish',
+					'es-ES' => 'Spanish',
+					'fi-FI' => 'Finnish',
+					'fr-FR' => 'French',
+					'lt-LT' => 'Lithuanian',
+					'lv-LV' => 'Latvian',
 					'nb-NO' => 'Norway',
+					'ru-RU' => 'Russian',
+					'sv-SE' => 'Swedish',
 				),
 				'description' => __(
 					'Language of pages displayed by Swedbank Pay during payment.',
 					'swedbank-pay-woocommerce-payments'
 				),
 				'default'     => $this->culture,
+			),
+			'method'         => array(
+				'title'       => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
+				'type'        => 'select',
+				'options'     => array(
+					self::METHOD_REDIRECT   => __( 'Redirect', 'swedbank-pay-woocommerce-payments' ),
+					self::METHOD_SEAMLESS   => __( 'Seamless View', 'swedbank-pay-woocommerce-payments' ),
+				),
+				'description' => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->method,
 			),
 			'auto_capture'           => array(
 				'title'   => __( 'Auto Capture Intent', 'swedbank-pay-woocommerce-payments' ),
@@ -440,12 +478,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 					return $value;
 				},
 			),
-            'use_payer_info'        => array(
-                'title'   => __( 'Send payer information', 'swedbank-pay-woocommerce-payments' ),
-                'type'    => 'checkbox',
-                'label'   => __( 'Send billing/delivery addresses of payer to Swedbank Pay', 'swedbank-pay-woocommerce-paymentst' ),
-                'default' => $this->use_payer_info
-            ),
+			'use_payer_info'        => array(
+				'title'   => __( 'Send payer information', 'swedbank-pay-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Send billing/delivery addresses of payer to Swedbank Pay', 'swedbank-pay-woocommerce-paymentst' ),
+				'default' => $this->use_payer_info
+			),
 			'reject_credit_cards'    => array(
 				'title'   => __( 'Reject Credit Cards', 'swedbank-pay-woocommerce-payments' ),
 				'type'    => 'checkbox',
@@ -558,6 +596,44 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * payment_scripts function.
+	 *
+	 * Outputs scripts used for payment
+	 *
+	 * @return void
+	 */
+	public function payment_scripts() {
+		if ( ! is_checkout() || 'no' === $this->enabled || self::METHOD_SEAMLESS !== $this->method ) {
+			return;
+		}
+
+		$this->enqueue_seamless();
+
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_register_script(
+			'wc-sb-cc',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/seamless-cc' . $suffix . '.js',
+			array(
+				'wc-sb-seamless',
+			),
+			false,
+			true
+		);
+
+		// Localize the script with new data
+		wp_localize_script(
+			'wc-sb-cc',
+			'WC_Gateway_Swedbank_Pay_Cc',
+			array(
+				'culture' => $this->culture,
+			)
+		);
+
+		wp_enqueue_script( 'wc-sb-cc' );
+	}
+
+	/**
 	 * If There are no payment fields show the description if set.
 	 */
 	public function payment_fields() {
@@ -634,45 +710,228 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				return;
 			}
 
-			$list = $this->core->fetchVerificationList( $payment_id );
-			if ( isset( $list[0] ) &&
-				( ! empty( $list[0]['paymentToken'] ) || ! empty( $list[0]['recurrenceToken'] ) )
-			) {
-				$verification     = $list[0];
-				$payment_token    = isset( $verification['paymentToken'] ) ? $verification['paymentToken'] : '';
-				$recurrence_token = isset( $verification['recurrenceToken'] ) ? $verification['recurrenceToken'] : '';
-				$card_brand       = $verification['cardBrand'];
-				$masked_pan       = $verification['maskedPan'];
-				$expiry_date      = explode( '/', $verification['expiryDate'] );
-
-				// Create Payment Token
-				$token = new WC_Payment_Token_Swedbank_Pay();
-				$token->set_gateway_id( $this->id );
-				$token->set_token( $payment_token );
-				$token->set_recurrence_token( $recurrence_token );
-				$token->set_last4( substr( $masked_pan, - 4 ) );
-				$token->set_expiry_year( $expiry_date[1] );
-				$token->set_expiry_month( $expiry_date[0] );
-				$token->set_card_type( strtolower( $card_brand ) );
-				$token->set_user_id( get_current_user_id() );
-				$token->set_masked_pan( $masked_pan );
-
-				// Save Credit Card
-				$token->save();
-				if ( ! $token->get_id() ) {
-					throw new Exception( __( 'There was a problem adding the card.', 'swedbank-pay-woocommerce-payments' ) );
+			$verifications = $this->core->fetchVerificationList( $payment_id );
+			foreach ($verifications as $verification) {
+				// Skip verification which failed transaction state
+				if ($verification->getTransaction()->isFailed()) {
+					continue;
 				}
 
-				WC()->session->__unset( 'verification_payment_id' );
+				if ($verification->getPaymentToken() || $verification->getRecurrenceToken()) {
+					// Add payment token
+					$expiry_date = explode( '/', $verification['expiryDate'] );
 
-				wc_add_notice( __( 'Payment method successfully added.', 'swedbank-pay-woocommerce-payments' ) );
-				wp_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
-				exit();
+					// Create Payment Token
+					$token = new WC_Payment_Token_Swedbank_Pay();
+					$token->set_gateway_id( $this->id );
+					$token->set_token( $verification->getPaymentToken() );
+					$token->set_recurrence_token( $verification->getRecurrenceToken() );
+					$token->set_last4( substr( $verification->getMaskedPan(), - 4 ) );
+					$token->set_expiry_year( $expiry_date[1] );
+					$token->set_expiry_month( $expiry_date[0] );
+					$token->set_card_type( strtolower( $verification->getCardBrand() ) );
+					$token->set_user_id( get_current_user_id() );
+					$token->set_masked_pan( $verification->getMaskedPan() );
+
+					// Save Credit Card
+					$token->save();
+					if ( ! $token->get_id() ) {
+						throw new Exception( __( 'There was a problem adding the card.', 'swedbank-pay-woocommerce-payments' ) );
+					}
+
+					// Only first
+					break;
+				}
 			}
+
+			WC()->session->__unset( 'verification_payment_id' );
+
+			wc_add_notice( __( 'Payment method successfully added.', 'swedbank-pay-woocommerce-payments' ) );
+			wp_redirect( wc_get_account_endpoint_url( 'payment-methods' ) );
+			exit();
 		} catch ( Exception $e ) {
 			wc_add_notice( $e->getMessage(), 'error' );
 			wp_redirect( wc_get_account_endpoint_url( 'add-payment-method' ) );
 			exit();
+		}
+	}
+
+	/**
+	 * Override "checkout/thankyou.php" template
+	 *
+	 * @param $located
+	 * @param $template_name
+	 * @param $args
+	 * @param $template_path
+	 * @param $default_path
+	 *
+	 * @return string
+	 */
+	public function override_template( $located, $template_name, $args, $template_path, $default_path ) {
+		if ( strpos( $located, 'checkout/thankyou.php' ) !== false ) {
+			$order = wc_get_order( $args['order'] );
+			if ( $this->id !== $order->get_payment_method() ) {
+				return $located;
+			}
+
+			$located = wc_locate_template(
+				'checkout/thankyou.php',
+				$template_path,
+				dirname( __FILE__ ) . '/../templates/'
+			);
+		}
+
+		return $located;
+	}
+
+	/**
+	 * thankyou_scripts function.
+	 *
+	 * Outputs scripts used for "thankyou" page
+	 *
+	 * @return void
+	 */
+	public function thankyou_scripts() {
+		if ( ! is_order_received_page() || 'no' === $this->enabled ) {
+			return;
+		}
+
+		global $wp;
+
+		$order_id  = absint( $wp->query_vars['order-received'] );
+		$order_key = isset( $_GET['key'] ) ? wc_clean( wp_unslash( $_GET['key'] ) ) : ''; // WPCS: input var ok, CSRF ok.
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order->get_id() || ! $order->key_is_valid( $order_key ) ) {
+			return;
+		}
+
+		if ( $this->id !== $order->get_payment_method() ) {
+			return;
+		}
+
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_register_script(
+			'wc-sb-order-status-check',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/order-status' . $suffix . '.js',
+			array(
+				'jquery',
+			),
+			false,
+			true
+		);
+
+		// Localize the script with new data
+		wp_localize_script(
+			'wc-sb-order-status-check',
+			'WC_Gateway_Swedbank_Pay_Order_Status',
+			array(
+				'order_id'      => $order_id,
+				'order_key'     => $order_key,
+				'nonce'         => wp_create_nonce( 'swedbank_pay' ),
+				'ajax_url'      => admin_url( 'admin-ajax.php' ),
+				'check_message' => __(
+					'Please wait. We\'re checking the order status.',
+					'swedbank-pay-woocommerce-payments'
+				)
+			)
+		);
+
+		wp_enqueue_script( 'wc-sb-order-status-check' );
+	}
+
+	/**
+	 * Ajax: Check the payment
+	 */
+	public function ajax_check_payment() {
+		check_ajax_referer( 'swedbank_pay', 'nonce' );
+
+		$order_id  = isset( $_POST['order_id'] ) ? wc_clean( $_POST['order_id'] ) : '';
+		$order_key  = isset( $_POST['order_key'] ) ? wc_clean( $_POST['order_key'] ) : '';
+
+		$order = wc_get_order( $order_id );
+		if ( ! $order->get_id() || ! $order->key_is_valid( $order_key ) ) {
+			wp_send_json_error( 'Invalid order' );
+			return;
+		}
+
+		$payment_id = $order->get_meta( '_payex_payment_id' );
+		if ( empty( $payment_id ) ) {
+			wp_send_json_error( 'Invalid payment' );
+			return;
+		}
+
+		try {
+			// Try to update order status if order has 'failure' status.
+			if ( 'failure' === $order->get_status() ) {
+				$this->core->fetchTransactionsAndUpdateOrder( $order->get_id() );
+			}
+
+			$payment_info = $this->core->fetchPaymentInfo( $payment_id );
+
+			// The aborted-payment operation means that the merchant has aborted the payment before
+			// the payer has fulfilled the payment process.
+			// You can see this under abortReason in the response.
+			$aborted = $payment_info->getOperationByRel( 'aborted-payment', false );
+			if ( ! empty( $aborted ) ) {
+				$result = $this->core->request( $aborted['method'], $aborted['href'] );
+
+				// Abort reason
+				$message = $result['aborted']['abortReason'];
+
+				wp_send_json_success( array(
+					'state' => 'aborted',
+					'message' => $message
+				) );
+			}
+
+			// The failed-payment operation means that something went wrong during the payment process, the transaction
+			// was not authorized, and no further transactions can be created if the payment is in this state.
+			$failed = $payment_info->getOperationByRel( 'failed-payment', false );
+			if ( ! empty( $failed ) ) {
+				$result = $this->core->request( $failed['method'], $failed['href'] );
+
+				// Extract the problem details
+				$message = $result['title'];
+				if ( count( $result['problem']['problems'] ) > 0 ) {
+					$problems = array_column( $result['problem']['problems'], 'description' );
+					$message = implode(', ', $problems );
+				}
+
+				wp_send_json_success( array(
+					'state' => 'failed',
+					'message' => $message
+				) );
+
+				return;
+			}
+
+			// The paid-payment operation confirms that the transaction has been successful
+			// and that the payment is completed.
+			$paid = $payment_info->getOperationByRel( 'paid-payment', false );
+			if ( ! empty( $paid ) ) {
+				$result = $this->core->request( $paid['method'], $paid['href'] );
+
+				wp_send_json_success( array(
+					'state' => 'paid',
+					'message' => 'Order has been paid'
+				) );
+
+				return;
+			}
+
+			// No any information
+			wp_send_json_success( array(
+				'state' => 'unknown',
+			) );
+		} catch ( \SwedbankPay\Core\Exception $exception ) {
+			wp_send_json_success( array(
+				'state' => 'failed',
+				'message' => $exception->getMessage()
+			) );
+
+			return;
 		}
 	}
 
@@ -761,34 +1020,6 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				);
 			}
 		}
-
-		$this->core->updateTransactionsOnFailure( $order->get_id() );
-	}
-
-	/**
-	 * Workaround for "order received page".
-	 * We need for actual status because order status
-	 * can be updated in "woocommerce_before_thankyou" hook.
-	 *
-	 * @param bool $result
-	 * @param string $status
-	 * @param WC_Order $order
-	 *
-	 * @return bool
-	 */
-	public static function order_has_status( $result, $order, $status ) {
-		if ( 'payex_psp_cc' !== $order->get_payment_method() ) {
-			return $result;
-		}
-
-		if ( is_order_received_page() ) {
-			// Reload an order and check status again
-			$order = wc_get_order( $order );
-
-			return $order->get_status() === $status;
-		}
-
-		return $result;
 	}
 
 	/**
@@ -905,13 +1136,28 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
 		$order->save();
 
-		// Redirect
-		$order->add_order_note( __( 'Customer has been redirected to Swedbank Pay.', 'swedbank-pay-woocommerce-payments' ) );
+		switch ( $this->method ) {
+			case self::METHOD_REDIRECT:
+				// Redirect
+				$order->add_order_note( __( 'Customer has been redirected to Swedbank Pay.', 'swedbank-pay-woocommerce-payments' ) );
 
-		return array(
-			'result'   => 'success',
-			'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
-		);
+				return array(
+					'result'   => 'success',
+					'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
+				);
+			case self::METHOD_SEAMLESS:
+				return array(
+					'result'                   => 'success',
+					'redirect'                 => '#!swedbank-pay-cc',
+					'is_swedbank_pay_cc'       => true,
+					'js_url'                   => $result->getOperationByRel( 'view-authorization' ),
+				);
+
+			default:
+				wc_add_notice( __( 'Wrong method', 'swedbank-pay-woocommerce-payments' ), 'error' );
+
+				return false;
+		}
 	}
 
 	/**
@@ -1260,6 +1506,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 * @param WC_Order $renewal_order
 	 */
 	public function scheduled_subscription_payment( $amount_to_charge, $renewal_order ) {
+		$user_agent = $renewal_order->get_customer_user_agent();
+		if ( empty( $user_agent ) ) {
+			$renewal_order->set_customer_user_agent( 'WooCommerce/' . WC()->version );
+			$renewal_order->save();
+		}
+
 		try {
 			$tokens = $renewal_order->get_payment_tokens();
 
@@ -1447,6 +1699,65 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		}
 
 		return false;
+	}
+
+
+	/**
+	 * Add seamless scripts
+	 */
+	protected function enqueue_seamless() {
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_enqueue_script(
+			'featherlight',
+			untrailingslashit(
+				plugins_url(
+					'/',
+					__FILE__
+				)
+			) . '/../assets/js/featherlight/featherlight' . $suffix . '.js',
+			array( 'jquery' ),
+			'1.7.13',
+			true
+		);
+
+		wp_enqueue_style(
+			'featherlight-css',
+			untrailingslashit(
+				plugins_url(
+					'/',
+					__FILE__
+				)
+			) . '/../assets/js/featherlight/featherlight' . $suffix . '.css',
+			array(),
+			'1.7.13',
+			'all'
+		);
+
+		wp_enqueue_style(
+			'featherlight-sb-seamless-css',
+			untrailingslashit(
+				plugins_url(
+					'/',
+					__FILE__
+				)
+			) . '/../assets/css/seamless' . $suffix . '.css',
+			array(),
+			null,
+			'all'
+		);
+
+		wp_register_script(
+			'wc-sb-seamless',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/seamless' . $suffix . '.js',
+			array(
+				'jquery',
+				'wc-checkout',
+				'featherlight',
+			),
+			false,
+			true
+		);
 	}
 
 	/**

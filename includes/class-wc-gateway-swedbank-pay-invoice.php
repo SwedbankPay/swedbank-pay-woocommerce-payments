@@ -10,6 +10,9 @@ use SwedbankPay\Core\Core;
 
 class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 
+    const METHOD_REDIRECT = 'redirect';
+    const METHOD_SEAMLESS = 'seamless';
+
 	/**
 	 * Access Token
 	 * @var string
@@ -45,6 +48,12 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @var string
 	 */
 	public $culture = 'en-US';
+
+	/**
+	 * Checkout Method
+	 * @var string
+	 */
+	public $method = self::METHOD_REDIRECT;
 
 	/**
 	 * Init
@@ -83,6 +92,7 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 		$this->testmode        = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug           = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
 		$this->culture         = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
+		$this->method          = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
 		$this->auto_capture    = 'no';
 		$this->instant_capture = isset( $this->settings['instant_capture'] ) ? $this->settings['instant_capture'] : $this->instant_capture;
 		$this->terms_url       = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
@@ -94,6 +104,9 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 		} elseif ( 'https' !== parse_url( $this->terms_url, PHP_URL_SCHEME ) ) {
 			$this->terms_url = '';
 		}
+
+		// JS Scrips
+		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
 
 		// Actions
 		add_action(
@@ -227,6 +240,16 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 				),
 				'default'     => $this->culture,
 			),
+			'method'         => array(
+				'title'       => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
+				'type'        => 'select',
+				'options'     => array(
+					self::METHOD_REDIRECT   => __( 'Redirect', 'swedbank-pay-woocommerce-payments' ),
+					self::METHOD_SEAMLESS   => __( 'Seamless View', 'swedbank-pay-woocommerce-payments' ),
+				),
+				'description' => __( 'Checkout Method', 'swedbank-pay-woocommerce-payments' ),
+				'default'     => $this->method,
+			),
 			'terms_url'      => array(
 				'title'       => __( 'Terms & Conditions Url', 'swedbank-pay-woocommerce-payments' ),
 				'type'        => 'text',
@@ -255,19 +278,48 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 	}
 
 	/**
+	 * payment_scripts function.
+	 *
+	 * Outputs scripts used for payment
+	 *
+	 * @return void
+	 */
+	public function payment_scripts() {
+		if ( ! is_checkout() || 'no' === $this->enabled || self::METHOD_SEAMLESS !== $this->method ) {
+			return;
+		}
+
+		$this->enqueue_seamless();
+
+		$suffix = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
+
+		wp_register_script(
+			'wc-sb-invoice',
+			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/seamless-invoice' . $suffix . '.js',
+			array(
+				'wc-sb-seamless',
+			),
+			false,
+			true
+		);
+
+		// Localize the script with new data
+		wp_localize_script(
+			'wc-sb-invoice',
+			'WC_Gateway_Swedbank_Pay_Invoice',
+			array(
+				'culture' => $this->culture,
+			)
+		);
+
+		wp_enqueue_script( 'wc-sb-invoice' );
+	}
+
+	/**
 	 * If There are no payment fields show the description if set.
 	 */
 	public function payment_fields() {
 		parent::payment_fields();
-		?>
-		<p class="form-row form-row-wide">
-			<label for="social-security-number">
-				<?php echo __( 'Social Security Number', 'swedbank-pay-woocommerce-payments' ); ?>
-				<abbr class="required">*</abbr>
-			</label>
-			<input type="text" class="input-text required-entry" name="social-security-number" id="social-security-number" value="" autocomplete="off">
-		</p>
-		<?php
 	}
 
 	/**
@@ -315,18 +367,6 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 			}
 		}
 
-		if ( empty( $_POST['social-security-number'] ) ) {
-			wc_add_notice(
-				__(
-					'Please enter your Social Security Number and confirm your order.',
-					'swedbank-pay-woocommerce-payments'
-				),
-				'error'
-			);
-
-			return false;
-		}
-
 		return true;
 
 	}
@@ -350,52 +390,41 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @return array|false
 	 */
 	public function process_payment( $order_id ) {
-		$order    = wc_get_order( $order_id );
-		$postcode = $order->get_billing_postcode();
-		$ssn      = wc_clean( $_POST['social-security-number'] );
-
 		// Process payment
 		try {
-			$result = $this->core->initiateInvoicePayment( $order_id );
-
-			// Save payment ID
-			update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
-
-			// Authorization
-			$create_authorize_href = $result->getOperationByRel( 'create-authorization' );
-
-			// Approved Legal Address
-			$legal_address_href = $result->getOperationByRel( 'create-approved-legal-address' );
-
-			// Get Approved Legal Address
-			$address = $this->core->getApprovedLegalAddress( $legal_address_href, $ssn, $postcode );
-
-			// Save legal address
-			$legal_address = $address['approvedLegalAddress'];
-			update_post_meta( $order_id, '_payex_legal_address', $legal_address );
-
-			// Transaction Activity: FinancingConsumer
-			$result = $this->core->transactionFinancingConsumer(
-				$create_authorize_href,
-				$order_id,
-				$ssn,
-				$legal_address['addressee'],
-				$legal_address['coAddress'],
-				$legal_address['streetAddress'],
-				$legal_address['zipCode'],
-				$legal_address['city'],
-				$legal_address['countryCode']
+			$result = $this->core->initiateInvoicePayment(
+				$order_id
 			);
-		} catch ( \Exception $e ) {
+		} catch ( Exception $e ) {
 			wc_add_notice( $e->getMessage(), 'error' );
 
 			return false;
 		}
 
-		return array(
-			'result'   => 'success',
-			'redirect' => $this->get_return_url( $order ),
-		);
+		// Save payment ID
+		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
+
+		switch ( $this->method ) {
+            case self::METHOD_REDIRECT:
+				// Get Redirect
+
+				return array(
+					'result'   => 'success',
+					'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
+				);
+            case self::METHOD_SEAMLESS:
+				return array(
+					'result'                   => 'success',
+					'redirect'                 => '#!swedbank-pay-invoice',
+					'is_swedbank_pay_invoice'  => true,
+					'js_url'                   => $result->getOperationByRel( 'view-authorization' ),
+				);
+
+			default:
+				wc_add_notice( __( 'Wrong method', 'swedbank-pay-woocommerce-payments' ), 'error' );
+
+				return false;
+		}
 	}
 
 	/**
