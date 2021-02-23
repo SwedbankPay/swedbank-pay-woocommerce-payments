@@ -770,6 +770,10 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public function override_template( $located, $template_name, $args, $template_path, $default_path ) {
 		if ( strpos( $located, 'checkout/thankyou.php' ) !== false ) {
 			$order = wc_get_order( $args['order'] );
+			if ( ! $order ) {
+				return $located;
+			}
+
 			if ( $this->id !== $order->get_payment_method() ) {
 				return $located;
 			}
@@ -1158,13 +1162,6 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 				return false;
 		}
-	}
-
-	/**
-	 * Payment confirm action
-	 */
-	public function payment_confirm() {
-		//
 	}
 
 	/**
