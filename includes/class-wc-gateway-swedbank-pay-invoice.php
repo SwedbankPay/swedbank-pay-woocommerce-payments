@@ -109,44 +109,16 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 		add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts' ) );
 
 		// Actions
-		add_action(
-			'woocommerce_update_options_payment_gateways_' . $this->id,
-			array(
-				$this,
-				'process_admin_options',
-			)
-		);
-
-		add_action(
-			'woocommerce_thankyou_' . $this->id,
-			array(
-				$this,
-				'thankyou_page',
-			)
-		);
+		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
+		add_filter( 'wc_get_template', array( $this, 'override_template' ), 5, 20 );
+		add_action( 'woocommerce_before_thankyou', array( $this, 'thankyou_page' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'thankyou_scripts' ) );
 
 		// Payment listener/API hook
-		add_action(
-			'woocommerce_api_' . strtolower( __CLASS__ ),
-			array(
-				$this,
-				'return_handler',
-			)
-		);
-
-		// Payment confirmation
-		add_action( 'the_post', array( $this, 'payment_confirm' ) );
+		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
 
 		// Pending Cancel
-		add_action(
-			'woocommerce_order_status_pending_to_cancelled',
-			array(
-				$this,
-				'cancel_pending',
-			),
-			10,
-			2
-		);
+		add_action( 'woocommerce_order_status_pending_to_cancelled', array( $this, 'cancel_pending' ), 10, 2 );
 
 		$this->adapter = new WC_Adapter( $this );
 		$this->core    = new Core( $this->adapter );
@@ -370,17 +342,6 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 
 		return true;
 
-	}
-
-	/**
-	 * Thank you page
-	 *
-	 * @param $order_id
-	 *
-	 * @return void
-	 */
-	public function thankyou_page( $order_id ) {
-		//
 	}
 
 	/**
