@@ -309,6 +309,7 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 			'WC_Gateway_Swedbank_Pay_Invoice',
 			array(
 				'culture' => $this->culture,
+				'payment_url' => WC()->session->get( 'sb_payment_url' )
 			)
 		);
 
@@ -413,6 +414,8 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 					'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
 				);
             case self::METHOD_SEAMLESS:
+	            WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-authorization' ) );
+
 				return array(
 					'result'                   => 'success',
 					'redirect'                 => '#!swedbank-pay-invoice',

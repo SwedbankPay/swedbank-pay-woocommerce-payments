@@ -10,6 +10,7 @@ jQuery( function( $ ) {
         gateway_id: 'payex_psp_trustly',
         key: 'is_swedbank_pay_trustly',
         culture: WC_Gateway_Swedbank_Pay_Trustly.culture,
+        payment_url: WC_Gateway_Swedbank_Pay_Trustly.payment_url,
         hostedView: 'trustly',
     };
 

@@ -281,6 +281,7 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 			'WC_Gateway_Swedbank_Pay_Swish',
 			array(
 				'culture' => $this->culture,
+				'payment_url' => WC()->session->get( 'sb_payment_url' )
 			)
 		);
 
@@ -383,6 +384,8 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 					'redirect' => $this->get_return_url( $order ),
 				);
 			case self::METHOD_SEAMLESS:
+				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-sales' ) );
+
 				return array(
 					'result'                   => 'success',
 					'redirect'                 => '#!swedbank-pay-swish',
