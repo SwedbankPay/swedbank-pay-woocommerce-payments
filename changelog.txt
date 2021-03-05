@@ -1,3 +1,7 @@
+Version 3.4.0
+* Implemented paymentUrl
+* Order status check fixes
+
 Version 3.3.0
 * Rename Merchant Token to Access Token
 * Swish: Fix phone number problem
