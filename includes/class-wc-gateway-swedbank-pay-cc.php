@@ -533,7 +533,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 		// Reload settings
 		$this->init_settings();
-		$this->merchant_token = isset( $this->settings['merchant_token'] ) ? $this->settings['merchant_token'] : $this->merchant_token;
+		$this->access_token   = isset( $this->settings['access_token'] ) ? $this->settings['access_token'] : $this->access_token;
 		$this->payee_id       = isset( $this->settings['payee_id'] ) ? $this->settings['payee_id'] : $this->payee_id;
 
 		// Test API Credentials
@@ -541,7 +541,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			switch ( $this->id ) {
 				case 'payex_psp_cc':
 					new SwedbankPay\Api\Service\Creditcard\Request\Test(
-						$this->merchant_token,
+						$this->access_token,
 						$this->payee_id,
 						$this->testmode === 'yes'
 					);
@@ -549,7 +549,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 					break;
 				case 'payex_psp_invoice':
 					new SwedbankPay\Api\Service\Invoice\Request\Test(
-						$this->merchant_token,
+						$this->access_token,
 						$this->payee_id,
 						$this->testmode === 'yes'
 					);
@@ -557,7 +557,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 					break;
 				case 'payex_psp_mobilepay':
 					new SwedbankPay\Api\Service\MobilePay\Request\Test(
-						$this->merchant_token,
+						$this->access_token,
 						$this->payee_id,
 						$this->testmode === 'yes'
 					);
@@ -565,7 +565,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 					break;
 				case 'payex_psp_swish':
 					new SwedbankPay\Api\Service\Swish\Request\Test(
-						$this->merchant_token,
+						$this->access_token,
 						$this->payee_id,
 						$this->testmode === 'yes'
 					);
@@ -573,7 +573,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 					break;
 				case 'payex_psp_trustly':
 					new SwedbankPay\Api\Service\Trustly\Request\Test(
-						$this->merchant_token,
+						$this->access_token,
 						$this->payee_id,
 						$this->testmode === 'yes'
 					);
@@ -581,7 +581,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 					break;
 				case 'payex_psp_vipps':
 					new SwedbankPay\Api\Service\Vipps\Request\Test(
-						$this->merchant_token,
+						$this->access_token,
 						$this->payee_id,
 						$this->testmode === 'yes'
 					);
