@@ -1,23 +1,28 @@
 name: Integration tests
 
-on:
-  push:
-    branches:
-    - '*'
-    tags:
-    - '*'
-  pull_request:
+on: [push, pull_request, pull_request_target]
 
 jobs:
   test:
     name: Run tests
     runs-on: ubuntu-18.04
+    if: |
+        (github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]') ||
+        (github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]')
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        if: ${{ github.event_name != 'pull_request_target' }}
         with:
           path: swedbank-pay-woocommerce-payments
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        if: ${{ github.event_name == 'pull_request_target' }}
+        with:
+          path: swedbank-pay-woocommerce-payments
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: WooCommerce Checkout
         uses: actions/checkout@v2
