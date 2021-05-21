@@ -81,6 +81,7 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		// phpcs:enable
 
         // Check the records
+		$sorting_flow = array();
 		foreach ( $data as $id => $result ) {
 			$task = array_filter( (array) maybe_unserialize( $result->$value_column ) );
 			if ( ! is_array( $task ) ||
