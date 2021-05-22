@@ -76,4 +76,12 @@ class WC_Swedbank_Subscriptions extends WC_Unit_Test_Case {
 		);
 	}
 
+	public function test_scheduled_subscription_payment() {
+		$order = WC_Helper_Order::create_order();
+		$order->set_payment_method( 'payex_psp_cc' );
+
+		$result = Subscriptions::scheduled_subscription_payment( 10, $order );
+		$this->assertNull( $result );
+	}
+
 }
