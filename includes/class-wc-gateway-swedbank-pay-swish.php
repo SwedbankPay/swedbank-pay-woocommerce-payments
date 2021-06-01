@@ -411,13 +411,6 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		try {
-			// Disable status change hook
-			remove_action(
-				'woocommerce_order_status_changed',
-				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-				10
-			);
-
 			$this->core->refund( $order->get_id(), $amount, $reason );
 
 			return true;
@@ -446,13 +439,6 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		try {
-			// Disable status change hook
-			remove_action(
-				'woocommerce_order_status_changed',
-				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-				10
-			);
-
 			$this->core->capture( $order->get_id(), $amount, $vat_amount );
 		} catch ( \SwedbankPay\Core\Exception $e ) {
 			throw new Exception( $e->getMessage() );
@@ -473,13 +459,6 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		try {
-			// Disable status change hook
-			remove_action(
-				'woocommerce_order_status_changed',
-				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-				10
-			);
-
 			$this->core->cancel( $order->get_id() );
 		} catch ( \SwedbankPay\Core\Exception $e ) {
 			throw new Exception( $e->getMessage() );
