@@ -50,6 +50,11 @@ jobs:
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
           sed -i -e "s/~3.1.0/dev-master/g" ./composer.json
           composer install
+          cd ./vendor/swedbank-pay/
+          git clone https://github.com/SwedbankPay/swedbank-pay-sdk-php swedbank-pay-sdk-php
+          git clone https://github.com/SwedbankPay/swedbank-pay-woocommerce-core swedbank-pay-woocommerce-core
+          cd ../../
+          composer dump-autoload
           zip -q -r /tmp/swedbank-pay-woocommerce-payments.zip ./
           cd /tmp/wordpress
           curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar

@@ -26,11 +26,6 @@ jobs:
           rm -rf ./.github
           rm -f ./composer.lock
           rm -f ./package-lock.json
-          cd ./vendor/swedbank-pay/
-          git clone https://github.com/SwedbankPay/swedbank-pay-sdk-php swedbank-pay-sdk-php
-          git clone https://github.com/SwedbankPay/swedbank-pay-woocommerce-core swedbank-pay-woocommerce-core
-          cd ../../
-          composer dump-autoload
 
       - name: WordPress Plugin Deploy
         uses: nk-o/action-wordpress-plugin-deploy@master
