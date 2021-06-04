@@ -15,7 +15,11 @@ class WC_Swedbank_Pay_Icon {
 	 * WooCommerce Init
 	 */
 	public function woocommerce_init() {
-		$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		$gateways = WC()->payment_gateways->payment_gateways();
 		foreach ( $gateways as $payment_id => $gateway ) {
 			if ( strpos( $payment_id, 'payex_' ) !== false ) {
 				add_filter(
