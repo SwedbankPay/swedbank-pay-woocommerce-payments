@@ -153,14 +153,6 @@ class WC_Unit_Gateway_Swedbank_Pay_CC extends WC_Unit_Test_Case {
 		$this->gateway->return_handler();
 	}
 
-	public function test_scheduled_subscription_payment() {
-		$order = WC_Helper_Order::create_order();
-		$order->set_payment_method( $this->gateway );
-
-		$result = $this->gateway->scheduled_subscription_payment( 10, $order );
-		$this->assertNull( $result );
-	}
-
 	public function test_payment_scripts() {
 		Constants::set_constant( 'WOOCOMMERCE_CHECKOUT', true );
 		$this->gateway->method = WC_Gateway_Swedbank_Pay_Cc::METHOD_SEAMLESS;
