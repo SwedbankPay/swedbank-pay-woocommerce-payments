@@ -510,7 +510,7 @@ class WC_Swedbank_Plugin {
 	public static function support_page() {
 		// Init sessions
 		if ( session_status() === PHP_SESSION_NONE ) {
-			session_start();
+			@session_start();
 		}
 
 		wc_get_template(
@@ -746,7 +746,7 @@ class WC_Swedbank_Plugin {
 
 		// Init sessions
 		if ( session_status() === PHP_SESSION_NONE ) {
-			session_start();
+			@session_start();
 		}
 
 		// Validate the fields
