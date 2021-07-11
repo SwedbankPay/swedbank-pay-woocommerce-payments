@@ -33,7 +33,6 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 		register_activation_hook( __FILE__, array( $this, 'install' ) );
 
 		// Actions
-		add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_action_links' ) );
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
 		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_loaded' ), 20 );
 	}
@@ -48,24 +47,6 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 		}
 
 		parent::install();
-	}
-
-	/**
-	 * Add relevant links to plugins page
-	 *
-	 * @param array $links
-	 *
-	 * @return array
-	 */
-	public function plugin_action_links( $links ) {
-		$plugin_links = array(
-			'<a href="' . admin_url( 'admin.php?page=wc-settings&tab=checkout&section=payex_psp_cc' ) . '">' . __(
-				'Settings',
-				'swedbank-pay-woocommerce-payments'
-			) . '</a>',
-		);
-
-		return array_merge( $plugin_links, $links );
 	}
 
 	/**
