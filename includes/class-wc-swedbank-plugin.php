@@ -95,13 +95,13 @@ class WC_Swedbank_Plugin {
 
 		$vendors_dir = dirname( __FILE__ ) . '/../vendor';
 		if ( file_exists( $vendors_dir . '/autoload.php' ) ) {
-		    // Prevent conflicts of the composer
+			// Prevent conflicts of the composer
 			$content = file_get_contents( $vendors_dir . '/composer/autoload_real.php' );
 			$matches = array();
 			preg_match('/class\s+(\w+)(.*)?/', $content, $matches, PREG_OFFSET_CAPTURE, 0);
 			if ( ! isset( $matches[1] ) || ! class_exists( $matches[1][0], false ) ) {
 				require_once $vendors_dir . '/autoload.php';
-            }
+			}
 		}
 
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-transactions.php' );
@@ -415,20 +415,20 @@ class WC_Swedbank_Plugin {
 	}
 
 	/**
-     * Payment Description.
-     *
+	 * Payment Description.
+	 *
 	 * @param string $description
 	 * @param WC_Order $order
 	 *
 	 * @return string
 	 */
 	public static function payment_description( $description, $order ) {
-	    return $description;
-    }
+		return $description;
+	}
 
 	/**
-     * Billing phone.
-     *
+	 * Billing phone.
+	 *
 	 * @param string $billing_phone
 	 * @param WC_Order $order
 	 *
@@ -453,7 +453,7 @@ class WC_Swedbank_Plugin {
 				$country_code = '45';
 				break;
 			default:
-			    return '+' . ltrim( $billing_phone, '+' ) ;
+				return '+' . ltrim( $billing_phone, '+' ) ;
 		}
 
 		if ( isset( $matches[3] ) && isset( $matches[5]) ) { // country code present
@@ -465,7 +465,7 @@ class WC_Swedbank_Plugin {
 		}
 
 		return strlen( $billing_phone ) > 7 && strlen( $billing_phone ) < 16 ? '+' . $billing_phone : null;
-    }
+	}
 
 	/**
 	 * Dispatch Background Process
@@ -516,10 +516,10 @@ class WC_Swedbank_Plugin {
 		wc_get_template(
 			'admin/support.php',
 			array(
-                'form_url' => admin_url( 'admin-post.php' ),
-                'action' => self::ADMIN_SUPPORT_PAGE_SLUG,
-                'errors' => isset( $_SESSION['form_errors'] ) ? (array) $_SESSION['form_errors'] : array(),
-                'notices' => isset( $_SESSION['form_notices'] ) ? (array) $_SESSION['form_notices'] : array(),
+				'form_url' => admin_url( 'admin-post.php' ),
+				'action' => self::ADMIN_SUPPORT_PAGE_SLUG,
+				'errors' => isset( $_SESSION['form_errors'] ) ? (array) $_SESSION['form_errors'] : array(),
+				'notices' => isset( $_SESSION['form_notices'] ) ? (array) $_SESSION['form_notices'] : array(),
 			),
 			'',
 			dirname( __FILE__ ) . '/../templates/'
@@ -573,7 +573,7 @@ class WC_Swedbank_Plugin {
 		add_action( 'admin_notices', __CLASS__ . '::check_dependencies' );
 
 		if ( version_compare( get_option( self::DB_VERSION_SLUG, self::DB_VERSION ), self::DB_VERSION, '<' ) &&
-		     current_user_can( 'manage_woocommerce' )
+			 current_user_can( 'manage_woocommerce' )
 		) {
 			add_action( 'admin_notices', __CLASS__ . '::upgrade_notice' );
 		}
@@ -591,8 +591,8 @@ class WC_Swedbank_Plugin {
 			$plugins = get_plugins();
 			foreach ( $plugins as $file => $plugin ) {
 				if ( strpos( $file, 'woocommerce-gateway-payex-payment.php' ) !== false
-                     && is_plugin_active( $file )
-                ) {
+					 && is_plugin_active( $file )
+				) {
 					add_action( 'admin_notices', __CLASS__ . '::migration_notice', 40 );
 
 					break;
@@ -606,8 +606,8 @@ class WC_Swedbank_Plugin {
 	 */
 	public static function upgrade_notice() {
 		?>
-        <div id="message" class="error">
-            <p>
+		<div id="message" class="error">
+			<p>
 				<?php
 				echo sprintf(
 					/* translators: 1: plugin name */                        esc_html__(
@@ -626,8 +626,8 @@ class WC_Swedbank_Plugin {
 						'</a>'
 					);
 				?>
-            </p>
-        </div>
+			</p>
+		</div>
 		<?php
 	}
 
@@ -636,11 +636,11 @@ class WC_Swedbank_Plugin {
 	 */
 	public static function migration_notice() {
 		?>
-        <div id="message" class="updated woocommerce-message">
-            <p class="main">
-                <strong><?php echo esc_html__( 'Data migration.', 'swedbank-pay-woocommerce-payments' ); ?></strong>
-            </p>
-            <p>
+		<div id="message" class="updated woocommerce-message">
+			<p class="main">
+				<strong><?php echo esc_html__( 'Data migration.', 'swedbank-pay-woocommerce-payments' ); ?></strong>
+			</p>
+			<p>
 				<?php
 				echo esc_html__( 'We\'ve detected that you\'ve used an older version of the WooCommerce PayEx integration.', 'swedbank-pay-woocommerce-payments' );
 				echo '<br />';
@@ -648,13 +648,13 @@ class WC_Swedbank_Plugin {
 				echo '<br />';
 				echo esc_html__( 'Please be sure to backup your website before doing this. Thank you for choosing Swedbankpay Payments!', 'swedbank-pay-woocommerce-payments' );
 				?>
-            </p>
-            <p class="submit">
-                <a class="button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::ADMIN_MIGRATE_PAGE_SLUG ) ); ?>">
+			</p>
+			<p class="submit">
+				<a class="button-primary" href="<?php echo esc_url( admin_url( 'admin.php?page=' . self::ADMIN_MIGRATE_PAGE_SLUG ) ); ?>">
 					<?php echo esc_html__( 'Upgrade', 'swedbank-pay-woocommerce-payments' ); ?>
-                </a>
-            </p>
-        </div>
+				</a>
+			</p>
+		</div>
 		<?php
 	}
 
@@ -663,28 +663,28 @@ class WC_Swedbank_Plugin {
 	 */
 	public static function missing_woocommerce_notice() {
 		?>
-        <div id="message" class="error">
-            <p class="main">
-                <strong><?php echo esc_html__( 'WooCommerce is inactive or missing.', 'swedbank-pay-woocommerce-payments' ); ?></strong>
-            </p>
-            <p>
+		<div id="message" class="error">
+			<p class="main">
+				<strong><?php echo esc_html__( 'WooCommerce is inactive or missing.', 'swedbank-pay-woocommerce-payments' ); ?></strong>
+			</p>
+			<p>
 				<?php
 				echo esc_html__( 'WooCommerce plugin is inactive or missing. Please install and active it.', 'swedbank-pay-woocommerce-payments' );
 				echo '<br />';
 				echo sprintf(
-				    /* translators: 1: plugin name */                        esc_html__(
-					    '%1$s will be deactivated.',
-					    'swedbank-pay-woocommerce-payments'
-				    ),
+					/* translators: 1: plugin name */                        esc_html__(
+						'%1$s will be deactivated.',
+						'swedbank-pay-woocommerce-payments'
+					),
 					self::PLUGIN_NAME
 				);
 
 				?>
-            </p>
-        </div>
+			</p>
+		</div>
 		<?php
 
-        // Deactivate the plugin
+		// Deactivate the plugin
 		deactivate_plugins( self::PLUGIN_PATH, true );
 	}
 
@@ -692,40 +692,40 @@ class WC_Swedbank_Plugin {
 	 * Check dependencies
 	 */
 	public static function check_dependencies() {
-	    $dependencies = array( 'curl', 'bcmath', 'json' );
+		$dependencies = array( 'curl', 'bcmath', 'json' );
 
-	    $errors = array();
-	    foreach ($dependencies as $dependency) {
-            if ( ! extension_loaded( $dependency ) ) {
-                $errors[] = sprintf( esc_html__( 'Extension %s is missing.', 'swedbank-pay-woocommerce-payments' ), $dependency );
-            }
-	    }
+		$errors = array();
+		foreach ($dependencies as $dependency) {
+			if ( ! extension_loaded( $dependency ) ) {
+				$errors[] = sprintf( esc_html__( 'Extension %s is missing.', 'swedbank-pay-woocommerce-payments' ), $dependency );
+			}
+		}
 
-	    if ( count( $errors ) > 0 ):
-	    ?>
-            <div id="message" class="error">
-                <p class="main">
-                    <strong><?php echo esc_html__( 'Required extensions are missing.', 'swedbank-pay-woocommerce-payments' ); ?></strong>
-                </p>
-                <p>
-				    <?php
-                    foreach ( $errors as $error ) {
-                        echo $error;
-                    }
-				    echo '<br />';
-				    echo sprintf(
-				    /* translators: 1: plugin name */                        esc_html__(
-					    '%1$s requires that. Please configure PHP or contact the server administrator.',
-					    'swedbank-pay-woocommerce-payments'
-				    ),
-					    self::PLUGIN_NAME
-				    );
+		if ( count( $errors ) > 0 ):
+		?>
+			<div id="message" class="error">
+				<p class="main">
+					<strong><?php echo esc_html__( 'Required extensions are missing.', 'swedbank-pay-woocommerce-payments' ); ?></strong>
+				</p>
+				<p>
+					<?php
+					foreach ( $errors as $error ) {
+						echo $error;
+					}
+					echo '<br />';
+					echo sprintf(
+					/* translators: 1: plugin name */                        esc_html__(
+						'%1$s requires that. Please configure PHP or contact the server administrator.',
+						'swedbank-pay-woocommerce-payments'
+					),
+						self::PLUGIN_NAME
+					);
 
-				    ?>
-                </p>
-            </div>
-	    <?php
-        endif;
+					?>
+				</p>
+			</div>
+		<?php
+		endif;
 	}
 
 	/**
@@ -798,7 +798,7 @@ class WC_Swedbank_Plugin {
 		// Add logs
 		$files = self::get_log_files();
 		foreach ($files as $file) {
-			$zipArchive->addFile(WC_LOG_DIR . $file, basename( $file ) );
+			$zipArchive->addFile( WC_LOG_DIR . $file, basename( $file ) );
 		}
 
 		$zipArchive->close();
@@ -818,7 +818,7 @@ class WC_Swedbank_Plugin {
 			get_bloginfo( 'version' ),
 			$plugin['Name'],
 			$plugin['Version']
-        );
+		);
 
 		// Send message
 		$result = wp_mail(
@@ -826,9 +826,9 @@ class WC_Swedbank_Plugin {
 			'Site support: ' . get_option( 'siteurl' ),
 			$message,
 			array(
-                'Reply-To: ' . $_POST['email'],
-                'Content-Type: text/plain; charset=UTF-8'
-            ),
+				'Reply-To: ' . $_POST['email'],
+				'Content-Type: text/plain; charset=UTF-8'
+			),
 			array( $zipFile )
 		);
 
@@ -849,8 +849,8 @@ class WC_Swedbank_Plugin {
 	}
 
 	/**
-     * Get log files.
-     *
+	 * Get log files.
+	 *
 	 * @return string[]
 	 */
 	private static function get_log_files() {
@@ -859,9 +859,9 @@ class WC_Swedbank_Plugin {
 		foreach ( $files as $file ) {
 			foreach ( self::PAYMENT_METHODS as $payment_method ) {
 				if ( strpos( $file, $payment_method ) !== false ||
-                     strpos( $file, 'wc_swedbank' ) !== false ||
-                     strpos( $file, 'fatal-errors' ) !== false
-                ) {
+					 strpos( $file, 'wc_swedbank' ) !== false ||
+					 strpos( $file, 'fatal-errors' ) !== false
+				) {
 					$result[] = $file;
 				}
 			}
