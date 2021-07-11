@@ -1,3 +1,10 @@
+Version 4.0.2
+* Fixed subscription status problem when instant capture is on
+* Fixed Uncaught Error: Call to a member function getReference() on array
+
+Version 4.0.1
+* Gateway icon fixes
+
 Version 4.0.0
 * Updates of WooCommerce Subscriptions
 * Fixed php warnings
