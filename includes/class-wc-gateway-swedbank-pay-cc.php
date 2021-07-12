@@ -765,6 +765,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			untrailingslashit( plugins_url( '/', __FILE__ ) ) . '/../assets/js/order-status' . $suffix . '.js',
 			array(
 				'jquery',
+				'jquery-blockui'
 			),
 			false,
 			true
