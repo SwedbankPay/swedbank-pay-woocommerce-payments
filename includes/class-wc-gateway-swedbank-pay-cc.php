@@ -861,6 +861,32 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			$paid = $payment_info->getOperationByRel( 'paid-payment', false );
 			if ( ! empty( $paid ) ) {
 				$result = $this->core->request( $paid['method'], $paid['href'] );
+				if ( ! isset( $result['paid'] ) ) {
+					wp_send_json_success( array(
+						'state' => 'failed',
+						'message' => 'Unable to verify the payment'
+					) );
+
+					return;
+				}
+
+				// Get transaction and update order statuses
+				// Fetch transactions list
+				$transactions = $this->core->fetchTransactionsList( $payment_id );
+				$this->core->saveTransactions( $order->get_id(), $transactions );
+
+				// Process transactions list
+				foreach ( $transactions as $transaction ) {
+					// Process transaction
+					try {
+						$this->core->processTransaction( $order->get_id(), $transaction );
+					} catch ( \Exception $e ) {
+						$this->core->log(
+							LogLevel::INFO,
+							sprintf( '%s: Warning: %s', __METHOD__, $e->getMessage() )
+						);
+					}
+				}
 
 				wp_send_json_success( array(
 					'state' => 'paid',
@@ -965,7 +991,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				}
 			} catch ( Exception $e ) {
 				$this->core->log(
-					LogLevel::WARNING, sprintf( '%s::%s %s', __CLASS__, __METHOD__, $e->getMessage() )
+					LogLevel::WARNING, sprintf( '%s %s', __METHOD__, $e->getMessage() )
 				);
 			}
 		}

@@ -1,3 +1,10 @@
+Version 4.1.0
+* Added the support form
+* Background queue fixes
+* Transaction processing on payment status checking
+* WC Subscriptions UI fixes in the admin backend
+* Fixed double order notifications/emails
+
 Version 4.0.2
 * Fixed subscription status problem when instant capture is on
 * Fixed Uncaught Error: Call to a member function getReference() on array
