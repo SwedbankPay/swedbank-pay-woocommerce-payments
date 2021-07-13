@@ -117,6 +117,11 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 		unset( $data, $sorting_flow );
 
 		$batch = array_shift( $results ); // Get first result
+		if ( ! $batch ) {
+			$batch = new \stdClass();
+			$batch->key  = null;
+			$batch->data = array();
+		}
 
 		return $batch;
 	}
