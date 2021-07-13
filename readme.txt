@@ -3,7 +3,7 @@ Contributors: swedbankpay
 Tags: ecommerce, e-commerce, commerce, woothemes, wordpress ecommerce, swedbank, payex, payment gateway
 Requires at least: 5.3
 Tested up to: 5.6
-Stable tag: 4.0.2
+Stable tag: 4.1.0
 License: Apache License 2.0
 License URI: http://www.apache.org/licenses/LICENSE-2.0
 
