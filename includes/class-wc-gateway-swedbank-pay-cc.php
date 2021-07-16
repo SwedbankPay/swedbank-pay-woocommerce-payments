@@ -871,22 +871,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				}
 
 				// Get transaction and update order statuses
-				// Fetch transactions list
-				$transactions = $this->core->fetchTransactionsList( $payment_id );
-				$this->core->saveTransactions( $order->get_id(), $transactions );
-
-				// Process transactions list
-				foreach ( $transactions as $transaction ) {
-					// Process transaction
-					try {
-						$this->core->processTransaction( $order->get_id(), $transaction );
-					} catch ( \Exception $e ) {
-						$this->core->log(
-							LogLevel::INFO,
-							sprintf( '%s: Warning: %s', __METHOD__, $e->getMessage() )
-						);
-					}
-				}
+				$this->core->fetchTransactionsAndUpdateOrder( $order->get_id() );
 
 				wp_send_json_success( array(
 					'state' => 'paid',
@@ -1224,22 +1209,8 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
 		$order->save_meta_data();
 
-		// Fetch transactions list
-		$transactions = $this->core->fetchTransactionsList( $payment_id );
-		$this->core->saveTransactions( $order->get_id(), $transactions );
-
-		// Process transactions list
-		foreach ( $transactions as $transaction ) {
-			// Process transaction
-			try {
-				$this->core->processTransaction( $order->get_id(), $transaction );
-			} catch ( \Exception $e ) {
-				$this->core->log(
-					LogLevel::INFO,
-					sprintf( '%s: Warning: %s', __METHOD__, $e->getMessage() )
-				);
-			}
-		}
+		// Get transaction and update order statuses
+		$this->core->fetchTransactionsAndUpdateOrder( $order->get_id() );
 
 		return $result;
 	}
