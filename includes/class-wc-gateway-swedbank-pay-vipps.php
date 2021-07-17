@@ -109,13 +109,12 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 
 		// Actions
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
-		add_action( 'woocommerce_thankyou_' . $this->id, array( $this, 'thankyou_page' ) );
+		add_filter( 'wc_get_template', array( $this, 'override_template' ), 5, 20 );
+		add_action( 'woocommerce_before_thankyou', array( $this, 'thankyou_page' ) );
+		add_action( 'wp_enqueue_scripts', array( $this, 'thankyou_scripts' ) );
 
 		// Payment listener/API hook
 		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
-
-		// Payment confirmation
-		add_action( 'the_post', array( $this, 'payment_confirm' ) );
 
 		// Pending Cancel
 		add_action( 'woocommerce_order_status_pending_to_cancelled', array( $this, 'cancel_pending' ), 10, 2 );
@@ -283,6 +282,7 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 			'WC_Gateway_Swedbank_Pay_Vipps',
 			array(
 				'culture' => $this->culture,
+				'payment_url' => WC()->session->get( 'sb_payment_url' )
 			)
 		);
 
@@ -323,17 +323,6 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 	}
 
 	/**
-	 * Thank you page
-	 *
-	 * @param $order_id
-	 *
-	 * @return void
-	 */
-	public function thankyou_page( $order_id ) {
-		//
-	}
-
-	/**
 	 * Process Payment
 	 *
 	 * @param int $order_id
@@ -367,6 +356,8 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 					'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
 				);
 			case self::METHOD_SEAMLESS:
+				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-payment' ) );
+
 				return array(
 					'result'                   => 'success',
 					'redirect'                 => '#!swedbank-pay-vipps',
@@ -405,13 +396,6 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		try {
-			// Disable status change hook
-			remove_action(
-				'woocommerce_order_status_changed',
-				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-				10
-			);
-
 			$this->core->refund( $order->get_id(), $amount, $reason );
 
 			return true;
@@ -440,13 +424,6 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		try {
-			// Disable status change hook
-			remove_action(
-				'woocommerce_order_status_changed',
-				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-				10
-			);
-
 			$this->core->capture( $order->get_id(), $amount, $vat_amount );
 		} catch ( \SwedbankPay\Core\Exception $e ) {
 			throw new Exception( $e->getMessage() );
@@ -467,13 +444,6 @@ class WC_Gateway_Swedbank_Pay_Vipps extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		try {
-			// Disable status change hook
-			remove_action(
-				'woocommerce_order_status_changed',
-				'\SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin::order_status_changed',
-				10
-			);
-
 			$this->core->cancel( $order->get_id() );
 		} catch ( \SwedbankPay\Core\Exception $e ) {
 			throw new Exception( $e->getMessage() );

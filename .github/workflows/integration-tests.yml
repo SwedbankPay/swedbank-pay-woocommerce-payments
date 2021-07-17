@@ -1,23 +1,28 @@
 name: Integration tests
 
-on:
-  push:
-    branches:
-    - '*'
-    tags:
-    - '*'
-  pull_request:
+on: [push, pull_request, pull_request_target]
 
 jobs:
   test:
     name: Run tests
     runs-on: ubuntu-18.04
+    if: |
+        (github.event_name == 'pull_request_target' && github.actor == 'dependabot[bot]') ||
+        (github.event_name != 'pull_request_target' && github.actor != 'dependabot[bot]')
 
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        if: ${{ github.event_name != 'pull_request_target' }}
         with:
           path: swedbank-pay-woocommerce-payments
+
+      - name: Checkout
+        uses: actions/checkout@v2
+        if: ${{ github.event_name == 'pull_request_target' }}
+        with:
+          path: swedbank-pay-woocommerce-payments
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: WooCommerce Checkout
         uses: actions/checkout@v2
@@ -43,7 +48,15 @@ jobs:
           bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
           zip -q -r /tmp/woocommerce.zip ./
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
+          sed -i -e "s/~3.1.0/dev-master/g" ./composer.json
           composer install
+          cd ./vendor/swedbank-pay/
+          rm -rf ./swedbank-pay-sdk-php
+          rm -rf ./swedbank-pay-woocommerce-core
+          git clone https://github.com/SwedbankPay/swedbank-pay-sdk-php swedbank-pay-sdk-php
+          git clone https://github.com/SwedbankPay/swedbank-pay-woocommerce-core swedbank-pay-woocommerce-core
+          cd ../../
+          composer dump-autoload
           zip -q -r /tmp/swedbank-pay-woocommerce-payments.zip ./
           cd /tmp/wordpress
           curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar

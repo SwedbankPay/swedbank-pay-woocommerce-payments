@@ -10,6 +10,7 @@ jQuery( function( $ ) {
         gateway_id: 'payex_psp_mobilepay',
         key: 'is_swedbank_pay_mobilepay',
         culture: WC_Gateway_Swedbank_Pay_Mobilepay.culture,
+        payment_url: WC_Gateway_Swedbank_Pay_Mobilepay.payment_url,
         hostedView: 'mobilepay',
     };
 
