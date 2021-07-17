@@ -148,7 +148,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	 * Swedbank Pay ip addresses
 	 * @var array
 	 */
-	public $gateway_ip_addresses = [ '82.115.146.1' ];
+	public $gateway_ip_addresses = [ '91.132.170.1' ];
 
 	/**
 	 * Init
