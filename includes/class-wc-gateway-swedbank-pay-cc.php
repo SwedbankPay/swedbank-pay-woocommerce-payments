@@ -1162,7 +1162,9 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			}
 
 			if ( empty( $order_key ) ) {
-				if ( ! in_array( $_SERVER['REMOTE_ADDR'], $this->gateway_ip_addresses ) ) {
+				if ( ! in_array( $_SERVER['REMOTE_ADDR'],
+					apply_filters( 'swedbank_gateway_ip_addresses', $this->gateway_ip_addresses )
+				) ) {
 					throw new Exception( 'An order key wasn\'t provided' );
 				}
 
