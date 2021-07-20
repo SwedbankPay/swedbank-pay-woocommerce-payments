@@ -45,6 +45,7 @@ jobs:
       - name: Build WooCommerce Test Enviroment
         run: |
           cd $GITHUB_WORKSPACE/woocommerce
+          npm run build
           bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
           zip -q -r /tmp/woocommerce.zip ./
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
