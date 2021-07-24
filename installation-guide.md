@@ -5,7 +5,7 @@ This plugin is using Swedbank Pay RESTful API and specifically the Swedbank Pay 
 
 ## Prerequisites
 
-1. WooCommerce 3.*
+1. WooCommerce 5.*
 
 ## Installation
 

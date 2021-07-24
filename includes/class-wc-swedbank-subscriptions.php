@@ -116,7 +116,7 @@ class WC_Swedbank_Subscriptions {
 					$subscription->add_payment_token( $token );
 					$subscription->add_order_note(
 						sprintf(
-							__( 'Card: %s', 'swedbank-pay-woocommerce-checkout' ),
+							__( 'Card: %s', 'swedbank-pay-woocommerce-payments' ),
 							strip_tags( $token->get_display_name() )
 						)
 					);
