@@ -62,6 +62,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	public $debug = 'no';
 
 	/**
+	 * IP Checking
+	 * @var string
+	 */
+	public $ip_check = 'yes';
+
+	/**
 	 * Locale
 	 * @var string
 	 */
@@ -201,6 +207,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$this->subsite         = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
 		$this->testmode        = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug           = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->ip_check        = isset( $this->settings['ip_check'] ) ? $this->settings['ip_check'] : $this->ip_check;
 		$this->culture         = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->method          = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
 		$this->auto_capture    = isset( $this->settings['auto_capture'] ) ? $this->settings['auto_capture'] : $this->auto_capture;
@@ -234,6 +241,9 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 		// Payment listener/API hook
 		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
+
+		// Save order items on refund
+		add_action( 'woocommerce_create_refund', array( $this, 'save_refund_parameters', ), 10, 2 );
 
 		// Pending Cancel
 		add_action(
@@ -337,6 +347,12 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable logging', 'swedbank-pay-woocommerce-payments' ),
 				'default' => $this->debug,
+			),
+			'ip_check'               => array(
+				'title'   => __( 'Enable IP checking of incoming callbacks', 'swedbank-pay-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable IP checking of incoming callbacks', 'swedbank-pay-woocommerce-payments' ),
+				'default' => $this->ip_check,
 			),
 			'culture'                => array(
 				'title'       => __( 'Language', 'swedbank-pay-woocommerce-payments' ),
@@ -989,6 +1005,27 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	}
 
 	/**
+	 * Get the transaction URL.
+	 *
+	 * @param  WC_Order $order Order object.
+	 * @return string
+	 */
+	public function get_transaction_url( $order ) {
+		$payment_id = $order->get_meta( '_payex_payment_id' );
+		if ( empty( $payment_id ) ) {
+			return parent::get_transaction_url( $order );
+		}
+
+		if ( 'yes' === $this->testmode ) {
+			$view_transaction_url = 'https://admin.externalintegration.payex.com/psp/beta/payments/details;id=%s';
+		} else {
+			$view_transaction_url = 'https://admin.payex.com/psp/beta/payments/details;id=%s';
+		}
+
+		return sprintf( $view_transaction_url, urlencode( $payment_id ) );
+	}
+
+	/**
 	 * Process Payment
 	 *
 	 * @param int $order_id
@@ -1146,15 +1183,17 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		);
 
 		// Check IP address of Incoming Callback
-		if ( ! in_array( WC_Geolocation::get_ip_address(),
-			apply_filters( 'swedbank_gateway_ip_addresses', $this->gateway_ip_addresses )
-		) ) {
-			$this->core->log(
-				LogLevel::INFO,
-				sprintf( 'Error: Incoming Callback has been rejected. %s', WC_Geolocation::get_ip_address() )
-			);
+		if ( 'yes' === $this->ip_check ) {
+			if ( ! in_array( WC_Geolocation::get_ip_address(),
+				apply_filters( 'swedbank_gateway_ip_addresses', $this->gateway_ip_addresses )
+			) ) {
+				$this->core->log(
+					LogLevel::INFO,
+					sprintf( 'Error: Incoming Callback has been rejected. %s', WC_Geolocation::get_ip_address() )
+				);
 
-			throw new Exception( 'Incoming Callback has been rejected' );
+				throw new Exception( 'Incoming Callback has been rejected' );
+			}
 		}
 
 		// Decode raw body
@@ -1222,7 +1261,6 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			$order->get_id(),
 			$token
 		);
-		$payment_id = $result['payment']['id'];
 
 		// Save payment ID
 		$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
@@ -1232,6 +1270,43 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$this->core->fetchTransactionsAndUpdateOrder( $order->get_id() );
 
 		return $result;
+	}
+
+	/**
+	 * Save refund parameters to perform refund with specified products and amounts.
+	 *
+	 * @param \WC_Order_Refund $refund
+	 * @param $args
+	 */
+	public function save_refund_parameters( $refund, $args ) {
+		if ( ! isset( $args['order_id'] ) ) {
+			return;
+		}
+
+		$order = wc_get_order( $args['order_id'] );
+		if ( ! $order ) {
+			return;
+		}
+
+		if ( $this->id !== $order->get_payment_method() ) {
+			return;
+		}
+
+		// Save order items of refund
+		set_transient(
+			'sb_refund_parameters_' . $args['order_id'],
+			$args,
+			5 * MINUTE_IN_SECONDS
+		);
+
+		// Save refund ID to store transaction_id
+		if ( $args['refund_payment'] ) {
+			set_transient(
+				'sb_refund_transaction_' . $args['order_id'],
+				$refund->get_id(),
+				5 * MINUTE_IN_SECONDS
+			);
+		}
 	}
 
 	/**
@@ -1257,8 +1332,28 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			$amount = $order->get_total();
 		}
 
+		if ( 0 === absint( $amount ) ) {
+			return new WP_Error( 'refund', __( 'Amount must be positive.', 'swedbank-pay-woocommerce-checkout' ) );
+		}
+
+		// Prevent refund credit memo creation through Callback
+		set_transient( 'sb_refund_block_' . $order->get_id(), $order_id, 5 * MINUTE_IN_SECONDS );
+
+		// Unset
+		delete_transient( 'sb_refund_parameters_' . $order->get_id() );
+
 		try {
-			$this->core->refund( $order->get_id(), $amount );
+			$result = $this->core->refund( $order->get_id(), $amount );
+
+			// Add transaction id
+			$refund_id = get_transient( 'sb_refund_transaction_' . $order->get_id() );
+			if ( $refund_id && isset( $result['reversal'] ) ) {
+				$refund = new WC_Order_Refund( $refund_id );
+				$refund->update_meta_data( '_transaction_id', $result['reversal']['transaction']['number'] );
+				$refund->save_meta_data();
+
+				delete_transient( 'sb_refund_transaction_' . $order->get_id() );
+			}
 
 			return true;
 		} catch ( \Exception $e ) {

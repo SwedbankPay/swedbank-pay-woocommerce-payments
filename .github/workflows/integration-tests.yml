@@ -49,7 +49,7 @@ jobs:
           bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
           zip -q -r /tmp/woocommerce.zip ./
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
-          sed -i -e "s/~3.1.0/dev-master/g" ./composer.json
+          sed -i -e "s/~3.1.0/dev-main/g" ./composer.json
           composer install
           cd ./vendor/swedbank-pay/
           rm -rf ./swedbank-pay-sdk-php
