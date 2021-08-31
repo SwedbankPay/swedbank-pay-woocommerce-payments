@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: woocommerce/woocommerce
-          ref: 5.5.1
+          ref: 5.6.0
           path: woocommerce
 
       - name: Install dependencies
@@ -37,7 +37,7 @@ jobs:
           php-version: '7.3'
           extension: intl, mbstring, json, bcmath
           coverage: xdebug
-          tools: composer, php-cs-fixer, phpunit:7.5.19, phpcpd, phpmd
+          tools: composer, php-cs-fixer, phpunit:7.5.20, phpcpd, phpmd
 
       - name: Set up MySQL
         run: sudo systemctl start mysql.service
