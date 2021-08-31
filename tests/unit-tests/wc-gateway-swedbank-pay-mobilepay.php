@@ -118,4 +118,11 @@ class WC_Unit_Gateway_Swedbank_Pay_Mobilepay extends WC_Unit_Test_Case {
 		$result = $this->gateway->process_refund( $order->get_id(), $order->get_total(), 'Test' );
 		$this->assertInstanceOf( 'WP_Error', $result );
 	}
+
+	public function test_settings() {
+		$this->assertNotNull( $this->gateway->ip_check );
+
+		$form_fields = $this->gateway->get_form_fields();
+		$this->assertArrayHasKey( 'ip_check', $form_fields );
+	}
 }
