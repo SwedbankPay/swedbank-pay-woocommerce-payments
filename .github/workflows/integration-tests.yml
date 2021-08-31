@@ -50,7 +50,6 @@ jobs:
       - name: Build WooCommerce Test Enviroment
         run: |
           cd $GITHUB_WORKSPACE/woocommerce
-          nvm use
           npm install -g grunt
           npm install
           composer install
