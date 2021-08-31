@@ -47,26 +47,33 @@ jobs:
         with:
           node-version: '12'
 
-      - name: Build WooCommerce Test Enviroment
+      - name: Build the plugin package
+        run: |
+          cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
+          composer require swedbank-pay/swedbank-pay-woocommerce-core:dev-main --no-install
+          composer install
+          #cd ./vendor/swedbank-pay/
+          #rm -rf ./swedbank-pay-sdk-php
+          #rm -rf ./swedbank-pay-woocommerce-core
+          #git clone https://github.com/SwedbankPay/swedbank-pay-sdk-php swedbank-pay-sdk-php
+          #git clone https://github.com/SwedbankPay/swedbank-pay-woocommerce-core swedbank-pay-woocommerce-core
+          #cd ../../
+          #composer dump-autoload
+          zip -q -r /tmp/swedbank-pay-woocommerce-payments.zip ./
+
+      - name: Build WooCommerce package
         run: |
           cd $GITHUB_WORKSPACE/woocommerce
           npm install -g grunt
           npm install
           composer install
           npm run build
-          bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
           zip -q -r /tmp/woocommerce.zip ./
-          cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
-          sed -i -e "s/~3.1.0/dev-main/g" ./composer.json
-          composer install
-          cd ./vendor/swedbank-pay/
-          rm -rf ./swedbank-pay-sdk-php
-          rm -rf ./swedbank-pay-woocommerce-core
-          git clone https://github.com/SwedbankPay/swedbank-pay-sdk-php swedbank-pay-sdk-php
-          git clone https://github.com/SwedbankPay/swedbank-pay-woocommerce-core swedbank-pay-woocommerce-core
-          cd ../../
-          composer dump-autoload
-          zip -q -r /tmp/swedbank-pay-woocommerce-payments.zip ./
+
+      - name: Build WooCommerce Test Enviroment
+        run: |
+          cd $GITHUB_WORKSPACE/woocommerce
+          bash tests/bin/install.sh woocommerce_test root 'root' localhost latest
           cd /tmp/wordpress
           curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
           php wp-cli.phar core config --dbname=woocommerce_test --dbuser=root --dbpass='root' --dbhost=localhost --dbprefix=wp_
@@ -93,7 +100,9 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          path: /tmp/wordpress/wp-content/uploads/wc-logs/*.log
+          path: |
+            /tmp/wordpress/wp-content/uploads/wc-logs/*.log
+            /tmp/swedbank-pay-woocommerce-payments.zip
 
       - name: Upload code coverage report to Codecov
         env:
