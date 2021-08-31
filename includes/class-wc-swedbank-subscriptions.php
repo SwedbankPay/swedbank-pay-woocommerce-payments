@@ -96,8 +96,15 @@ class WC_Swedbank_Subscriptions {
 		$subscriptions = wcs_get_subscriptions_for_order( $order_id, array( 'order_type' => 'parent' ) );
 		foreach ( $subscriptions as $subscription ) {
 			/** @var WC_Subscription $subscription */
-			$subscription->update_meta_data('_payex_payment_id', $order->get_meta('_payex_payment_id'));
+			// Add payment meta
+			$paymentId = $order->get_meta( '_payex_payment_id' );
 
+			/** @var \WC_Subscription $subscription */
+			if ( ! empty( $paymentId ) ) {
+				$subscription->update_meta_data( '_payex_payment_id', $paymentId );
+			}
+
+			// Add payment token
 			$tokens = $order->get_payment_tokens();
 			if ( count( $tokens ) > 0 ) {
 				foreach ( $tokens as $token_id ) {
@@ -107,9 +114,18 @@ class WC_Swedbank_Subscriptions {
 					}
 
 					$subscription->add_payment_token( $token );
+					$subscription->add_order_note(
+						sprintf(
+							__( 'Card: %s', 'swedbank-pay-woocommerce-payments' ),
+							strip_tags( $token->get_display_name() )
+						)
+					);
+
+					break;
 				}
 			}
 
+			$subscription->save_meta_data();
 			$subscription->save();
 		}
 	}

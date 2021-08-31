@@ -39,6 +39,12 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 	public $debug = 'yes';
 
 	/**
+	 * IP Checking
+	 * @var string
+	 */
+	public $ip_check = 'yes';
+
+	/**
 	 * Locale
 	 * @var string
 	 */
@@ -89,6 +95,7 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 		$this->subsite      = isset( $this->settings['subsite'] ) ? $this->settings['subsite'] : $this->subsite;
 		$this->testmode     = isset( $this->settings['testmode'] ) ? $this->settings['testmode'] : $this->testmode;
 		$this->debug        = isset( $this->settings['debug'] ) ? $this->settings['debug'] : $this->debug;
+		$this->ip_check     = isset( $this->settings['ip_check'] ) ? $this->settings['ip_check'] : $this->ip_check;
 		$this->culture      = isset( $this->settings['culture'] ) ? $this->settings['culture'] : $this->culture;
 		$this->method       = isset( $this->settings['method'] ) ? $this->settings['method'] : $this->method;
 		$this->terms_url    = isset( $this->settings['terms_url'] ) ? $this->settings['terms_url'] : get_site_url();
@@ -169,6 +176,12 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 				'type'    => 'checkbox',
 				'label'   => __( 'Enable logging', 'swedbank-pay-woocommerce-payments' ),
 				'default' => $this->debug,
+			),
+			'ip_check'       => array(
+				'title'   => __( 'Enable IP checking of incoming callbacks', 'swedbank-pay-woocommerce-payments' ),
+				'type'    => 'checkbox',
+				'label'   => __( 'Enable IP checking of incoming callbacks', 'swedbank-pay-woocommerce-payments' ),
+				'default' => $this->ip_check,
 			),
 			'culture'        => array(
 				'title'       => __( 'Language', 'swedbank-pay-woocommerce-payments' ),
