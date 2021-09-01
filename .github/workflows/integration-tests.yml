@@ -52,13 +52,6 @@ jobs:
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
           composer require swedbank-pay/swedbank-pay-woocommerce-core:dev-main --no-install
           composer install
-          #cd ./vendor/swedbank-pay/
-          #rm -rf ./swedbank-pay-sdk-php
-          #rm -rf ./swedbank-pay-woocommerce-core
-          #git clone https://github.com/SwedbankPay/swedbank-pay-sdk-php swedbank-pay-sdk-php
-          #git clone https://github.com/SwedbankPay/swedbank-pay-woocommerce-core swedbank-pay-woocommerce-core
-          #cd ../../
-          #composer dump-autoload
           zip -q -r /tmp/swedbank-pay-woocommerce-payments.zip ./
 
       - name: Build WooCommerce package
@@ -87,9 +80,10 @@ jobs:
           PAYEE_ID: ${{ secrets.PAYEE_ID }}
           ACCESS_TOKEN_MOBILEPAY: ${{ secrets.ACCESS_TOKEN_MOBILEPAY }}
           PAYEE_ID_MOBILEPAY: ${{ secrets.PAYEE_ID_MOBILEPAY }}
+          WP_TESTS_DIR: /tmp/wordpress-tests-lib
         run: |
           cd $GITHUB_WORKSPACE/swedbank-pay-woocommerce-payments
-          WP_TESTS_DIR=/tmp/wordpress-tests-lib WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit --configuration=./tests/phpunit.xml --bootstrap=./tests/bootstrap.php --coverage-clover=coverage.xml
+          WOOCOMMERCE_DIR=$GITHUB_WORKSPACE/woocommerce phpunit --configuration=./tests/phpunit.xml --bootstrap=./tests/bootstrap.php --coverage-clover=coverage.xml
 
       - name: Run PHPCS inspection
         run: |
