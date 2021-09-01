@@ -7,6 +7,8 @@ class WC_Swedbank_Pay_Transactions_Test extends WC_Unit_Test_Case {
 		$order = WC_Helper_Order::create_order();
 		$transactions = WC_Swedbank_Pay_Transactions::instance();
 
+		$transactions->install_schema();
+
 		$fields = array(
 			'transaction_id' => 123,
 			'order_id' => $order->get_id(),
