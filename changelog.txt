@@ -1,3 +1,7 @@
+Version 4.4.0
+* Add "Enable IP checking" option
+* Fix Transactions::import() notice
+
 Version 4.3.0
 * Add transaction link in WC admin
 * Add details of failed transactions
