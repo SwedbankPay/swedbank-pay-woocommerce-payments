@@ -310,8 +310,6 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 	 * @throws Exception
 	 */
 	public function import( $data, $order_id ) {
-		global $wpdb;
-
 		$id    = $data['id'];
 		$saved = $this->get_by( 'id', $id );
 		if ( ! $saved ) {
@@ -319,35 +317,21 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 			$row_id = $this->add( $data );
 			if ( is_wp_error( $row_id ) ) {
 				/** @var WP_Error $row_id */
-				throw new Exception( $row_id->get_error_message( ) );
+				throw new \SwedbankPay\Core\Exception( $row_id->get_error_message() );
 			}
 
 			return $row_id;
 		}
 
-		// Data should be updated
-		$data['transaction_data'] = json_encode( $data, true );
-		if ( isset( $data['updated'] ) ) {
-			$data['updated'] = gmdate( 'Y-m-d H:i:s', strtotime( $data['updated'] ) );
-		} else {
-			$data['updated'] = gmdate( 'Y-m-d H:i:s' );
+		$data   = $this->prepare( $data, $order_id );
+		$result = $this->update( $saved['transaction_id'], $data );
+
+		if ( is_wp_error( $result ) ) {
+			/** @var WP_Error $result */
+			throw new \SwedbankPay\Core\Exception( $result->get_error_message() );
 		}
 
-		$result = $wpdb->update(
-			$wpdb->prefix . 'payex_transactions',
-			$data,
-			array(
-				'id' => $id,
-			)
-		);
-
-		if ( false === $result ) {
-			throw new Exception(
-				__( 'Failed to update the transaction in the table.', 'swedbank-pay-woocommerce-payments' )
-			);
-		}
-
-		return $saved['transaction_id'];
+		return $result;
 	}
 
 	/**
