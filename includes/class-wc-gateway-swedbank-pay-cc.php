@@ -907,7 +907,11 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			wp_send_json_success( array(
 				'state' => 'unknown',
 			) );
-		} catch ( \SwedbankPay\Core\Exception $exception ) {
+		} catch ( Exception $exception ) {
+			$this->core->log(
+				LogLevel::WARNING, sprintf( '%s %s', __METHOD__, $exception->getMessage() )
+			);
+
 			wp_send_json_success( array(
 				'state' => 'failed',
 				'message' => $exception->getMessage()
