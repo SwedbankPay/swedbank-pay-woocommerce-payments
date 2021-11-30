@@ -32,6 +32,7 @@ class WC_Swedbank_Pay_Transactions_Test extends WC_Unit_Test_Case {
 		$result = $transactions->delete( 123 );
 		$this->assertIsInt( $result );
 	}
+
 	public function test_import() {
 		$order = WC_Helper_Order::create_order();
 		$transactions = WC_Swedbank_Pay_Transactions::instance();
@@ -60,6 +61,5 @@ class WC_Swedbank_Pay_Transactions_Test extends WC_Unit_Test_Case {
 		// Run import again, this time the transactions table should be updated.
 		$update = $transactions->import( $fields, $order->get_id() );
 		$this->assertIsInt( $update );
-
 	}
 }
