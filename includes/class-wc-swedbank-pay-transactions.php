@@ -315,7 +315,7 @@ CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}payex_transactions` (
 			$row_id = $this->add( $data );
 			if ( is_wp_error( $row_id ) ) {
 				/** @var WP_Error $row_id */
-				throw new Exception( $row_id->get_error_message( ) );
+				throw new \SwedbankPay\Core\Exception( $row_id->get_error_message( ) );
 			}
 
 			return $row_id;
