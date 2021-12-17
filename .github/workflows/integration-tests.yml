@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: woocommerce/woocommerce
-          ref: 5.9.0
+          ref: 6.0.0
           path: woocommerce
 
       - name: Install dependencies
