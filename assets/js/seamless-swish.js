@@ -10,7 +10,6 @@ jQuery( function( $ ) {
         gateway_id: 'payex_psp_swish',
         key: 'is_swedbank_pay_swish',
         culture: WC_Gateway_Swedbank_Pay_Swish.culture,
-        payment_url: WC_Gateway_Swedbank_Pay_Swish.payment_url,
         hostedView: 'swish',
     };
 

@@ -10,7 +10,6 @@ jQuery( function( $ ) {
         gateway_id: 'payex_psp_invoice',
         key: 'is_swedbank_pay_invoice',
         culture: WC_Gateway_Swedbank_Pay_Invoice.culture,
-        payment_url: WC_Gateway_Swedbank_Pay_Invoice.payment_url,
         hostedView: 'invoice',
     };
 

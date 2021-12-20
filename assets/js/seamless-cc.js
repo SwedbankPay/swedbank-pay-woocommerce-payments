@@ -10,7 +10,6 @@ jQuery( function( $ ) {
         gateway_id: 'payex_psp_cc',
         key: 'is_swedbank_pay_cc',
         culture: WC_Gateway_Swedbank_Pay_Cc.culture,
-        payment_url: WC_Gateway_Swedbank_Pay_Cc.payment_url,
         hostedView: 'creditCard',
     };
 

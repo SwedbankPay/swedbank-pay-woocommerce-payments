@@ -278,8 +278,7 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 			'wc-sb-trustly',
 			'WC_Gateway_Swedbank_Pay_Trustly',
 			array(
-				'culture' => $this->culture,
-				'payment_url' => WC()->session->get( 'sb_payment_url' )
+				'culture' => $this->culture
 			)
 		);
 
@@ -301,6 +300,8 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @return array|false
 	 */
 	public function process_payment( $order_id ) {
+		$order = wc_get_order( $order_id );
+
 		// Process payment
 		try {
 			$result = $this->core->initiateTrustlyPayment(
@@ -313,7 +314,20 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		// Save payment ID
-		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
+		$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
+
+		$redirect_sale = $result->getOperationByRel( 'redirect-sale' );
+		if ( $redirect_sale ) {
+			$order->update_meta_data( '_sb_redirect_sale', $redirect_sale );
+		}
+
+		$view_sales = $result->getOperationByRel( 'view-sales' );
+		if ( $view_sales ) {
+			$order->update_meta_data( '_sb_view_sales', $view_sales );
+		}
+
+		$order->save_meta_data();
+		$order->save();
 
 		switch ( $this->method ) {
 			case self::METHOD_REDIRECT:
@@ -321,16 +335,14 @@ class WC_Gateway_Swedbank_Pay_Trustly extends WC_Gateway_Swedbank_Pay_Cc {
 
 				return array(
 					'result'   => 'success',
-					'redirect' => $result->getOperationByRel( 'redirect-sale' ),
+					'redirect' => $redirect_sale,
 				);
 			case self::METHOD_SEAMLESS:
-				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-sales' ) );
-
 				return array(
 					'result'                   => 'success',
 					'redirect'                 => '#!swedbank-pay-trustly',
 					'is_swedbank_pay_trustly'  => true,
-					'js_url'                   => $result->getOperationByRel( 'view-sales' ),
+					'js_url'                   => $view_sales,
 				);
 
 			default:

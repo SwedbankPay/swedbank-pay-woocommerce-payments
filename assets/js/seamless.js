@@ -25,7 +25,6 @@ jQuery( function( $ ) {
             $( this.form ).on( 'submit checkout_place_order_' + this.gateway_id );
 
             this.addAjaxHook();
-            this.checkPaymentUrl();
         },
 
         onSubmit: function( event ) {
@@ -265,14 +264,6 @@ jQuery( function( $ ) {
                     }
                 }
             } );
-        },
-
-        checkPaymentUrl: function () {
-            if ( !! (new URLSearchParams(document.location.search)).get('payment_url') ) {
-                this.initFrame( this.payment_url, function () {
-                    console.log( 'Payment url has been loaded.' );
-                } );
-            }
         }
     }
 } );

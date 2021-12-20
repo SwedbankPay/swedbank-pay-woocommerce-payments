@@ -292,8 +292,7 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 			'wc-sb-swish',
 			'WC_Gateway_Swedbank_Pay_Swish',
 			array(
-				'culture' => $this->culture,
-				'payment_url' => WC()->session->get( 'sb_payment_url' )
+				'culture' => $this->culture
 			)
 		);
 
@@ -357,21 +356,38 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		// Save payment ID
-		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
+		$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
+
+		$redirect_sale = $result->getOperationByRel( 'redirect-sale' );
+		if ( $redirect_sale ) {
+			$order->update_meta_data( '_sb_redirect_sale', $redirect_sale );
+		}
+
+		$create_sale = $result->getOperationByRel( 'create-sale' );
+		if ( $create_sale ) {
+			$order->update_meta_data( '_sb_create_sale', $create_sale );
+		}
+
+		$view_sales = $result->getOperationByRel( 'view-sales' );
+		if ( $view_sales ) {
+			$order->update_meta_data( '_sb_view_sales', $view_sales );
+		}
+
+		$order->save_meta_data();
+		$order->save();
 
 		switch ( $this->method ) {
 			case self::METHOD_REDIRECT:
 				// Get Redirect
-
 				return array(
 					'result'   => 'success',
-					'redirect' => $result->getOperationByRel( 'redirect-sale' ),
+					'redirect' => $redirect_sale,
 				);
 			case self::METHOD_DIRECT:
 				// Sale payment
 				try {
 					$this->core->initiateSwishPaymentDirect(
-						$result->getOperationByRel( 'create-sale' ),
+						$create_sale,
 						apply_filters( 'swedbank_pay_swish_phone_format', $order->get_billing_phone(), $order )
 					);
 				} catch ( \Exception $e ) {
@@ -385,13 +401,11 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 					'redirect' => $this->get_return_url( $order ),
 				);
 			case self::METHOD_SEAMLESS:
-				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-sales' ) );
-
 				return array(
 					'result'                   => 'success',
 					'redirect'                 => '#!swedbank-pay-swish',
 					'is_swedbank_pay_swish'    => true,
-					'js_url'                   => $result->getOperationByRel( 'view-sales' ),
+					'js_url'                   => $view_sales,
 				);
 			default:
 				wc_add_notice( __( 'Wrong method', 'swedbank-pay-woocommerce-payments' ), 'error' );
