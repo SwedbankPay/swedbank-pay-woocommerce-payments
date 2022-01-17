@@ -293,8 +293,7 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 			'wc-sb-invoice',
 			'WC_Gateway_Swedbank_Pay_Invoice',
 			array(
-				'culture' => $this->culture,
-				'payment_url' => WC()->session->get( 'sb_payment_url' )
+				'culture' => $this->culture
 			)
 		);
 
@@ -365,6 +364,8 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @return array|false
 	 */
 	public function process_payment( $order_id ) {
+		$order = wc_get_order( $order_id );
+
 		// Process payment
 		try {
 			$result = $this->core->initiateInvoicePayment(
@@ -377,7 +378,20 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 		}
 
 		// Save payment ID
-		update_post_meta( $order_id, '_payex_payment_id', $result['payment']['id'] );
+		$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
+
+		$redirect_authorization = $result->getOperationByRel( 'redirect-authorization' );
+		if ( $redirect_authorization ) {
+			$order->update_meta_data( '_sb_redirect_authorization', $redirect_authorization );
+		}
+
+		$view_authorization = $result->getOperationByRel( 'view-authorization' );
+		if ( $view_authorization ) {
+			$order->update_meta_data( '_sb_view_authorization', $view_authorization );
+		}
+
+		$order->save_meta_data();
+		$order->save();
 
 		switch ( $this->method ) {
             case self::METHOD_REDIRECT:
@@ -385,16 +399,14 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 
 				return array(
 					'result'   => 'success',
-					'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
+					'redirect' => $redirect_authorization,
 				);
             case self::METHOD_SEAMLESS:
-	            WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-authorization' ) );
-
 				return array(
 					'result'                   => 'success',
 					'redirect'                 => '#!swedbank-pay-invoice',
 					'is_swedbank_pay_invoice'  => true,
-					'js_url'                   => $result->getOperationByRel( 'view-authorization' ),
+					'js_url'                   => $view_authorization,
 				);
 
 			default:

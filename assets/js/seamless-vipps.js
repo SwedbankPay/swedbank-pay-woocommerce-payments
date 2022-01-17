@@ -10,7 +10,6 @@ jQuery( function( $ ) {
         gateway_id: 'payex_psp_vipps',
         key: 'is_swedbank_pay_vipps',
         culture: WC_Gateway_Swedbank_Pay_Vipps.culture,
-        payment_url: WC_Gateway_Swedbank_Pay_Vipps.payment_url,
         hostedView: 'vipps',
     };
 

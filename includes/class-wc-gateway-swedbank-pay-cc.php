@@ -587,8 +587,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			'wc-sb-cc',
 			'WC_Gateway_Swedbank_Pay_Cc',
 			array(
-				'culture' => $this->culture,
-				'payment_url' => WC()->session->get( 'sb_payment_url' )
+				'culture' => $this->culture
 			)
 		);
 
@@ -1141,6 +1140,18 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 		// Save payment ID
 		$order->update_meta_data( '_payex_payment_id', $result['payment']['id'] );
+
+		$redirect_authorization = $result->getOperationByRel( 'redirect-authorization' );
+		if ( $redirect_authorization ) {
+			$order->update_meta_data( '_sb_redirect_authorization', $redirect_authorization );
+		}
+
+		$view_authorization = $result->getOperationByRel( 'view-authorization' );
+		if ( $view_authorization ) {
+			$order->update_meta_data( '_sb_view_authorization', $view_authorization );
+		}
+
+		$order->save_meta_data();
 		$order->save();
 
 		switch ( $this->method ) {
@@ -1150,16 +1161,15 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 				return array(
 					'result'   => 'success',
-					'redirect' => $result->getOperationByRel( 'redirect-authorization' ),
+					'redirect' => $redirect_authorization,
 				);
 			case self::METHOD_SEAMLESS:
-				WC()->session->set( 'sb_payment_url', $result->getOperationByRel( 'view-authorization' ) );
 
 				return array(
 					'result'                   => 'success',
 					'redirect'                 => '#!swedbank-pay-cc',
 					'is_swedbank_pay_cc'       => true,
-					'js_url'                   => $result->getOperationByRel( 'view-authorization' ),
+					'js_url'                   => $view_authorization,
 				);
 
 			default:
