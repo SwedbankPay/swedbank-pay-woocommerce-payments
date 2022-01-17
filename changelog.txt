@@ -1,3 +1,6 @@
+Version 6.0.0
+* Dedicated dialog for "payment-url"
+
 Version 5.0.0
 * Updated the core library
 
