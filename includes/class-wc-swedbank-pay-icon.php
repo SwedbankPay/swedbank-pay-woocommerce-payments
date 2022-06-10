@@ -63,7 +63,7 @@ class WC_Swedbank_Pay_Icon {
 	public function gateway_icon( $icon, $payment_id ) {
 		if ( strpos( $payment_id, 'payex_' ) !== false ) {
 			// Get Payment Gateway
-			$gateways = WC()->payment_gateways()->get_available_payment_gateways();
+			$gateways = WC()->payment_gateways()->payment_gateways();
 
 			if ( isset( $gateways[ $payment_id ] ) ) {
 				$gateway = $gateways[ $payment_id ];

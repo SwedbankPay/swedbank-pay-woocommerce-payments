@@ -1,3 +1,7 @@
+Version 7.0.0
+* Capturing fixes
+* Added "Full refund" button in WC admin
+
 Version 6.0.0
 * Dedicated dialog for "payment-url"
 
