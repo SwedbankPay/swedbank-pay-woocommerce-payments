@@ -1,6 +1,8 @@
-Version 7.0.0
+Version 6.1.0
+* Fix warnings on php8
 * Capturing fixes
 * Added "Full refund" button in WC admin
+* Updated the core library
 
 Version 6.0.0
 * Dedicated dialog for "payment-url"
