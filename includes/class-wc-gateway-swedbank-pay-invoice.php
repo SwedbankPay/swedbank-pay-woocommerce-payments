@@ -457,21 +457,15 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 	 *
 	 * @return void
 	 * @throws \Exception
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
 	public function capture_payment( $order, $amount = false, $vat_amount = 0 ) {
 		if ( is_int( $order ) ) {
 			$order = wc_get_order( $order );
 		}
 
-		if ( is_int( $order ) ) {
-			$order = wc_get_order( $order );
-		}
-
-		// Order Info
-		$info = $this->get_order_info( $order );
-
 		try {
-			$this->core->captureInvoice( $order->get_id(), $amount, $vat_amount, $info['items'] );
+			$this->core->captureInvoice( $order->get_id() );
 		} catch ( \SwedbankPay\Core\Exception $e ) {
 			throw new Exception( $e->getMessage() );
 		}
@@ -503,6 +497,7 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @param \WC_Order $order
 	 *
 	 * @return array
+	 * @deprecated
 	 */
 	private function get_order_items( $order ) {
 		$item = array();
@@ -589,6 +584,7 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 	 * @param WC_Order $order
 	 *
 	 * @return array
+	 * @deprecated
 	 */
 	private function get_order_info( $order ) {
 		$amount       = 0;
