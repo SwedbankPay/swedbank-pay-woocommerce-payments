@@ -3,6 +3,7 @@
 defined( 'ABSPATH' ) || exit;
 
 use SwedbankPay\Core\Adapter\WC_Adapter;
+use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Refund;
 use SwedbankPay\Payments\WooCommerce\WC_Background_Swedbank_Pay_Queue;
 use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Pay_Transactions;
 use SwedbankPay\Payments\WooCommerce\WC_Payment_Token_Swedbank_Pay;
@@ -241,9 +242,6 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 		// Payment listener/API hook
 		add_action( 'woocommerce_api_' . strtolower( __CLASS__ ), array( $this, 'return_handler' ) );
-
-		// Save order items on refund
-		add_action( 'woocommerce_create_refund', array( $this, 'save_refund_parameters', ), 10, 2 );
 
 		// Pending Cancel
 		add_action(
@@ -1287,43 +1285,6 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 	}
 
 	/**
-	 * Save refund parameters to perform refund with specified products and amounts.
-	 *
-	 * @param \WC_Order_Refund $refund
-	 * @param $args
-	 */
-	public function save_refund_parameters( $refund, $args ) {
-		if ( ! isset( $args['order_id'] ) ) {
-			return;
-		}
-
-		$order = wc_get_order( $args['order_id'] );
-		if ( ! $order ) {
-			return;
-		}
-
-		if ( $this->id !== $order->get_payment_method() ) {
-			return;
-		}
-
-		// Save order items of refund
-		set_transient(
-			'sb_refund_parameters_' . $args['order_id'],
-			$args,
-			5 * MINUTE_IN_SECONDS
-		);
-
-		// Save refund ID to store transaction_id
-		if ( $args['refund_payment'] ) {
-			set_transient(
-				'sb_refund_transaction_' . $args['order_id'],
-				$refund->get_id(),
-				5 * MINUTE_IN_SECONDS
-			);
-		}
-	}
-
-	/**
 	 * Process Refund
 	 *
 	 * If the gateway declares 'refunds' support, this will allow it to refund
@@ -1350,24 +1311,8 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 			return new WP_Error( 'refund', __( 'Amount must be positive.', 'swedbank-pay-woocommerce-checkout' ) );
 		}
 
-		// Prevent refund credit memo creation through Callback
-		set_transient( 'sb_refund_block_' . $order->get_id(), $order_id, 5 * MINUTE_IN_SECONDS );
-
-		// Unset
-		delete_transient( 'sb_refund_parameters_' . $order->get_id() );
-
 		try {
-			$result = $this->core->refund( $order->get_id(), $amount );
-
-			// Add transaction id
-			$refund_id = get_transient( 'sb_refund_transaction_' . $order->get_id() );
-			if ( $refund_id && isset( $result['reversal'] ) ) {
-				$refund = new WC_Order_Refund( $refund_id );
-				$refund->update_meta_data( '_transaction_id', $result['reversal']['transaction']['number'] );
-				$refund->save_meta_data();
-
-				delete_transient( 'sb_refund_transaction_' . $order->get_id() );
-			}
+			WC_Swedbank_Pay_Refund::refund( $this, $order, $amount, $reason );
 
 			return true;
 		} catch ( \Exception $e ) {

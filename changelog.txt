@@ -1,3 +1,9 @@
+Version 6.2.0
+* Fixed multiple refunds bug
+* Refunds: Use correct amount and vat_amount from order view in the backend
+* Removed composer checking
+* Invoice: capture by order items
+
 Version 6.1.0
 * Fix warnings on php8
 * Capturing fixes

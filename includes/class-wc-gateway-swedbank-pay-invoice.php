@@ -417,38 +417,6 @@ class WC_Gateway_Swedbank_Pay_Invoice extends WC_Gateway_Swedbank_Pay_Cc {
 	}
 
 	/**
-	 * Process Refund
-	 *
-	 * If the gateway declares 'refunds' support, this will allow it to refund
-	 * a passed in amount.
-	 *
-	 * @param int $order_id
-	 * @param float $amount
-	 * @param string $reason
-	 *
-	 * @return  bool|wp_error True or false based on success, or a WP_Error object
-	 */
-	public function process_refund( $order_id, $amount = null, $reason = '' ) {
-		$order = wc_get_order( $order_id );
-		if ( ! $order ) {
-			return false;
-		}
-
-		// Full Refund
-		if ( is_null( $amount ) ) {
-			$amount = $order->get_total();
-		}
-
-		try {
-			$this->core->refundInvoice( $order->get_id(), $amount );
-
-			return true;
-		} catch ( \Exception $e ) {
-			return new WP_Error( 'refund', $e->getMessage() );
-		}
-	}
-
-	/**
 	 * Capture
 	 *
 	 * @param WC_Order|int $order

@@ -91,6 +91,7 @@ class WC_Swedbank_Plugin {
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-instant-capture.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-payment-url.php' );
 		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-admin.php' );
+		require_once( dirname( __FILE__ ) . '/class-wc-swedbank-pay-refund.php' );
 	}
 
 	/**
