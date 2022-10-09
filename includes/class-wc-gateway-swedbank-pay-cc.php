@@ -1039,6 +1039,11 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 		$maybe_save_card = isset( $_POST['wc-payex_psp_cc-new-payment-method'] ) && (bool) $_POST['wc-payex_psp_cc-new-payment-method'];
 		$generate_token  = ( 'yes' === $this->save_cc && $maybe_save_card );
 
+		// Use `redirect` method for `order-pay` endpoints
+		if ( is_wc_endpoint_url( 'order-pay' ) ) {
+			$this->method = self::METHOD_REDIRECT;
+		}
+
 		// Try to load saved token
 		$token = new WC_Payment_Token_Swedbank_Pay();
 		if ( absint( $token_id ) > 0 ) {
