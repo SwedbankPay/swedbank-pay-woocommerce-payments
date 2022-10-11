@@ -342,6 +342,11 @@ class WC_Gateway_Swedbank_Pay_Swish extends WC_Gateway_Swedbank_Pay_Cc {
 	public function process_payment( $order_id ) {
 		$order = wc_get_order( $order_id );
 
+		// Use `redirect` method for `order-pay` endpoints
+		if ( is_wc_endpoint_url( 'order-pay' ) ) {
+			$this->method = self::METHOD_REDIRECT;
+		}
+
 		// Process payment
 		try {
 			$result = $this->core->initiateSwishPayment(
