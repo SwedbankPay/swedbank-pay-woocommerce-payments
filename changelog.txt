@@ -1,3 +1,7 @@
+Version 6.3.0
+* Use redirect method for order-pay endpoints
+* Updated the core library
+
 Version 6.2.0
 * Fixed multiple refunds bug
 * Refunds: Use correct amount and vat_amount from order view in the backend
