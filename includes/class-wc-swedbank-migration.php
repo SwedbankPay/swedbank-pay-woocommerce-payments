@@ -163,7 +163,7 @@ class WC_Swedbank_Pay_Migration
 				continue;
 			}
 
-			$has_migrated  = get_post_meta( $order->get_id(), '_sb_has_migrated', true );
+			$has_migrated = $order->get_meta( '_sb_has_migrated', true );
 			if ( ! empty( $has_migrated ) ) {
 				self::log( sprintf( '[WARNING] Order #%s has been skipped. It has been already migrated.',
                     $order->get_id()
@@ -173,11 +173,11 @@ class WC_Swedbank_Pay_Migration
 			}
 
 			// Change payment method
-			update_post_meta( $order->get_id(), '_payment_method', 'payex_psp_cc' );
+			$order->set_payment_method( 'payex_psp_cc' );
 
 			// Check if the order has an assigned card
-			$card_id = get_post_meta( $order->get_id(), '_payex_card_id', true );
-			if ( ! empty( $card_id) && count( $order->get_payment_tokens() ) === 0 ) {
+			$card_id = $order->get_meta( '_payex_card_id', true );
+			if ( ! empty( $card_id ) && count( $order->get_payment_tokens() ) === 0 ) {
 				// Load Saved Credit Card
 				$post = get_post( $card_id );
 				if ( ! $post ) {
@@ -218,9 +218,9 @@ class WC_Swedbank_Pay_Migration
 			}
 
 			// Change recurring payment method if needs
-			$recurring = get_post_meta( $order->get_id(), '_recurring_payment_method' );
+			$recurring = $order->get_meta( '_recurring_payment_method' );
 			if ( ! empty( $recurring ) ) {
-				update_post_meta( $order->get_id(), '_recurring_payment_method', 'payex_psp_cc' );
+				$order->update_meta_data( '_recurring_payment_method', 'payex_psp_cc' );
 			}
 
 			self::log( sprintf( '[INFO] The order #%s has been migrated.',
@@ -228,7 +228,8 @@ class WC_Swedbank_Pay_Migration
 			) );
 
 			// Migration flag
-			update_post_meta( $order->get_id(), '_sb_has_migrated', '1' );
+			$order->update_meta_data( '_sb_has_migrated', '1' );
+			$order->save();
 		}
 	}
 
