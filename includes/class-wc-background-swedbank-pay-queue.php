@@ -2,6 +2,7 @@
 
 namespace SwedbankPay\Payments\WooCommerce;
 
+use Automattic\WooCommerce\Utilities\OrderUtil;
 use WC_Background_Process;
 use WC_Logger;
 
@@ -246,13 +247,30 @@ class WC_Background_Swedbank_Pay_Queue extends WC_Background_Process {
 	 */
 	private function get_post_id_by_meta( $key, $value ) {
 		global $wpdb;
-
-		return $wpdb->get_var(
-			$wpdb->prepare(
-				"SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;",
-				$key,
-				$value
+		if ( ! OrderUtil::custom_orders_table_usage_is_enabled() ) {
+			return $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT post_id FROM {$wpdb->prefix}postmeta WHERE meta_key = %s AND meta_value = %s;",
+					$key,
+					$value
+				)
+			);
+		}
+		$orders = wc_get_orders(
+			array(
+				'return'     => 'ids',
+				'limit'      => 1,
+				'meta_query' => array(
+					array(
+						'key'   => $key,
+						'value' => $value,
+					),
+				),
 			)
 		);
+		if ( ! empty( $orders ) ) {
+			return (string) $orders[0];
+		}
+		return null;
 	}
 }

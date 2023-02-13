@@ -143,7 +143,8 @@ class WC_Swedbank_Subscriptions {
 	 */
 	public static function update_failing_payment_method( $subscription, $renewal_order ) {
 		// Delete tokens
-		//delete_post_meta( $subscription->get_id(), '_payment_tokens' );
+		//$subscription->delete_meta_data( '_payment_tokens' );
+		//$subscription->save();
 	}
 
 	/**
@@ -157,7 +158,8 @@ class WC_Swedbank_Subscriptions {
 	 */
 	public static function delete_resubscribe_meta( $resubscribe_order ) {
 		// Delete tokens
-		delete_post_meta( $resubscribe_order->get_id(), '_payment_tokens' );
+		$resubscribe_order->delete_meta_data( '_payment_tokens' );
+		$resubscribe_order->save();
 	}
 
 	/**
@@ -263,7 +265,8 @@ class WC_Swedbank_Subscriptions {
 
 		if ( 'swedbankpay_meta' === $meta_table && 'token_id' === $meta_key ) {
 			// Delete tokens
-			delete_post_meta( $subscription->get_id(), '_payment_tokens' );
+			$subscription->delete_meta_data( '_payment_tokens' );
+			$subscription->save();
 
 			// Add tokens
 			$tokens = explode( ',', $meta_value );

@@ -986,9 +986,10 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 							$token->save();
 
 							// Replace token
-							delete_post_meta( $order->get_id(), '_payex_replace_token' );
-							delete_post_meta( $order->get_id(), '_payment_tokens' );
+							$order->delete_meta_data( '_payex_replace_token' );
+							$order->delete_meta_data( '_payment_tokens' );
 							$order->add_payment_token( $token );
+							$order->save();
 
 							wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-payments' ) );
 
@@ -1078,8 +1079,9 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 				}
 
 				// Replace token
-				delete_post_meta( $order->get_id(), '_payment_tokens' );
+				$order->delete_meta_data( '_payment_tokens' );
 				$order->add_payment_token( $token );
+				$order->save();
 
 				if ( self::wcs_is_payment_change() ) {
 					wc_add_notice( __( 'Payment method was updated.', 'swedbank-pay-woocommerce-payments' ) );

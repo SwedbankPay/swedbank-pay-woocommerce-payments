@@ -10,8 +10,8 @@
  * Version: 6.3.0
  * Text Domain: swedbank-pay-woocommerce-payments
  * Domain Path: /languages
- * WC requires at least: 5.5.1
- * WC tested up to: 7.0.0
+ * WC requires at least: 6.4.0
+ * WC tested up to: 7.3.0
  */
 
 use SwedbankPay\Payments\WooCommerce\WC_Swedbank_Plugin;
@@ -37,6 +37,7 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 		// Actions
 		add_action( 'plugins_loaded', array( $this, 'init' ), 0 );
 		add_action( 'woocommerce_loaded', array( $this, 'woocommerce_loaded' ), 20 );
+		add_action( 'before_woocommerce_init', array( $this, 'declare_compatibility_with_custom_order_tables' ) );
 	}
 
 	/**
@@ -69,6 +70,15 @@ class WC_Swedbank_Pay extends WC_Swedbank_Plugin {
 		WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Swish' );
 		WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Mobilepay' );
 		WC_Swedbank_Pay::register_gateway( 'WC_Gateway_Swedbank_Pay_Trustly' );
+	}
+
+	/**
+	 * Declare compatibilty with WooCommerce custom order tables.
+	 */
+	public function declare_compatibility_with_custom_order_tables() {
+		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
+		}
 	}
 }
 
