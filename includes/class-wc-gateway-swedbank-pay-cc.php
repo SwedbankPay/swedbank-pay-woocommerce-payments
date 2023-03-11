@@ -1126,6 +1126,7 @@ class WC_Gateway_Swedbank_Pay_Cc extends WC_Payment_Gateway {
 
 			$result = $this->core->initiateCreditCardPayment( $order_id, $generate_token, $payment_token );
 		} catch ( Exception $e ) {
+			//
 			wc_add_notice( $e->getMessage(), 'error' );
 
 			return false;

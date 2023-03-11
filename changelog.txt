@@ -1,3 +1,6 @@
+Version 6.4.0
+* Improve error messages
+
 Version 6.3.0
 * Use redirect method for order-pay endpoints
 * Updated the core library

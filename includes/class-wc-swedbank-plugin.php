@@ -234,6 +234,10 @@ class WC_Swedbank_Plugin {
 				$country_code = '45';
 				break;
 			default:
+				if ( strpos( $billing_phone, '00' ) === 0 ) {
+                    return $billing_phone;
+				}
+
 				return '+' . ltrim( $billing_phone, '+' ) ;
 		}
 
