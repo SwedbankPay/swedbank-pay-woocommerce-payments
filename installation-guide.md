@@ -23,7 +23,7 @@ Navigate to **WooCommerce -> Settings -> Payments** and pick the payment Method 
 ![image3](https://user-images.githubusercontent.com/6286270/63706069-d76ff400-c82e-11e9-8768-78c5144ccec0.png)
 
 There are explanatory descriptions under each setting.
-To connect your module to the PayEx system you need to navigate to https://admin.externalintegration.payex.com/psp/login for test and https://admin.payex.com/psp/login for production accounts and generate tokens:
+To connect your module to the PayEx system you need to navigate to [Swedbank Pay Merchant Portal (Test)](https://merchantportal.externalintegration.swedbankpay.com/) for test and [Swedbank Pay Merchant Portal (production)](https://merchantportal.swedbankpay.com/) for production accounts and generate tokens:
 
 ![image4](https://user-images.githubusercontent.com/6286270/63706086-e2c31f80-c82e-11e9-878e-aadc670a398f.png)
 
