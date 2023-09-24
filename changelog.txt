@@ -1,3 +1,6 @@
+Version 6.4.1
+* Stock reducing fixes
+
 Version 6.4.0
 * Improve error messages
 

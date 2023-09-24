@@ -9,9 +9,13 @@
         "php": ">=7.0",
         "adci/full-name-parser": "^0.2.4",
         "ramsey/uuid": "^3.7",
-        "swedbank-pay/swedbank-pay-woocommerce-core": "~5.3"
+        "swedbank-pay/swedbank-pay-woocommerce-core": "~5.3.1"
     },
     "require-dev": {
-        "yoast/phpunit-polyfills": "^1.0.2"
+        "yoast/phpunit-polyfills": "^1.0.3",
+        "phpunit/phpunit": "^7.5.20",
+        "phpmd/phpmd": "^2.9",
+        "squizlabs/php_codesniffer": "^3.5",
+        "wp-coding-standards/wpcs": "^3.0"
     }
 }
