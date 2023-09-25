@@ -9,9 +9,17 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        uses: shivammathur/setup-php@master
+        with:
+          php-version: '7.4'
+          extensions: intl, mbstring, json, bcmath
+          coverage: xdebug
+          tools: composer:v1
 
       - name: Build
         run: |
