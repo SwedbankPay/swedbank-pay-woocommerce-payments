@@ -7,6 +7,7 @@ Stable tag: 6.4.1
 License: Apache License 2.0
 License URI: http://www.apache.org/licenses/LICENSE-2.0
 
+This plugin is deprecated. Please use [Swedbank Pay Payment Menu][http://www.apache.org/licenses/LICENSE-2.0](https://wordpress.org/plugins/swedbank-pay-payment-menu/)
 This plugin provides the Swedbank Pay Payment Gateway for WooCommerce.
 
 == Description ==
